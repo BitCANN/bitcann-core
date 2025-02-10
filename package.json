@@ -1,0 +1,24 @@
+{
+  "name": "bitcann",
+  "version": "0.0.1",
+  "description": "BitCANN - Bitcoin Cash for Assigned Names and Numbers – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BitCANN/bitcann.js.git"
+  },
+  "keywords": [
+    "bitcoin cash",
+    "BCH",
+    "smart contracts"
+  ],
+  "author": "Kuldeep Singh <kuldeepbb.grewal@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BitCANN/bitcann.js/issues"
+  },
+  "homepage": "https://github.com/BitCANN/bitcann.js#readme"
+}
