@@ -1,0 +1,28 @@
+{
+	"entryPoints": [ "lib/index.ts" ],
+	"out": "public/",
+	"plugin": [ "typedoc-plugin-coverage" ],
+	"visibilityFilters":
+	{
+		"protected": false,
+		"private": false,
+		"inherited": false,
+		"external": false
+	},
+	"groupOrder": [ "Classes" ],
+	"exclude":
+	[
+	],
+	"navigation":
+	{
+		"includeCategories": true,
+		"includeGroups": true
+	},
+	"navigationLinks":
+	{
+		"Contract": "https://github.com/BitCANN/contracts",
+		"Examples": "https://github.com/BitCANN/bitcann.js/tree/main/examples",
+		"|": "",
+		"NPM": "https://www.npmjs.com/package/bitcann",
+	}
+}

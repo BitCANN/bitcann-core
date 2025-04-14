@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+      "target": "es2020",
+      "module": "esnext",
+      "moduleResolution": "node",
+      "rootDir": ".",
+      "outDir": "build",
+      "incremental": true,
+      "tsBuildInfoFile": "./build/.tsbuildinfo",
+      "esModuleInterop": true,
+      "resolveJsonModule": true,
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "skipLibCheck": true,
+      "strict": true,
+      "strictPropertyInitialization": false,
+  },
+  "include": ["lib/**/*", "test/**/*", "examples/**/*"],
+  "exclude": ["node_modules", "build", ".eslintrc.cjs"],
+  "compileOnSave": false
+}

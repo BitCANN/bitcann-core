@@ -1,0 +1,14 @@
+.idea
+.DS_Store
+.vscode/
+build/
+coverage/
+node_modules/
+public/
+junit.xml
+e2e-tests.xml
+unit-tests.xml
+yarn.lock
+yarn-error.log
+lib/**/*.js
+test/**/*.js
