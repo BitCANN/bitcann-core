@@ -4,11 +4,12 @@ import {
 	NetworkProvider,
 	ElectrumNetworkProvider,
 	Contract,
+	AddressType,
 } from 'cashscript';
+import { constructContracts } from './util/contracts-util';
 
 export class BitCANNManager 
 {
-
 	// Config to build the contracts in the BitCANN system.
 	public category: string;
 	public minStartingBid: number;
@@ -42,6 +43,18 @@ export class BitCANNManager
 			// Create a new ElectrumNetworkProvider for BCH network operations.
 			this.networkProvider = new ElectrumNetworkProvider('mainnet');
 		}
+
+		// Options for contract construction, specifying the network provider and address type.
+		const options = { provider: this.networkProvider, addressType: 'p2sh32' as AddressType };
+
+		this.contracts = constructContracts({
+			options,
+			category: this.category,
+			minStartingBid: this.minStartingBid,
+			minBidIncreasePercentage: this.minBidIncreasePercentage,
+			minWaitTime: this.minWaitTime,
+			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
+		});
 	}
 
 	// Read Methods

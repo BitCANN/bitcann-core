@@ -21,7 +21,17 @@
     "jest": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
     "lint": "eslint . --ext .ts",
     "syntax": "tsc --noEmit",
-    "example": "NODE_OPTIONS='--loader ts-node/esm' node examples/network-example.ts"
+    "example": "NODE_OPTIONS='--loader ts-node/esm' node examples/network-example.ts",
+    "compile:registry": "cashc ./lib/contracts/Registry.cash -o ./lib/contracts/Registry.json",
+    "compile:domain": "cashc ./lib/contracts/Domain.cash -o ./lib/contracts/Domain.json",
+    "compile:auction": "cashc ./lib/contracts/Auction.cash -o ./lib/contracts/Auction.json",
+    "compile:bid": "cashc ./lib/contracts/Bid.cash -o ./lib/contracts/Bid.json",
+    "compile:domainfactory": "cashc ./lib/contracts/DomainFactory.cash -o ./lib/contracts/DomainFactory.json",
+    "compile:auctionnameenforcer": "cashc ./lib/contracts/AuctionNameEnforcer.cash -o ./lib/contracts/AuctionNameEnforcer.json",
+    "compile:domainownershipguard": "cashc ./lib/contracts/DomainOwnershipGuard.cash -o ./lib/contracts/DomainOwnershipGuard.json",
+    "compile:auctionconflictresolver": "cashc ./lib/contracts/AuctionConflictResolver.cash -o ./lib/contracts/AuctionConflictResolver.json",
+    "compile:accumulator": "cashc ./lib/contracts/Accumulator.cash -o ./lib/contracts/Accumulator.json",
+    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:bid && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:accumulator && npm run compile:domain"
   },
   "repository": {
     "type": "git",
@@ -50,7 +60,8 @@
     "ts-node": "^10.9.2",
     "typedoc": "^0.27.9",
     "typedoc-plugin-coverage": "^3.4.1",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "cashc": "^0.11.0-next.3"
   },
   "dependencies": {
     "@bitauth/libauth": "^3.1.0-next.4",

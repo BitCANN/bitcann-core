@@ -8,12 +8,12 @@ describe('BitCANNManager', () =>
 {
 	const mockOptions: ManagerConfig = 
 	{
-		category: '0x0000000000000000000000000000000000000000',
-		minStartingBid: 100000000,
-		minBidIncreasePercentage: 100,
-		inactivityExpiryTime: 100000000,
+		category: '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218',
+		minStartingBid: 10000,
+		minBidIncreasePercentage: 5,
+		inactivityExpiryTime: 1,
 		minWaitTime: 1,
-		maxPlatformFeePercentage: 100,
+		maxPlatformFeePercentage: 50,
 	};
 
 	describe('constructor', () => 
