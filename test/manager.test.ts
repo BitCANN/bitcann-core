@@ -1,21 +1,32 @@
 import { describe, it, expect } from '@jest/globals';
 import { createManager, BitCANNManager } from '../lib/manager';
-import { ManagerConfig } from '../lib/interfaces';
 import { NetworkProvider } from 'cashscript';
 import { DomainStatusType } from '../lib/interfaces/domain';
+import
+{
+	accumulatorContractAddress,
+	accumulatorLockingBytecodeHex,
+	auctionConflictResolverContractAddress,
+	auctionConflictResolverLockingBytecodeHex,
+	auctionContractAddress,
+	auctionLockingBytecodeHex,
+	auctionNameEnforcerContractAddress,
+	auctionNameEnforcerLockingBytecodeHex,
+	bidContractAddress,
+	bidLockingBytecodeHex,
+	domainFactoryContractAddress,
+	domainFactoryLockingBytecodeHex,
+	domainOwnershipGuardContractAddress,
+	domainOwnershipGuardLockingBytecodeHex,
+	mockOptions,
+	registryContractAddress,
+	registryLockingBytecodeHex,
+} from './config';
+import { cashAddressToLockingBytecode } from '@bitauth/libauth';
+import { binToHex } from '@bitauth/libauth';
 
 describe('BitCANNManager', () => 
 {
-	const mockOptions: ManagerConfig = 
-	{
-		category: '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218',
-		minStartingBid: 10000,
-		minBidIncreasePercentage: 5,
-		inactivityExpiryTime: 1,
-		minWaitTime: 1,
-		maxPlatformFeePercentage: 50,
-	};
-
 	describe('constructor', () => 
 	{
 		it('should create a manager instance with correct configuration', () => 
@@ -41,6 +52,70 @@ describe('BitCANNManager', () =>
 		{
 			const manager = createManager(mockOptions);
 			expect(manager.networkProvider).toBeDefined();
+		});
+
+		it('should construct the correct contracts, addresses, and locking bytecodes', () => 
+		{
+			const manager = createManager(mockOptions);
+			expect(manager.contracts).toBeDefined();
+			expect(manager.contracts.Accumulator).toBeDefined();
+			expect(manager.contracts.Auction).toBeDefined();
+			expect(manager.contracts.AuctionConflictResolver).toBeDefined();
+			expect(manager.contracts.AuctionNameEnforcer).toBeDefined();
+			expect(manager.contracts.Bid).toBeDefined();
+			expect(manager.contracts.DomainFactory).toBeDefined();
+			expect(manager.contracts.DomainOwnershipGuard).toBeDefined();
+			expect(manager.contracts.Registry).toBeDefined();
+
+			// Verify contract addresses from config
+			expect(manager.contracts.Registry.address).toBe(registryContractAddress);
+			expect(manager.contracts.Auction.address).toBe(auctionContractAddress);
+			expect(manager.contracts.Bid.address).toBe(bidContractAddress);
+			expect(manager.contracts.DomainFactory.address).toBe(domainFactoryContractAddress);
+			expect(manager.contracts.DomainOwnershipGuard.address).toBe(domainOwnershipGuardContractAddress);
+			expect(manager.contracts.AuctionConflictResolver.address).toBe(auctionConflictResolverContractAddress);
+			expect(manager.contracts.AuctionNameEnforcer.address).toBe(auctionNameEnforcerContractAddress);
+			expect(manager.contracts.Accumulator.address).toBe(accumulatorContractAddress);
+
+			const registryLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Registry.address);
+			// @ts-ignore
+			const derivedRegistryLockingBytecodeHex = binToHex(registryLockingBytecode.bytecode);
+			expect(derivedRegistryLockingBytecodeHex).toBe(registryLockingBytecodeHex);
+
+			const domainFactoryLockingBytecode = cashAddressToLockingBytecode(manager.contracts.DomainFactory.address);
+			// @ts-ignore
+			const derivedDomainFactoryLockingBytecodeHex = binToHex(domainFactoryLockingBytecode.bytecode);
+			expect(derivedDomainFactoryLockingBytecodeHex).toBe(domainFactoryLockingBytecodeHex);
+
+			const domainOwnershipGuardLockingBytecode = cashAddressToLockingBytecode(manager.contracts.DomainOwnershipGuard.address);
+			// @ts-ignore
+			const derivedDomainOwnershipGuardLockingBytecodeHex = binToHex(domainOwnershipGuardLockingBytecode.bytecode);
+			expect(derivedDomainOwnershipGuardLockingBytecodeHex).toBe(domainOwnershipGuardLockingBytecodeHex);
+
+			const auctionConflictResolverLockingBytecode = cashAddressToLockingBytecode(manager.contracts.AuctionConflictResolver.address);
+			// @ts-ignore
+			const derivedAuctionConflictResolverLockingBytecodeHex = binToHex(auctionConflictResolverLockingBytecode.bytecode);
+			expect(derivedAuctionConflictResolverLockingBytecodeHex).toBe(auctionConflictResolverLockingBytecodeHex);
+
+			const auctionNameEnforcerLockingBytecode = cashAddressToLockingBytecode(manager.contracts.AuctionNameEnforcer.address);
+			// @ts-ignore
+			const derivedAuctionNameEnforcerLockingBytecodeHex = binToHex(auctionNameEnforcerLockingBytecode.bytecode);
+			expect(derivedAuctionNameEnforcerLockingBytecodeHex).toBe(auctionNameEnforcerLockingBytecodeHex);
+
+			const bidLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Bid.address);
+			// @ts-ignore
+			const derivedBidLockingBytecodeHex = binToHex(bidLockingBytecode.bytecode);
+			expect(derivedBidLockingBytecodeHex).toBe(bidLockingBytecodeHex);
+
+			const accumulatorLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Accumulator.address);
+			// @ts-ignore
+			const derivedAccumulatorLockingBytecodeHex = binToHex(accumulatorLockingBytecode.bytecode);
+			expect(derivedAccumulatorLockingBytecodeHex).toBe(accumulatorLockingBytecodeHex);
+			
+			const auctionLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Auction.address);
+			// @ts-ignore
+			const derivedAuctionLockingBytecodeHex = binToHex(auctionLockingBytecode.bytecode);
+			expect(derivedAuctionLockingBytecodeHex).toBe(auctionLockingBytecodeHex);
 		});
 	});
 
