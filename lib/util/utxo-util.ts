@@ -1,3 +1,5 @@
+import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError } from '../errors';
+
 /**
  * Retrieves the registration UTXO from a list of UTXOs.
  * 
@@ -5,7 +7,7 @@
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
  * @returns {Promise<any>} A promise that resolves to the registration UTXO.
- * @throws {Error} If no registration UTXO is found.
+ * @throws {RegistrationCounterUTXONotFoundError} If no registration UTXO is found.
  */
 export const getRegistrationUtxo = async ({ utxos, category }: { utxos: any[]; category: string }): Promise<any> =>
 {
@@ -18,7 +20,7 @@ export const getRegistrationUtxo = async ({ utxos, category }: { utxos: any[]; c
 
 	if(!utxo)
 	{
-		throw new Error('Registration UTXO not found');
+		throw new RegistrationCounterUTXONotFoundError();
 	}
   
 	return utxo;
@@ -31,7 +33,7 @@ export const getRegistrationUtxo = async ({ utxos, category }: { utxos: any[]; c
  * @param {string} params.category - The category to match against.
  * @param {string} params.authorizedContractLockingBytecodeHex - The authorized contract locking bytecode hex to match against.
  * @returns {Promise<any>} A promise that resolves to the thread UTXO.
- * @throws {Error} If no thread UTXO is found.
+ * @throws {ThreadNFTUTXONotFoundError} If no thread UTXO is found.
  */
 export const getThreadUtxo = async ({ utxos, category, authorizedContractLockingBytecodeHex }: { utxos: any[]; category: string; authorizedContractLockingBytecodeHex: string }): Promise<any> =>
 {
@@ -44,7 +46,7 @@ export const getThreadUtxo = async ({ utxos, category, authorizedContractLocking
 
 	if(!utxo)
 	{
-		throw new Error('Thread UTXO not found');
+		throw new ThreadNFTUTXONotFoundError();
 	}
 
 	return utxo;
@@ -58,7 +60,7 @@ export const getThreadUtxo = async ({ utxos, category, authorizedContractLocking
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
  * @returns {Promise<any>} A promise that resolves to the auction UTXO.
- * @throws {Error} If no auction UTXO is found.
+ * @throws {AuctionUTXONotFoundError} If no auction UTXO is found.
  */
 export const getAuctionUtxo = async ({ utxos, category }: { utxos: any[]; category: string }): Promise<any> =>
 {
@@ -70,7 +72,29 @@ export const getAuctionUtxo = async ({ utxos, category }: { utxos: any[]; catego
 
 	if(!utxo)
 	{
-		throw new Error('Auction UTXO not found');
+		throw new AuctionUTXONotFoundError();
+	}
+
+	return utxo;
+};
+
+
+
+/**
+ * Retrieves a random authorized contract UTXO from a list of UTXOs.
+ * 
+ * @param {Object} params - The parameters for the function.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @returns {Promise<any>} A promise that resolves to the authorized contract UTXO.
+ * @throws {AuthorizedContractUTXONotFoundError} If no authorized contract UTXO is found.
+ */
+export const getAuthorizedContractUtxo = async ({ utxos }: { utxos: any[] }): Promise<any> =>
+{
+	const utxo = utxos[Math.floor(Math.random() * utxos.length)];
+
+	if(!utxo)
+	{
+		throw new AuthorizedContractUTXONotFoundError();
 	}
 
 	return utxo;

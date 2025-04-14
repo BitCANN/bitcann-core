@@ -1,11 +1,14 @@
 import { describe, it, expect } from '@jest/globals';
 import { createManager, BitCANNManager } from '../lib/manager';
-import { NetworkProvider } from 'cashscript';
+import { MockNetworkProvider, NetworkProvider, randomUtxo } from 'cashscript';
 import { DomainStatusType } from '../lib/interfaces/domain';
 import
 {
 	accumulatorContractAddress,
 	accumulatorLockingBytecodeHex,
+	aliceAddress,
+	alicePkh,
+	aliceTemplate,
 	auctionConflictResolverContractAddress,
 	auctionConflictResolverLockingBytecodeHex,
 	auctionContractAddress,
@@ -24,14 +27,63 @@ import
 } from './config';
 import { cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { binToHex } from '@bitauth/libauth';
+import { intToBytesToHex } from '../lib/util';
 
 describe('BitCANNManager', () => 
 {
+	let networkProvider: MockNetworkProvider;
+	let manager: BitCANNManager;
+
+	beforeAll(() =>
+	{
+		networkProvider = new MockNetworkProvider();
+		mockOptions.networkProvider = networkProvider;
+
+		manager = createManager(mockOptions);
+
+		networkProvider.addUtxo(auctionContractAddress, { ...randomUtxo() });	
+
+		networkProvider.addUtxo(registryContractAddress, {
+			token: {
+				category: mockOptions.category,
+				amount: BigInt(0),
+				nft: {
+					commitment: auctionLockingBytecodeHex,
+					capability: 'none',
+				},
+			},
+			...randomUtxo(),
+		});
+
+		networkProvider.addUtxo(registryContractAddress, {
+			token: {
+				category: mockOptions.category,
+				amount: BigInt('9223372036854775807'),
+				nft: {
+					commitment: intToBytesToHex({ value: 0, length: 8 }),
+					capability: 'minting',
+				},
+			},
+			...randomUtxo(),
+		});
+	
+		networkProvider.addUtxo(registryContractAddress, {
+			token: {
+				category: mockOptions.category,
+				// @ts-ignore
+				nft: {
+					capability: 'minting',
+				},
+			},
+			...randomUtxo(),
+		});
+	});
+
 	describe('constructor', () => 
 	{
 		it('should create a manager instance with correct configuration', () => 
 		{
-			const manager = createManager(mockOptions);
+			
 			expect(manager).toBeInstanceOf(BitCANNManager);
 			expect(manager.category).toBe(mockOptions.category);
 			expect(manager.minStartingBid).toBe(mockOptions.minStartingBid);
@@ -44,19 +96,17 @@ describe('BitCANNManager', () =>
 		it('should use provided network provider if specified', () => 
 		{
 			const mockNetworkProvider = {} as NetworkProvider;
-			const manager = createManager({ ...mockOptions, networkProvider: mockNetworkProvider });
-			expect(manager.networkProvider).toBe(mockNetworkProvider);
+			const customManager = createManager({ ...mockOptions, networkProvider: mockNetworkProvider });
+			expect(customManager.networkProvider).toBe(mockNetworkProvider);
 		});
 
 		it('should create default network provider if none provided', () => 
 		{
-			const manager = createManager(mockOptions);
 			expect(manager.networkProvider).toBeDefined();
 		});
 
 		it('should construct the correct contracts, addresses, and locking bytecodes', () => 
 		{
-			const manager = createManager(mockOptions);
 			expect(manager.contracts).toBeDefined();
 			expect(manager.contracts.Accumulator).toBeDefined();
 			expect(manager.contracts.Auction).toBeDefined();
@@ -123,7 +173,6 @@ describe('BitCANNManager', () =>
 	{
 		it('should return empty object for a domain', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const domain = 'test.bch';
 			const records = await manager.getRecords(domain);
 			expect(records).toBeDefined();
@@ -135,7 +184,6 @@ describe('BitCANNManager', () =>
 	{
 		it('should return void for domain status', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.getDomains({ status: DomainStatusType.UNDER_AUCTION });
 			expect(result).toBeUndefined();
 		});
@@ -145,7 +193,6 @@ describe('BitCANNManager', () =>
 	{
 		it('should return void for domain name', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.getDomain('test.bch');
 			expect(result).toBeUndefined();
 		});
@@ -155,49 +202,50 @@ describe('BitCANNManager', () =>
 	{
 		it('should return void for accumulateInternalTokens', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.accumulateInternalTokens();
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for createAuction', async () => 
 		{
-			const manager = createManager(mockOptions);
-			const result = await manager.createAuction('test.bch');
-			expect(result).toBeUndefined();
+			const result = await manager.createAuctionTransaction({
+				name: 'test',
+				amount: 100000000,
+				userUTXO: {},
+				userUnlocker: aliceTemplate.unlockP2PKH(),
+				aliceAddress: aliceAddress,
+				alicePkh: binToHex(alicePkh),
+				change: 100000000,
+			});
+			expect(result).toBeDefined();
 		});
 
 		it('should return void for createBid', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.createBid('test.bch', 100000000);
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for claimDomain', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.claimDomain('test.bch');
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for proveInvalidAuctionName', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.proveInvalidAuctionName('test.bch');
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for proveDuplicateAuction', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.proveDuplicateAuction('test.bch');
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for proveIllegalAuction', async () => 
 		{
-			const manager = createManager(mockOptions);
 			const result = await manager.proveIllegalAuction('test.bch');
 			expect(result).toBeUndefined();
 		});

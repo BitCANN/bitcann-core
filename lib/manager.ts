@@ -5,8 +5,14 @@ import {
 	ElectrumNetworkProvider,
 	Contract,
 	AddressType,
+	TransactionBuilder,
+	Unlocker,
 } from 'cashscript';
 import { constructContracts } from './util/contracts-util';
+import { InvalidNameError, RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError } from './errors';
+import { isValidName } from './util/name';
+import { binToHex, cashAddressToLockingBytecode, hexToBin } from '@bitauth/libauth';
+import { getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util';
 
 export class BitCANNManager 
 {
@@ -95,11 +101,103 @@ export class BitCANNManager
 		return;
 	}
 
-	public async createAuction(name: string): Promise<void>
+	public async createAuctionTransaction({ 
+		name, 
+		amount, 
+		userUTXO,
+		userUnlocker,
+		aliceAddress,
+		alicePkh,
+		change,
+	}: {
+		name: string;
+		amount: number;
+		userUTXO: any;
+		userUnlocker: Unlocker;
+		aliceAddress: string;
+		alicePkh: string;
+		change: number;
+	}): Promise<TransactionBuilder>
 	{
-		console.log(name);
+		if(!isValidName(name))
+		{
+			throw new InvalidNameError();
+		}	
 
-		return;
+		const nameHex = Buffer.from(name).toString('hex');
+		const nameBin = hexToBin(nameHex);
+
+		const threadNFTUTXO = await getThreadUtxo({
+			utxos: await this.networkProvider.getUtxos(this.contracts.Registry.address),
+			category: this.category,
+			// @ts-ignore
+			authorizedContractLockingBytecodeHex: binToHex(cashAddressToLockingBytecode(this.contracts.Auction.address).bytecode),
+		});
+
+		const registrationCounterUTXO = await getRegistrationUtxo({
+			utxos: await this.networkProvider.getUtxos(this.contracts.Registry.address),
+			category: this.category,
+		});
+
+		const authorizedContractUTXO = await getAuthorizedContractUtxo({
+			utxos: await this.networkProvider.getUtxos(this.contracts.Auction.address),
+		});
+
+		const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1;
+		const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0');
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+			.addInput(authorizedContractUTXO, this.contracts.Auction.unlock.call(nameBin))
+			.addInput(registrationCounterUTXO, this.contracts.Registry.unlock.call())
+			.addInput(userUTXO, userUnlocker)
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token.category,
+					amount: threadNFTUTXO.token.amount,
+					nft: {
+						capability: threadNFTUTXO.token.nft.capability,
+						commitment: threadNFTUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.Auction.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: registrationCounterUTXO.satoshis,
+				token: {
+					category: registrationCounterUTXO.token.category,
+					amount: registrationCounterUTXO.token.amount  - BigInt(newRegistrationId),
+					nft: {
+						capability: registrationCounterUTXO.token.nft.capability,
+						commitment: newRegistrationIdCommitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: BigInt(amount),
+				token: {
+					category: registrationCounterUTXO.token.category,
+					amount: BigInt(newRegistrationId),
+					nft: {
+						capability: 'mutable',
+						commitment: alicePkh + binToHex(nameBin),
+					},
+				},
+			})
+			.addOpReturnOutput([ name ])
+			.addOutput({
+				to: aliceAddress,
+				amount: BigInt(change),
+			});
+
+		return transaction;
 	}
 
 	public async createBid(name: string, amount: number): Promise<void>
