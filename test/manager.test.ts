@@ -41,6 +41,8 @@ describe('BitCANNManager', () =>
 
 		manager = createManager(mockOptions);
 
+		networkProvider.addUtxo(aliceAddress, { ...randomUtxo() });	
+
 		networkProvider.addUtxo(auctionContractAddress, { ...randomUtxo() });	
 
 		networkProvider.addUtxo(registryContractAddress, {
@@ -194,7 +196,7 @@ describe('BitCANNManager', () =>
 		it('should return void for domain name', async () => 
 		{
 			const result = await manager.getDomain('test.bch');
-			expect(result).toBeUndefined();
+			expect(result).toBeDefined();
 		});
 	});
 
@@ -210,12 +212,8 @@ describe('BitCANNManager', () =>
 		{
 			const result = await manager.createAuctionTransaction({
 				name: 'test',
-				amount: 100000000,
-				userUTXO: {},
-				userUnlocker: aliceTemplate.unlockP2PKH(),
-				aliceAddress: aliceAddress,
-				alicePkh: binToHex(alicePkh),
-				change: 100000000,
+				amount: 10000,
+				address: aliceAddress,
 			});
 			expect(result).toBeDefined();
 		});

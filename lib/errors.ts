@@ -50,4 +50,14 @@ export class AuthorizedContractUTXONotFoundError extends Error
 
 		super(message);
 	}
-}	
+}
+
+export class UserUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'User UTXO not found';
+
+		super(message);
+	}
+}

@@ -1,3 +1,3 @@
-export { createManager, BitCANNManager } from './manager';
-export * from './interfaces';
-export * from './util';
+export { createManager, BitCANNManager } from './manager.js';
+export * from './interfaces/index.js';
+export * from './util/index.js';
