@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "rootDir": ".",
     "outDir": "build",
     "incremental": true,
@@ -14,10 +14,9 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "strict": true,
-    "strictPropertyInitialization": false,
-    "verbatimModuleSyntax": true
+    "strictPropertyInitialization": false      
   },
-  "include": ["lib/**/*", "test/**/*", "examples/**/*", "lib/contracts/*.json"],
+  "include": ["lib/**/*", "test/**/*", "examples/**/*"],
   "exclude": ["node_modules", "build", ".eslintrc.cjs"],
   "compileOnSave": false
 }

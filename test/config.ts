@@ -6,7 +6,7 @@ import {
 	encodeCashAddress,
 	deriveSeedFromBip39Mnemonic,
 } from '@bitauth/libauth';
-import { ManagerConfig } from '../lib/interfaces';
+import type { ManagerConfig } from '../lib/interfaces';
 import { SignatureTemplate } from 'cashscript';
 
 export const domainTokenCategory = '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218';

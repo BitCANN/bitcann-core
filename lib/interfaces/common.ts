@@ -1,4 +1,4 @@
-import { NetworkProvider } from 'cashscript';
+import type { NetworkProvider } from 'cashscript';
 
 export type ManagerConfig = 
 {

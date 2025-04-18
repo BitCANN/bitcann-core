@@ -1,14 +1,8 @@
 import { DomainStatusType } from './interfaces/domain.js';
-import { ManagerConfig } from './interfaces/common.js';
-import {
-	NetworkProvider,
-	ElectrumNetworkProvider,
-	Contract,
-	AddressType,
-	TransactionBuilder,
-	Unlocker,
-	Utxo,
-} from 'cashscript';
+import type { ManagerConfig } from './interfaces/common.js';
+import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
+import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
+import { fetchHistory } from '@electrum-cash/protocol';
 import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
 import { binToHex, hexToBin } from '@bitauth/libauth';
@@ -16,18 +10,24 @@ import { convertAddressToPkh, convertPkhToLockingBytecode, getAuthorizedContract
 import { pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
-
-import Accumulator from './contracts/Accumulator.json';
-import Auction from './contracts/Auction.json';
-import AuctionConflictResolver from './contracts/AuctionConflictResolver.json';
-import AuctionNameEnforcer from './contracts/AuctionNameEnforcer.json';
-import Bid from './contracts/Bid.json';
-import Domain from './contracts/Domain.json';
-import DomainFactory from './contracts/DomainFactory.json';
-import DomainOwnershipGuard from './contracts/DomainOwnershipGuard.json';
-import Registry from './contracts/Registry.json';
 import { DUST } from './constants.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = dirname(currentFilePath);
+
+// Import JSON files
+const Accumulator = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Accumulator.json'), 'utf-8'));
+const Auction = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Auction.json'), 'utf-8'));
+const AuctionConflictResolver = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'AuctionConflictResolver.json'), 'utf-8'));
+const AuctionNameEnforcer = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'AuctionNameEnforcer.json'), 'utf-8'));
+const Bid = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Bid.json'), 'utf-8'));
+const Domain = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Domain.json'), 'utf-8'));
+const DomainFactory = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'DomainFactory.json'), 'utf-8'));
+const DomainOwnershipGuard = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'DomainOwnershipGuard.json'), 'utf-8'));
+const Registry = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Registry.json'), 'utf-8'));
 
 export class BitCANNManager 
 {
@@ -82,12 +82,18 @@ export class BitCANNManager
 	/**
 	 * Retrieves the records for a given domain.
 	 * 
-	 * @param {string} domain - The domain name to retrieve records for.
+	 * @param {string} name - The domain name to retrieve records for.
 	 * @returns {Promise<any>} A promise that resolves to the domain records.
 	 */
-	public async getRecords(domain: string): Promise<any> 
+	public async getRecords(name: string): Promise<any> 
 	{
-		console.log(domain);
+		const domainContract = this.constructDomainContract({
+			name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+		});
+
+		console.log(this.networkProvider);
 
 		// Construct the domain contract
 		// Fetch the utxos
@@ -178,10 +184,12 @@ export class BitCANNManager
 		if(!isValidName(name))
 		{
 			throw new InvalidNameError();
-		}	
+		}
 
 		// Convert the domain name to hexadecimal and binary formats.
-		const nameHex = Buffer.from(name).toString('hex');
+		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
+			.padStart(2, '0'))
+			.join('');
 		const nameBin = hexToBin(nameHex);
 
 		// Fetch UTXOs for registry, auction, and user addresses.
@@ -336,7 +344,9 @@ export class BitCANNManager
 	
 		// Dummy name used for constructing a partial domain contract bytecode.
 		const dummyName = 'test';
-		const dummyNameHex = Buffer.from(dummyName).toString('hex');
+		const dummyNameHex = Array.from(dummyName).map(char => char.charCodeAt(0).toString(16)
+			.padStart(2, '0'))
+			.join('');
 	
 		// Construct a dummy domain contract to extract partial bytecode.
 		const DummyDomainContract = new Contract(Domain, [ BigInt(1), dummyNameHex, reversedCategory ], this.options);

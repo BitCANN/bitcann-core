@@ -1,6 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { createManager, BitCANNManager } from '../lib/manager';
-import { MockNetworkProvider, NetworkProvider, randomUtxo } from 'cashscript';
+import { MockNetworkProvider, randomUtxo } from 'cashscript';
+import type { NetworkProvider } from 'cashscript';
 import { DomainStatusType } from '../lib/interfaces/domain';
 import
 {

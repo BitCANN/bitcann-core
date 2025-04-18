@@ -1,4 +1,4 @@
-import { LibauthOutput, UnlockableUtxo } from 'cashscript';
+import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
 import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import { cashAddressToLockingBytecode, decodeCashAddress } from '@bitauth/libauth';
