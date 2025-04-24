@@ -11,7 +11,8 @@ import {
   importWalletTemplate,
   walletTemplateP2pkhNonHd,
   binToHex,
-  hexToBin
+  hexToBin,
+  decodeTransaction
 } from "@bitauth/libauth";
 
 
@@ -119,4 +120,68 @@ export const signTransaction = async ({
 		// @ts-ignore
     txHash: binToHex(sha256.hash(sha256.hash(result.transaction)).reverse())
   }
+}
+
+export const getWalletConnectTransaction = async ({
+  transaction,
+  prompt,
+}:{
+  transaction: any;
+  prompt: string;
+}) => {
+  const unsignedRawTransactionHex = transaction.build();
+
+  const decodedTransaction = decodeTransaction(hexToBin(unsignedRawTransactionHex));
+  if(typeof decodedTransaction == "string") throw new Error("!decodedTransaction")
+
+	// @ts-ignore
+  const sourceOutputs = generateSourceOutputs(transaction.inputs)
+
+  const preparedSourceOutputs = sourceOutputs.map((sourceOutput, index) => {
+    return { ...sourceOutput, ...decodedTransaction.inputs[index] }
+  })
+
+  // SIGN USING WALLETCONNECT
+
+  const wcTransactionObj = {
+    transaction: decodedTransaction,
+    sourceOutputs: preparedSourceOutputs,
+    broadcast: true,
+    userPrompt: prompt,
+  };
+
+  return wcTransactionObj;
+}
+
+export const getSignedTransaction = async ({
+	transaction,
+  address,
+  privateKey
+}:{
+  transaction: any;
+  address: any;
+  privateKey: any;
+}) => {
+  const unsignedRawTransactionHex = transaction.build();
+
+  const decodedTransaction = decodeTransaction(hexToBin(unsignedRawTransactionHex));
+  if(typeof decodedTransaction == "string") throw new Error("!decodedTransaction")
+
+	// @ts-ignore
+  const sourceOutputs = generateSourceOutputs(transaction.inputs)
+
+  const preparedSourceOutputs = sourceOutputs.map((sourceOutput, index) => {
+    return { ...sourceOutput, ...decodedTransaction.inputs[index] }
+  })
+
+	// SIGN USING LOCAL PRIVATE KEY
+
+	const signedTransaction = await signTransaction({
+		address,
+		privateKey,
+		decoded: decodedTransaction,
+		sourceOutputsUnpacked: preparedSourceOutputs,
+	});
+
+  return signedTransaction;
 }
