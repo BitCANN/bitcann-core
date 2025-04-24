@@ -5,7 +5,7 @@ import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscrip
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
-import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, type TransactionCommon } from '@bitauth/libauth';
 import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
@@ -162,11 +162,48 @@ export class BitCANNManager
 		return auctionUtxos;
 	}
 
-	public async getPastAuctions({ status }: { status: DomainStatusType }): Promise<void>
+	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
 	{
-		console.log(status);
+		// @ts-ignore
+		const history = await fetchHistory(this.networkProvider.electrum, this.contracts.DomainFactory.address);
+		
+		const validTransactions = [];
 
-		return;
+		for(const txn of history)
+		{
+			// @ts-ignore
+			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+			let decodedTx = decodeTransaction(hexToBin(tx));
+
+			if(typeof decodedTx === 'string')
+			{
+				continue;
+			}
+
+			if(decodedTx.inputs.length !== 4
+				|| decodedTx.outputs.length !== 7
+				|| !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== this.category
+				|| !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== this.category
+				|| !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== this.category
+				|| !decodedTx.outputs[4].token?.category || binToHex(decodedTx.outputs[4].token.category) !== this.category
+				|| !decodedTx.outputs[5].token?.category || binToHex(decodedTx.outputs[5].token.category) !== this.category
+				|| decodedTx.outputs[2].token?.nft?.capability != 'minting'
+			)
+			{
+				continue;
+			}
+
+			// @ts-ignore
+			const nameHex = binToHex(decodedTx.outputs[5].token?.nft?.commitment).slice(16);
+			const name = Buffer.from(nameHex, 'hex').toString('utf8');
+
+			validTransactions.push({
+				transactionHex: tx,
+				name,
+			});
+		}
+
+		return validTransactions;
 	}
 
 	/**
@@ -416,7 +453,7 @@ export class BitCANNManager
 		}
 
 		const ownershipNFTUTXO: Utxo | null = userUtxos.find(utxo => 
-			utxo.token?.nft?.capability === 'none' && utxo.token?.category === this.category
+			utxo.token?.nft?.capability === 'none' && utxo.token?.category === this.category,
 		) || null;
 
 		if(!ownershipNFTUTXO)
