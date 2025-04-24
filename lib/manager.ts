@@ -3,10 +3,10 @@ import type { ManagerConfig } from './interfaces/common.js';
 import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
 import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
-import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
+import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
 import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
-import { convertAddressToPkh, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
@@ -382,12 +382,96 @@ export class BitCANNManager
 		return;
 	}
 
-	public async createRecord(name: string, record: string): Promise<void>
+	public async createRecordTransaction({ name, record, address }: { name: string; record: string; address: string }): Promise<TransactionBuilder>
 	{
-		console.log(name, record);
+		// Construct the Domain contract with the provided parameters.
+		const domainContract = this.constructDomainContract({
+			name: name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+		});
+		// Fetch UTXOs for registry, auction, and user addresses.
+		const [ domainUTXOs, userUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(domainContract.address),
+			this.networkProvider.getUtxos(address),
+		]);
 
-		return;
-	}	
+		// Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
+		const internalAuthNFTUTXO: Utxo | null = domainUTXOs.find(utxo => 
+			utxo.token?.nft?.capability === 'none'
+			&& utxo.token?.category === this.category
+			&& utxo.token?.nft?.commitment.length > 0,
+		) || null;
+
+		if(!internalAuthNFTUTXO)
+		{
+			throw new InternalAuthNFTUTXONotFoundError();
+		}
+
+		const ownershipNFTUTXO: Utxo | null = userUtxos.find(utxo => 
+			utxo.token?.nft?.capability === 'none' && utxo.token?.category === this.category
+		) || null;
+
+		if(!ownershipNFTUTXO)
+		{
+			throw new UserOwnershipNFTUTXONotFoundError();
+		}
+	
+		const fundingUTXO: Utxo | null = userUtxos.reduce<Utxo | null>((max, utxo) => (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, null);
+
+		if(!fundingUTXO)
+		{
+			throw new UserFundingUTXONotFoundError();
+		}
+
+		const change = fundingUTXO.satoshis - BigInt(2000);
+
+		// Convert user address to public key hash.
+		const pkh = convertAddressToPkh(address);
+
+		// Define a placeholder unlocker for the user UTXO.
+		// @ts-ignore
+		const placeholderUnlocker: Unlocker = {
+			generateLockingBytecode: () => convertPkhToLockingBytecode(pkh),
+			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
+		};
+		
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(internalAuthNFTUTXO, domainContract.unlock.useAuth(BigInt(1)))
+			.addInput(ownershipNFTUTXO, placeholderUnlocker)
+			.addInput(fundingUTXO, placeholderUnlocker)
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: internalAuthNFTUTXO.satoshis,
+				token: {
+					category: internalAuthNFTUTXO.token!.category,
+					amount: internalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: internalAuthNFTUTXO.token!.nft!.capability,
+						commitment: internalAuthNFTUTXO.token!.nft!.commitment,
+					},
+				}
+			})
+			.addOutput({
+				to: convertCashAddressToTokenAddress(address),
+				amount: ownershipNFTUTXO.satoshis,
+				token: {
+					category: ownershipNFTUTXO.token!.category,
+					amount: ownershipNFTUTXO.token!.amount,
+					nft: {
+						capability: ownershipNFTUTXO.token!.nft!.capability,
+						commitment: ownershipNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOpReturnOutput([ record ])
+			.addOutput({
+				to: address,
+				amount: change,
+			});
+
+		return transaction;
+	}
 
 	// UTILITIES
 

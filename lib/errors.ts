@@ -61,3 +61,33 @@ export class UserUTXONotFoundError extends Error
 		super(message);
 	}
 }
+
+export class InternalAuthNFTUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'Internal Auth NFT UTXO not found';
+
+		super(message);
+	}
+}
+
+export class UserOwnershipNFTUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'User Ownership NFT UTXO not found';
+
+		super(message);
+	}
+}
+
+export class UserFundingUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'User Funding UTXO not found';
+
+		super(message);
+	}
+}
