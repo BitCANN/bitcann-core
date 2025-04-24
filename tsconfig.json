@@ -17,7 +17,7 @@
     "strictPropertyInitialization": false,
     "verbatimModuleSyntax": true
   },
-  "include": ["lib/**/*", "test/**/*", "examples/**/*", "lib/contracts/*.json"],
-  "exclude": ["node_modules", "build", ".eslintrc.cjs"],
+  "include": ["lib/**/*", "test/**/*", "lib/contracts/*.json"],
+  "exclude": ["node_modules", "build", ".eslintrc.cjs", "examples/**/*"],
   "compileOnSave": false
 }

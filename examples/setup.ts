@@ -1,4 +1,4 @@
-export const domainTokenCategory = '8b4590c0b3f84a93634b5a5a85a550db1f4a9c9e83ad30b677ef5627ac64d218';
+export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
 export const minStartingBid = 10000;
 export const minBidIncreasePercentage = 5;
 export const inactivityExpiryTime = 1;

@@ -9,7 +9,10 @@
     ".": "./build/lib/index.js",
     "./client": "./build/lib/client.js"
   },
-  "browser": "build/lib/index.js",
+  "browser": {
+    "url": false,
+    "path": false
+  },
   "scripts": {
     "build": "tsc",
     "docs": "typedoc --hideGenerator --categorizeByGroup",

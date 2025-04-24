@@ -2,12 +2,12 @@ import { DomainStatusType } from './interfaces/domain.js';
 import type { ManagerConfig } from './interfaces/common.js';
 import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
 import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
-import { fetchHistory } from '@electrum-cash/protocol';
+import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
-import { binToHex, hexToBin } from '@bitauth/libauth';
+import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { convertAddressToPkh, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
-import { pushDataHex } from './util/index.js';
+import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
 import { DUST } from './constants.js';
@@ -83,9 +83,9 @@ export class BitCANNManager
 	 * Retrieves the records for a given domain.
 	 * 
 	 * @param {string} name - The domain name to retrieve records for.
-	 * @returns {Promise<any>} A promise that resolves to the domain records.
+	 * @returns {Promise<string[]>} A promise that resolves to the domain records.
 	 */
-	public async getRecords(name: string): Promise<any> 
+	public async getRecords(name: string): Promise<string[]> 
 	{
 		const domainContract = this.constructDomainContract({
 			name,
@@ -93,11 +93,29 @@ export class BitCANNManager
 			inactivityExpiryTime: this.inactivityExpiryTime,
 		});
 
-		console.log(this.networkProvider);
+		// @ts-ignore
+		const history = await fetchHistory(this.networkProvider.electrum, domainContract.address);
+		
+		const records = [];
 
-		// Construct the domain contract
-		// Fetch the utxos
-		return {};
+		for(const txn of history)
+		{
+			// @ts-ignore
+			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+			let decodedTx = decodeTransaction(hexToBin(tx));
+			// @ts-ignore
+			for(const output of decodedTx.outputs)
+			{
+				if(output.valueSatoshis == 0)
+				{
+					const opReturnPayload = extractOpReturnPayload(binToHex(output.lockingBytecode));
+					const utf8String = Buffer.from(opReturnPayload, 'hex').toString('utf8');
+					records.push(utf8String);
+				}
+			}
+		}
+
+		return records;
 	}
 
 	public async getDomains({ status }: { status: DomainStatusType }): Promise<void>

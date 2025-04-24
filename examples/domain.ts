@@ -24,13 +24,15 @@ const bitcannManager = createManager({
 
 (async () =>
 {
-	const address = 'bitcoincash:qznn6uyfuj9t7da5mv2ul66t63tmtgggruzlpen6ql';
+	const name = 'test';
+
 	const resp = await bitcannManager.getDomain('a.bch');
 	console.log(resp);
 
-	const utxos = await networkProvider.getUtxos(address);
-	console.log(utxos);
+	// const address = 'bitcoincash:qznn6uyfuj9t7da5mv2ul66t63tmtgggruzlpen6ql';
+	// const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 10000, address });
+	// console.log(auctionTransaction);
 
-	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name: 'a', amount: 10000, address });
-	console.log(auctionTransaction);
+	const tx = await bitcannManager.getRecords(name);
+	console.log(tx);
 })();

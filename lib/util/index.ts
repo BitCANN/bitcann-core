@@ -49,6 +49,45 @@ export const pushDataHex = function(data: string): string
 	}
 };
 
+export const extractOpReturnPayload = function(opReturnHex: string): string
+{
+	if(!opReturnHex.startsWith('6a'))
+	{
+		throw new Error('Not a valid OP_RETURN script');
+	}
+
+	let cursor = 2;
+	let opcodeOrLength = parseInt(opReturnHex.slice(cursor, cursor + 2), 16);
+	cursor += 2;
+
+	let dataLength;
+
+	if(opcodeOrLength === 0x4c)
+	{
+		dataLength = parseInt(opReturnHex.slice(cursor, cursor + 2), 16);
+		cursor += 2;
+	}
+	else if(opcodeOrLength === 0x4d)
+	{
+		dataLength = parseInt(opReturnHex.slice(cursor, cursor + 4), 16);
+		cursor += 4;
+	}
+	else if(opcodeOrLength === 0x4e)
+	{
+		dataLength = parseInt(opReturnHex.slice(cursor, cursor + 8), 16);
+		cursor += 8;
+	}
+	else
+	{
+		dataLength = opcodeOrLength;
+	}
+
+	const dataHex = opReturnHex.slice(cursor, cursor + dataLength * 2);
+	
+	return dataHex;
+};
+
+
 export const findPureUTXO = (utxos: any[]): any =>
 {
 	const utxo = utxos.reduce((max, val) => 
