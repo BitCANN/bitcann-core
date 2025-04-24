@@ -91,3 +91,23 @@ export class UserFundingUTXONotFoundError extends Error
 		super(message);
 	}
 }
+
+export class RunningAuctionUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'Running Auction UTXO not found';
+
+		super(message);
+	}
+}
+
+export class InvalidBidAmountError extends Error
+{
+	constructor()
+	{
+		const message = 'The bid amount is invalid';
+
+		super(message);
+	}
+}

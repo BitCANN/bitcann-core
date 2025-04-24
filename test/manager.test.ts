@@ -221,7 +221,11 @@ describe('BitCANNManager', () =>
 
 		it('should return void for createBid', async () => 
 		{
-			const result = await manager.createBid('test.bch', 100000000);
+			const result = await manager.createBidTransaction({
+				name: 'test',
+				amount: 10000,
+				address: aliceAddress,
+			});
 			expect(result).toBeUndefined();
 		});
 

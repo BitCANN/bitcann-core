@@ -3,10 +3,10 @@ import type { ManagerConfig } from './interfaces/common.js';
 import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
 import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
-import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
+import { InternalAuthNFTUTXONotFoundError, InvalidBidAmountError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
-import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, type TransactionCommon } from '@bitauth/libauth';
-import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
@@ -391,11 +391,110 @@ export class BitCANNManager
 		return transaction;
 	}
 
-	public async createBid(name: string, amount: number): Promise<void>
+	public async createBidTransaction({ name, amount, address }: { name: string; amount: number; address: string }): Promise<TransactionBuilder>
 	{
-		console.log(name, amount);
+		// Validate the domain name.
+		if(!isValidName(name))
+		{
+			throw new InvalidNameError();
+		}
 
-		return;
+		// Convert the domain name to hexadecimal and binary formats.
+		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
+			.padStart(2, '0'))
+			.join('');
+		const nameBin = hexToBin(nameHex);
+
+		// Fetch UTXOs for registry, auction, and user addresses.
+		const [ registryUtxos, bidUtxos, userUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(this.contracts.Registry.address),
+			this.networkProvider.getUtxos(this.contracts.Bid.address),
+			this.networkProvider.getUtxos(address),
+		]);
+
+		// Retrieve necessary UTXOs for the transaction.
+		const threadNFTUTXO = getThreadUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+			threadContractAddress: this.contracts.Bid.address,
+		});
+
+		const authorizedContractUTXO = getAuthorizedContractUtxo({
+			utxos: bidUtxos,
+		});
+
+		const runningAuctionUTXO = getRunningAuctionUtxo({
+			name,
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * 1.05)))
+		{
+			throw new InvalidBidAmountError();
+		}
+
+		// Convert user address to public key hash.
+		const userPkh = convertAddressToPkh(address);
+		console.log('userPkh', userPkh);
+
+		// Define a placeholder unlocker for the user UTXO.
+		// @ts-ignore
+		const placeholderUnlocker: Unlocker = {
+			generateLockingBytecode: () => convertPkhToLockingBytecode(userPkh),
+			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
+		};
+
+		// Find the user UTXO matching the category.
+		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2500 + DUST));
+		if(!fundingUTXO)
+		{
+			throw new UserUTXONotFoundError();
+		}
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+			.addInput(authorizedContractUTXO, this.contracts.Bid.unlock.call())
+			.addInput(runningAuctionUTXO, this.contracts.Registry.unlock.call())
+			.addInput(fundingUTXO, placeholderUnlocker)
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token.category,
+					amount: threadNFTUTXO.token.amount,
+					nft: {
+						capability: threadNFTUTXO.token.nft.capability,
+						commitment: threadNFTUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.Bid.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * 1.05)),
+				token: {
+					category: runningAuctionUTXO.token.category,
+					amount: BigInt(1),
+					nft: {
+						capability: 'mutable',
+						commitment: userPkh + binToHex(nameBin),
+					},
+				},
+			})
+			.addOutput({
+				to: address,
+				amount: runningAuctionUTXO.satoshis,
+			})
+			.addOutput({
+				to: address,
+				amount: fundingUTXO.satoshis - BigInt(2500),
+			});
+
+		return transaction;
 	}
 
 	public async claimDomain(name: string): Promise<void>
@@ -494,7 +593,7 @@ export class BitCANNManager
 						capability: internalAuthNFTUTXO.token!.nft!.capability,
 						commitment: internalAuthNFTUTXO.token!.nft!.commitment,
 					},
-				}
+				},
 			})
 			.addOutput({
 				to: convertCashAddressToTokenAddress(address),

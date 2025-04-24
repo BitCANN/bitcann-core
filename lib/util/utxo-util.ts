@@ -1,5 +1,5 @@
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
-import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError } from '../errors.js';
+import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import { cashAddressToLockingBytecode, decodeCashAddress, lockingBytecodeToAddressContents, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { binToHex } from '@bitauth/libauth';
@@ -31,6 +31,41 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
   
 	return utxo;
 };
+
+export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any =>
+{
+	const auctionUtxo = utxos
+		.filter((utxo) =>
+		{
+			if(utxo.token?.category === category)
+			{
+				if(utxo.token?.nft?.capability === 'mutable')
+				{
+
+					const nameHex = utxo.token.nft.commitment.slice(40);
+					const nameFromCommitment = Buffer.from(nameHex, 'hex').toString('utf8');
+
+					return nameFromCommitment === name;
+				}
+			}
+			
+			return false;
+		})
+		.reduce((prev, current) =>
+		{
+			if(!prev) return current;
+
+			return (prev.token.amount < current.token.amount) ? prev : current;
+		}, null);
+
+	if(!auctionUtxo)
+	{
+		throw new RunningAuctionUTXONotFoundError();
+	}
+
+	return auctionUtxo;
+};
+
 /**
  * Retrieves the thread UTXO from a list of UTXOs.
  * 
