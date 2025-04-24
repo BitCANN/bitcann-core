@@ -5,7 +5,7 @@ import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscrip
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
-import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { convertAddressToPkh, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
@@ -95,16 +95,52 @@ export class BitCANNManager
 
 		// @ts-ignore
 		const history = await fetchHistory(this.networkProvider.electrum, domainContract.address);
-		
+
 		const records = [];
+		const validCandidateTransactions = [];
 
 		for(const txn of history)
 		{
 			// @ts-ignore
 			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
 			let decodedTx = decodeTransaction(hexToBin(tx));
+
+			let hasOpReturn = false;
+			let hasCategoryFromContract = false;
+
 			// @ts-ignore
 			for(const output of decodedTx.outputs)
+			{		
+				if(output.valueSatoshis == 0)
+				{
+					hasOpReturn = true;
+					continue;
+				}
+
+				if(!output.token || binToHex(output.token.category) != this.category)
+				{
+					continue;
+				}
+
+				// @ts-ignore
+				const lockingBytecode = cashAddressToLockingBytecode(domainContract.address).bytecode;
+				if(binToHex(output.lockingBytecode) === binToHex(lockingBytecode))
+				{
+					hasCategoryFromContract = true;
+				}
+			}
+
+			if(hasOpReturn && hasCategoryFromContract)
+			{
+				validCandidateTransactions.push(decodedTx);
+			}
+			
+		}
+
+		for(const tx of validCandidateTransactions)
+		{
+			// @ts-ignore
+			for(const output of tx.outputs)
 			{
 				if(output.valueSatoshis == 0)
 				{
@@ -114,7 +150,7 @@ export class BitCANNManager
 				}
 			}
 		}
-
+		
 		return records;
 	}
 
@@ -346,6 +382,12 @@ export class BitCANNManager
 		return;
 	}
 
+	public async createRecord(name: string, record: string): Promise<void>
+	{
+		console.log(name, record);
+
+		return;
+	}	
 
 	// UTILITIES
 
