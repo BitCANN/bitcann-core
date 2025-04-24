@@ -14,6 +14,7 @@ import {
   hexToBin,
   decodeTransaction
 } from "@bitauth/libauth";
+import { generateSourceOutputs } from "bitcann";
 
 
 const toCashaddr = (lockingBytecode: any) => {

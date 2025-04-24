@@ -154,7 +154,15 @@ export class BitCANNManager
 		return records;
 	}
 
-	public async getDomains({ status }: { status: DomainStatusType }): Promise<void>
+	public async getAuctions(): Promise<Utxo[]>
+	{
+		const registryUtxos = await this.networkProvider.getUtxos(this.contracts.Registry.address);
+		const auctionUtxos = registryUtxos.filter((utxo) => utxo.token?.category === this.category && utxo.token?.nft?.capability === 'mutable');
+
+		return auctionUtxos;
+	}
+
+	public async getPastAuctions({ status }: { status: DomainStatusType }): Promise<void>
 	{
 		console.log(status);
 
@@ -232,7 +240,7 @@ export class BitCANNManager
 		name: string;
 		amount: number;
 		address: string;
-	}): Promise<string>
+	}): Promise<TransactionBuilder>
 	{
 		// Validate the domain name.
 		if(!isValidName(name))
@@ -340,8 +348,7 @@ export class BitCANNManager
 			.addOutput({
 				to: address,
 				amount: userUTXO.satoshis - BigInt(amount + 2000),
-			})
-			.build();
+			});
 
 		// Return the constructed transaction.
 		return transaction;

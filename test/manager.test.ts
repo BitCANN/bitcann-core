@@ -183,11 +183,11 @@ describe('BitCANNManager', () =>
 		});
 	});
 
-	describe('getDomains', () => 
+	describe('getAuctions', () => 
 	{
 		it('should return void for domain status', async () => 
 		{
-			const result = await manager.getDomains({ status: DomainStatusType.UNDER_AUCTION });
+			const result = await manager.getAuctions();
 			expect(result).toBeUndefined();
 		});
 	});
