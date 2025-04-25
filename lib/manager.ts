@@ -5,7 +5,7 @@ import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscrip
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { InternalAuthNFTUTXONotFoundError, InvalidBidAmountError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
-import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
@@ -436,7 +436,6 @@ export class BitCANNManager
 
 		// Convert user address to public key hash.
 		const userPkh = convertAddressToPkh(address);
-		console.log('userPkh', userPkh);
 
 		// Define a placeholder unlocker for the user UTXO.
 		// @ts-ignore
@@ -446,10 +445,20 @@ export class BitCANNManager
 		};
 
 		// Find the user UTXO matching the category.
-		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2500 + DUST));
+		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2500) && !utxo.token);
 		if(!fundingUTXO)
 		{
 			throw new UserUTXONotFoundError();
+		}
+
+		const prevBidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
+		const prevBidderLockingBytecode = convertPkhToLockingBytecode(prevBidderPKH);
+		// @ts-ignore
+		const prevBidderAddress = lockingBytecodeToCashAddress({ bytecode: prevBidderLockingBytecode }).address;
+
+		if(typeof prevBidderAddress !== 'string')
+		{
+			throw new Error('Invalid prev bidder address');
 		}
 
 		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
@@ -475,10 +484,10 @@ export class BitCANNManager
 			})
 			.addOutput({
 				to: this.contracts.Registry.tokenAddress,
-				amount: BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * 1.05)),
+				amount: BigInt(amount),
 				token: {
 					category: runningAuctionUTXO.token.category,
-					amount: BigInt(1),
+					amount: runningAuctionUTXO.token.amount,
 					nft: {
 						capability: 'mutable',
 						commitment: userPkh + binToHex(nameBin),
@@ -486,12 +495,12 @@ export class BitCANNManager
 				},
 			})
 			.addOutput({
-				to: address,
+				to: prevBidderAddress,
 				amount: runningAuctionUTXO.satoshis,
 			})
 			.addOutput({
 				to: address,
-				amount: fundingUTXO.satoshis - BigInt(2500),
+				amount: fundingUTXO.satoshis - (BigInt(amount) + BigInt(2500)),
 			});
 
 		return transaction;
