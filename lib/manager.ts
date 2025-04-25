@@ -6,11 +6,11 @@ import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { InternalAuthNFTUTXONotFoundError, InvalidBidAmountError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
 import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
-import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
-import { DUST } from './constants.js';
+import { DUST, EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -38,6 +38,7 @@ export class BitCANNManager
 	public inactivityExpiryTime: number;
 	public minWaitTime: number;
 	public maxPlatformFeePercentage: number;
+	public platformFeeAddress: string | undefined;
 	public options: { provider: NetworkProvider; addressType: AddressType };
 
 	// Network provider to use for BCH network operations.
@@ -54,7 +55,7 @@ export class BitCANNManager
 		this.inactivityExpiryTime = config.inactivityExpiryTime;
 		this.minWaitTime = config.minWaitTime;
 		this.maxPlatformFeePercentage = config.maxPlatformFeePercentage;
-
+		this.platformFeeAddress = config.platformFeeAddress;
 		if(config.networkProvider)
 		{
 			// Use the provided network provider for BCH network operations if one is provided.
@@ -429,7 +430,7 @@ export class BitCANNManager
 			category: this.category,
 		});
 
-		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * 1.05)))
+		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * (1 + this.minBidIncreasePercentage / 100))))
 		{
 			throw new InvalidBidAmountError();
 		}
@@ -445,7 +446,7 @@ export class BitCANNManager
 		};
 
 		// Find the user UTXO matching the category.
-		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2500) && !utxo.token);
+		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + EXPECTED_MAX_TRANSACTION_FEE) && !utxo.token);
 		if(!fundingUTXO)
 		{
 			throw new UserUTXONotFoundError();
@@ -500,17 +501,162 @@ export class BitCANNManager
 			})
 			.addOutput({
 				to: address,
-				amount: fundingUTXO.satoshis - (BigInt(amount) + BigInt(2500)),
+				amount: fundingUTXO.satoshis - (BigInt(amount) + BigInt(EXPECTED_MAX_TRANSACTION_FEE)),
 			});
+		
+		const tranasctionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(amount) + BigInt(tranasctionSize));
 
 		return transaction;
 	}
 
-	public async claimDomain(name: string): Promise<void>
+	public async createClaimDomainTransaction({ name }: { name: string }): Promise<TransactionBuilder>
 	{
-		console.log(name);
+		// Validate the domain name.
+		if(!isValidName(name))
+		{
+			throw new InvalidNameError();
+		}
 
-		return;
+		// Convert the domain name to hexadecimal and binary formats.
+		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
+			.padStart(2, '0'))
+			.join('');
+		const nameBin = hexToBin(nameHex);
+
+		// Fetch UTXOs for registry, auction, and user addresses.
+		const [ registryUtxos, domainFactoryUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(this.contracts.Registry.address),
+			this.networkProvider.getUtxos(this.contracts.DomainFactory.address),
+		]);
+
+		// Retrieve necessary UTXOs for the transaction.
+		const threadNFTUTXO = getThreadUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+			threadContractAddress: this.contracts.DomainFactory.address,
+		});
+
+		const authorizedContractUTXO = getAuthorizedContractUtxo({
+			utxos: domainFactoryUtxos,
+		});
+
+		const domainMintingUTXO = getDomainMintingUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+		const runningAuctionUTXO = getRunningAuctionUtxo({
+			name,
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+
+		const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
+		const bidderLockingBytecode = convertPkhToLockingBytecode(bidderPKH);
+		// @ts-ignore
+		const bidderAddress = lockingBytecodeToCashAddress({ bytecode: bidderLockingBytecode }).address;
+
+		if(typeof bidderAddress !== 'string')
+		{
+			throw new Error('Invalid prev bidder address');
+		}
+
+		// Construct the Domain contract with the provided parameters.
+		const domainContract = this.constructDomainContract({
+			name: name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+		});
+
+		const registrationId = runningAuctionUTXO.token?.amount.toString(16).padStart(16, '0');
+
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+			.addInput(authorizedContractUTXO, this.contracts.DomainFactory.unlock.call())
+			.addInput(domainMintingUTXO, this.contracts.Registry.unlock.call())
+			.addInput(runningAuctionUTXO, this.contracts.Registry.unlock.call(), { sequence: this.minWaitTime })
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token.category,
+					amount: threadNFTUTXO.token.amount + runningAuctionUTXO.token.amount,
+					nft: {
+						capability: threadNFTUTXO.token.nft.capability,
+						commitment: threadNFTUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.DomainFactory.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: domainMintingUTXO.satoshis,
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: domainMintingUTXO.token.amount,
+					nft: {
+						capability: domainMintingUTXO.token.nft.capability,
+						commitment: domainMintingUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: '',
+					},
+				},
+			})
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: registrationId,
+					},
+				},
+			})
+			.addOutput({
+				to: convertCashAddressToTokenAddress(bidderAddress),
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: registrationId + binToHex(nameBin),
+					},
+				},
+			});
+		
+		if(this.platformFeeAddress)
+		{
+			const platformFee = runningAuctionUTXO.satoshis * BigInt(this.maxPlatformFeePercentage) / BigInt(100);
+
+			transaction.addOutput({
+				to: this.platformFeeAddress,
+				amount: platformFee,
+			});
+
+			const tranasctionSize = transaction.build().length;
+			transaction.outputs[transaction.outputs.length - 1].amount = platformFee - BigInt(tranasctionSize);
+		}
+
+		return transaction;
 	}
 
 	public async proveInvalidAuctionName(name: string): Promise<void>

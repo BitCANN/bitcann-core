@@ -10,12 +10,10 @@ import { getSignedTransaction } from './common/sign.js';
 	const name = 'satoshi';
 	const address = aliceAddress;
 
-	const amount = 10000*1.05;
-  console.log('amount', amount);
-	const bidTransaction = await bitcannManager.createBidTransaction({ name, amount, address });
+	const claimDomainTransaction = await bitcannManager.createClaimDomainTransaction({ name });
 
   const preparedTransaction = await getSignedTransaction({
-    transaction: bidTransaction,
+    transaction: claimDomainTransaction,
     address,
     privateKey: alicePriv
   })

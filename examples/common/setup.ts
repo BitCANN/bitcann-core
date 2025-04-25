@@ -7,6 +7,7 @@ export const minBidIncreasePercentage = 5;
 export const inactivityExpiryTime = 1;
 export const minWaitTime = 1;
 export const maxPlatformFeePercentage = 50;
+export const platformFeeAddress = 'bitcoincash:qznn6uyfuj9t7da5mv2ul66t63tmtgggruzlpen6ql';
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
@@ -18,6 +19,7 @@ const bitcannManager = createManager({
 	minWaitTime: minWaitTime,
 	maxPlatformFeePercentage: maxPlatformFeePercentage,
 	networkProvider: networkProvider,
+	platformFeeAddress: platformFeeAddress,
 });
 
 export { bitcannManager };

@@ -231,7 +231,9 @@ describe('BitCANNManager', () =>
 
 		it('should return void for claimDomain', async () => 
 		{
-			const result = await manager.claimDomain('test.bch');
+			const result = await manager.createClaimDomainTransaction({
+				name: 'test',
+			});
 			expect(result).toBeUndefined();
 		});
 

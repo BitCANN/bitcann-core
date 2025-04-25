@@ -1,5 +1,5 @@
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
-import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError } from '../errors.js';
+import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import { cashAddressToLockingBytecode, decodeCashAddress, lockingBytecodeToAddressContents, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { binToHex } from '@bitauth/libauth';
@@ -31,6 +31,23 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
   
 	return utxo;
 };
+
+export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+{	
+	const utxo = utxos.find(u => 
+		u.token?.nft?.capability === 'minting'
+		&& u.token?.category === category
+		&& u.token?.amount == BigInt(0),
+	);
+
+	if(!utxo)
+	{
+		throw new DomainMintingUTXONotFoundError();
+	}
+	
+	return utxo;
+};
+	
 
 export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any =>
 {

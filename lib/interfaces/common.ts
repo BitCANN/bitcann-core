@@ -22,4 +22,7 @@ export type ManagerConfig =
 
 	/** maximum platform fee percentage for the auction. */
 	maxPlatformFeePercentage: number;
+
+	/** platform fee address for the auction. */
+	platformFeeAddress?: string;
 };
