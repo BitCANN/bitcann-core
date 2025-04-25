@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": ".",
+    "outDir": "build",
+    "incremental": true,
+    "tsBuildInfoFile": "./build/.tsbuildinfo",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["lib/**/*", "test/**/*", "lib/contracts/*.json"],
+  "exclude": ["node_modules", "build", ".eslintrc.cjs", "examples/**/*"],
+  "compileOnSave": false
+}
