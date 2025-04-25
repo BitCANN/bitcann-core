@@ -1,44 +1,102 @@
 # bitcann.js
 
+## Introduction
 BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
 
+## Usage
 
+### Installation
+```bash
+npm install bitcann
+```
 
+### Setup
 ```js
-import { createClient } from 'bitcann';
+import { createManager } from 'bitcann';
 
-const client = createClient({
+const manager = createManager({
     network: 'mainnet',
     config: {
+      // Category ID for the BitCANN system
       category: '0x0000000000000000000000000000000000000000',
+      // Minimum starting bid in satoshis
       minStartingBid: 100000000,
-      minBidIncreasePercentage: 100,
-      inactivityExpiryTime: 100000000,
+      // Minimum bid increase percentage
+      minBidIncreasePercentage: 5,
+      // Inactivity expiry time in blocks/MTP
+      inactivityExpiryTime: 1000000,
+      // Minimum wait time in blocks/MTP
       minWaitTime: 1,
-      maxPlatformFeePercentage: 100,
+      // Maximum platform fee percentage
+      maxPlatformFeePercentage: 50,
+      // Optional platform fee address
+      platformFeeAddress: 'bitcoincash:...'
     }
 });
-
-const auction = await client.getAuctionContract();
-
-const records = await client.getRecords('satoshi.bch');
-
-console.log(records);
-
 ```
 
-### Watch for duplicate auctions
+### Handling
 
+#### Domain Operations
 ```js
-setInterval(async () => {
-  const getActiveAuctions = await client.getActiveAuctions();
-  // Loop through the NFTs and look for the ones that already have a running auction.
-  const auction = await client.proveDuplicateAuction();
-  // Construct the auction case and penalise.
+// Get domain records
+const records = await manager.getRecords('satoshi');
 
+// Get domain information
+const domain = await manager.getDomain('satoshi');
 
-  // Check for dupicate auctions
-
-  // Check for invalid auction names
-}, 5000);
+// Create record
+const recordTx = await manager.createRecordTransaction({
+  name: 'satoshi',
+  record: 'Hello, World!',
+  address: 'bitcoincash:...'
+});
 ```
+
+#### Auction Operations
+```js
+// Get active auctions
+const auctions = await manager.getAuctions();
+
+// Create auction
+const auctionTx = await manager.createAuctionTransaction({
+  name: 'satoshi',
+  amount: 100000000,
+  address: 'bitcoincash:...'
+});
+
+// Place bid
+const bidTx = await manager.createBidTransaction({
+  name: 'satoshi',
+  amount: 200000000,
+  address: 'bitcoincash:...'
+});
+
+// Claim domain
+const claimTx = await manager.createClaimDomainTransaction({
+  name: 'satoshi'
+});
+```
+
+
+## Support
+For support, please open an issue on our GitHub repository or create a PR, or join our community chat at [Telegram](https://t.me/bitcann_discussion).
+
+
+## Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| category | Category ID for the BitCANN system | Required |
+| minStartingBid | Minimum starting bid in satoshis | Required |
+| minBidIncreasePercentage | Minimum bid increase percentage | Required |
+| inactivityExpiryTime | Inactivity expiry time in blocks/MTP | Required |
+| minWaitTime | Minimum wait time in blocks/MTP | Required |
+| maxPlatformFeePercentage | Maximum platform fee percentage | Required |
+| platformFeeAddress | Platform fee address | Optional |
+
+## License
+
+MIT
+
+
