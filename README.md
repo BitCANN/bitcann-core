@@ -1,18 +1,21 @@
-# bitcann.js
+# @bitcann/core
 
-## Introduction
 BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
+
+## Contract and Documentation
+For more details, visit the [BitCANN Contracts and Documentation](https://github.com/BitCANN/bitcann-contracts) repository.
+
 
 ## Usage
 
 ### Installation
 ```bash
-npm install bitcann
+npm install @bitcann/core
 ```
 
 ### Setup
 ```js
-import { createManager } from 'bitcann';
+import { createManager } from '@bitcann/core';
 
 const manager = createManager({
     network: 'mainnet',
