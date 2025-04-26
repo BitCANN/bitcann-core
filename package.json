@@ -2,17 +2,12 @@
   "name": "@bitcann/core",
   "version": "0.0.1",
   "description": "BitCANN - Bitcoin Cash for Assigned Names and Numbers is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.",
-  "types": "./build/lib/index.d.ts",
-  "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": "./build/lib/index.js",
-    "./client": "./build/lib/client.js"
+    ".": "./build/lib/index.js"
   },
-  "browser": {
-    "url": false,
-    "path": false
-  },
+  "types": "./build/lib/index.d.ts",
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "docs": "typedoc --hideGenerator --categorizeByGroup",
@@ -24,33 +19,33 @@
     "jest": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
     "lint": "eslint . --ext .ts",
     "syntax": "tsc --noEmit",
-    "example": "NODE_OPTIONS='--loader ts-node/esm' node examples/network-example.ts",
-    "compile:registry": "cashc ./lib/contracts/Registry.cash -o ./lib/contracts/Registry.json",
-    "compile:domain": "cashc ./lib/contracts/Domain.cash -o ./lib/contracts/Domain.json",
-    "compile:auction": "cashc ./lib/contracts/Auction.cash -o ./lib/contracts/Auction.json",
-    "compile:bid": "cashc ./lib/contracts/Bid.cash -o ./lib/contracts/Bid.json",
-    "compile:domainfactory": "cashc ./lib/contracts/DomainFactory.cash -o ./lib/contracts/DomainFactory.json",
-    "compile:auctionnameenforcer": "cashc ./lib/contracts/AuctionNameEnforcer.cash -o ./lib/contracts/AuctionNameEnforcer.json",
-    "compile:domainownershipguard": "cashc ./lib/contracts/DomainOwnershipGuard.cash -o ./lib/contracts/DomainOwnershipGuard.json",
-    "compile:auctionconflictresolver": "cashc ./lib/contracts/AuctionConflictResolver.cash -o ./lib/contracts/AuctionConflictResolver.json",
-    "compile:accumulator": "cashc ./lib/contracts/Accumulator.cash -o ./lib/contracts/Accumulator.json",
-    "compile": "npm run compile:registry && npm run compile:auction && npm run compile:bid && npm run compile:domainfactory && npm run compile:auctionnameenforcer && npm run compile:domainownershipguard && npm run compile:auctionconflictresolver && npm run compile:accumulator && npm run compile:domain"
+    "example": "NODE_OPTIONS='--loader ts-node/esm' node examples/network-example.ts"
   },
+  "files": [
+    "build/lib"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BitCANN/bitcann.js.git"
+    "url": "git+https://github.com/BitCANN/bitcann-core.git"
   },
+  "author": "Kuldeep Singh <kuldeepbb.grewal@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BitCANN/bitcann-core/issues"
+  },
+  "homepage": "https://github.com/BitCANN/bitcann-core#readme",
   "keywords": [
     "bitcoin cash",
     "BCH",
     "smart contracts"
   ],
-  "author": "Kuldeep Singh <kuldeepbb.grewal@gmail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/BitCANN/bitcann.js/issues"
+  "dependencies": {
+    "@bitauth/libauth": "^3.1.0-next.4",
+    "@bitcann/contracts": "^0.0.1",
+    "@electrum-cash/protocol": "^2.2.1-r8564577559",
+    "cashscript": "^0.11.0-next.3",
+    "electrum-cash": "^3.2.0"
   },
-  "homepage": "https://github.com/BitCANN/bitcann.js#readme",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^22.14.1",
@@ -64,12 +59,5 @@
     "typedoc": "^0.27.9",
     "typedoc-plugin-coverage": "^3.4.1",
     "typescript": "^5.5.3"
-  },
-  "dependencies": {
-    "@bitauth/libauth": "^3.1.0-next.4",
-    "@bitcann/contracts": "^0.0.1",
-    "@electrum-cash/protocol": "^2.2.1-r8564577559",
-    "cashscript": "^0.11.0-next.3",
-    "electrum-cash": "^3.2.0"
   }
 }
