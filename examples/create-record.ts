@@ -4,7 +4,6 @@ import {
 import { aliceAddress, alicePriv } from './common/wallet.js';
 import { getSignedTransaction } from './common/sign.js';
 
-
 (async () =>
 {
 	const name = 'test';

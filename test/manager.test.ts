@@ -2,14 +2,11 @@ import { describe, it, expect } from '@jest/globals';
 import { createManager, BitCANNManager } from '../lib/manager';
 import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import type { NetworkProvider } from 'cashscript';
-import { DomainStatusType } from '../lib/interfaces/domain';
 import
 {
 	accumulatorContractAddress,
 	accumulatorLockingBytecodeHex,
 	aliceAddress,
-	alicePkh,
-	aliceTemplate,
 	auctionConflictResolverContractAddress,
 	auctionConflictResolverLockingBytecodeHex,
 	auctionContractAddress,

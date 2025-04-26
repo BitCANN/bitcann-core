@@ -1,5 +1,5 @@
 {
-  "name": "bitcann",
+  "name": "@bitcann/core",
   "version": "0.0.1",
   "description": "BitCANN - Bitcoin Cash for Assigned Names and Numbers is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.",
   "types": "./build/lib/index.d.ts",
@@ -56,7 +56,6 @@
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "cashc": "^0.11.0-next.3",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "jest": "^29.7.0",
@@ -68,6 +67,7 @@
   },
   "dependencies": {
     "@bitauth/libauth": "^3.1.0-next.4",
+    "@bitcann/contracts": "^0.0.1",
     "@electrum-cash/protocol": "^2.2.1-r8564577559",
     "cashscript": "^0.11.0-next.3",
     "electrum-cash": "^3.2.0"

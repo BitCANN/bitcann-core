@@ -1,7 +1,7 @@
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
 import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
-import { cashAddressToLockingBytecode, decodeCashAddress, lockingBytecodeToAddressContents, lockingBytecodeToCashAddress } from '@bitauth/libauth';
+import { cashAddressToLockingBytecode, decodeCashAddress, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { binToHex } from '@bitauth/libauth';
 import { hexToBin } from '@bitauth/libauth';
 import { addressContentsToLockingBytecode } from '@bitauth/libauth';

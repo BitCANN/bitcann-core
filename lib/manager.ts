@@ -1,33 +1,30 @@
-import { DomainStatusType } from './interfaces/domain.js';
-import type { ManagerConfig } from './interfaces/common.js';
+import { BitCANNArtifacts } from '@bitcann/contracts';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
+import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
 import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
-import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
+
+import { DUST, EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
 import { InternalAuthNFTUTXONotFoundError, InvalidBidAmountError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
+import type { ManagerConfig } from './interfaces/common.js';
+import { DomainStatusType } from './interfaces/domain.js';
 import { isValidName } from './util/name.js';
-import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
-import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
 import { buildLockScriptP2SH32 } from './util/index.js';
 import { lockScriptToAddress } from './util/index.js';
-import { DUST, EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
 
-const currentFilePath = fileURLToPath(import.meta.url);
-const currentDirPath = dirname(currentFilePath);
-
-// Import JSON files
-const Accumulator = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Accumulator.json'), 'utf-8'));
-const Auction = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Auction.json'), 'utf-8'));
-const AuctionConflictResolver = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'AuctionConflictResolver.json'), 'utf-8'));
-const AuctionNameEnforcer = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'AuctionNameEnforcer.json'), 'utf-8'));
-const Bid = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Bid.json'), 'utf-8'));
-const Domain = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Domain.json'), 'utf-8'));
-const DomainFactory = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'DomainFactory.json'), 'utf-8'));
-const DomainOwnershipGuard = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'DomainOwnershipGuard.json'), 'utf-8'));
-const Registry = JSON.parse(readFileSync(join(currentDirPath, 'contracts', 'Registry.json'), 'utf-8'));
+const {
+	Accumulator,
+	Auction,
+	AuctionConflictResolver,
+	AuctionNameEnforcer,
+	Bid,
+	Domain,
+	DomainFactory,
+	DomainOwnershipGuard,
+	Registry,
+} = BitCANNArtifacts;
 
 export class BitCANNManager 
 {
