@@ -10,14 +10,21 @@ import type { BidConfig, BidParams } from './types.js';
 import { createPlaceholderUnlocker } from '../util/index.js';
 import { convertNameToBinary } from '../util/name.js';
 
-
-
+/**
+ * The BidManager class is responsible for managing bid-related operations,
+ * including creating bid transactions for auctions.
+ */
 export class BidManager {
     private category: string;
     private minBidIncreasePercentage: number;
     private networkProvider: NetworkProvider;
     private contracts: Record<string, any>;
 
+    /**
+     * Constructs a new BidManager instance with the specified configuration parameters.
+     * 
+     * @param {BidConfig} params - The configuration parameters for the bid manager.
+     */
     constructor(params: BidConfig) {
         this.category = params.category;
         this.minBidIncreasePercentage = params.minBidIncreasePercentage;
@@ -25,6 +32,18 @@ export class BidManager {
         this.contracts = params.contracts;
     }
 
+    /**
+     * Creates a transaction for placing a bid in an auction.
+     * 
+     * @param {BidParams} params - The parameters for the bid transaction.
+     * @param {string} params.name - The name of the auction.
+     * @param {number} params.amount - The bid amount.
+     * @param {string} params.address - The address of the bidder.
+     * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the bid transaction.
+     * @throws {InvalidNameError} If the auction name is invalid.
+     * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
+     * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
+     */
     public async createBidTransaction({ name, amount, address }: BidParams): Promise<TransactionBuilder> {
         if(!isValidName(name)) {
             throw new InvalidNameError();

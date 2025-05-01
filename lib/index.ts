@@ -1,4 +1,10 @@
 export { createManager, BitCANNManager } from './manager.js';
+export { BidManager } from './bid/index.js';
+export { AuctionManager } from './auction/index.js';
+export { DomainManager } from './domain/index.js';
+export type * from './auction/types.js';
+export type * from './bid/types.js';
+export type * from './domain/types.js';
 export * from './interfaces/index.js';
 export * from './util/index.js';
 export * from './util/utxo-util.js';

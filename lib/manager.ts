@@ -86,6 +86,7 @@ export class BitCANNManager
 			platformFeeAddress: this.platformFeeAddress || '',
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			minWaitTime: this.minWaitTime,
+			options: this.options,
 		});
 	}
 
