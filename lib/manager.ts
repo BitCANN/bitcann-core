@@ -1,30 +1,19 @@
 import { BitCANNArtifacts } from '@bitcann/contracts';
 import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
-import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import type { NetworkProvider, AddressType, Unlocker, Utxo } from 'cashscript';
-import { ElectrumNetworkProvider, Contract, TransactionBuilder } from 'cashscript';
+import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
+import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 
-import { DUST, EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
-import { InternalAuthNFTUTXONotFoundError, InvalidBidAmountError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError, UserUTXONotFoundError } from './errors.js';
+import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from './errors.js';
 import type { ManagerConfig } from './interfaces/common.js';
 import { DomainStatusType } from './interfaces/domain.js';
-import { isValidName } from './util/name.js';
 import { extractOpReturnPayload, pushDataHex } from './util/index.js';
-import { buildLockScriptP2SH32 } from './util/index.js';
-import { lockScriptToAddress } from './util/index.js';
-import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRegistrationUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
+import { buildLockScriptP2SH32, lockScriptToAddress } from './util/index.js';
+import { isValidName } from './util/name.js';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo-util.js';
+import { AuctionManager } from './auction/index.js';
+import { BidManager } from './bid/index.js';
 
-const {
-	Accumulator,
-	Auction,
-	AuctionConflictResolver,
-	AuctionNameEnforcer,
-	Bid,
-	Domain,
-	DomainFactory,
-	DomainOwnershipGuard,
-	Registry,
-} = BitCANNArtifacts;
 
 export class BitCANNManager 
 {
@@ -43,6 +32,10 @@ export class BitCANNManager
 
 	// Contracts in the BitCANN system.
 	public contracts: Record<string, Contract>;
+
+	// Managers for handling specific operations
+	private auctionManager: AuctionManager;
+	private bidManager: BidManager;
 
 	constructor(config: ManagerConfig) 
 	{
@@ -72,6 +65,20 @@ export class BitCANNManager
 			minBidIncreasePercentage: this.minBidIncreasePercentage,
 			minWaitTime: this.minWaitTime,
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
+		});
+
+		// Initialize the managers
+		this.auctionManager = new AuctionManager({
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+		});
+
+		this.bidManager = new BidManager({
+			category: this.category,
+			minBidIncreasePercentage: this.minBidIncreasePercentage,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
 		});
 	}
 
@@ -154,10 +161,7 @@ export class BitCANNManager
 
 	public async getAuctions(): Promise<Utxo[]>
 	{
-		const registryUtxos = await this.networkProvider.getUtxos(this.contracts.Registry.address);
-		const auctionUtxos = registryUtxos.filter((utxo) => utxo.token?.category === this.category && utxo.token?.nft?.capability === 'mutable');
-
-		return auctionUtxos;
+		return this.auctionManager.getAuctions();
 	}
 
 	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
@@ -277,234 +281,12 @@ export class BitCANNManager
 		address: string;
 	}): Promise<TransactionBuilder>
 	{
-		// Validate the domain name.
-		if(!isValidName(name))
-		{
-			throw new InvalidNameError();
-		}
-
-		// Convert the domain name to hexadecimal and binary formats.
-		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
-			.padStart(2, '0'))
-			.join('');
-		const nameBin = hexToBin(nameHex);
-
-		// Fetch UTXOs for registry, auction, and user addresses.
-		const [ registryUtxos, auctionUtxos, userUtxos ] = await Promise.all([
-			this.networkProvider.getUtxos(this.contracts.Registry.address),
-			this.networkProvider.getUtxos(this.contracts.Auction.address),
-			this.networkProvider.getUtxos(address),
-		]);
-
-		// Retrieve necessary UTXOs for the transaction.
-		const threadNFTUTXO = getThreadUtxo({
-			utxos: registryUtxos,
-			category: this.category,
-			threadContractAddress: this.contracts.Auction.address,
-		});
-
-		const registrationCounterUTXO = getRegistrationUtxo({
-			utxos: registryUtxos,
-			category: this.category,
-		});
-
-		const authorizedContractUTXO = getAuthorizedContractUtxo({
-			utxos: auctionUtxos,
-		});
-
-		// Calculate new registration ID and commitment.
-		const newRegistrationId = parseInt(registrationCounterUTXO.token.nft.commitment, 16) + 1;
-		const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0');
-
-		// Convert user address to public key hash.
-		const userPkh = convertAddressToPkh(address);
-
-		// Define a placeholder unlocker for the user UTXO.
-		// @ts-ignore
-		const placeholderUnlocker: Unlocker = {
-			generateLockingBytecode: () => convertPkhToLockingBytecode(userPkh),
-			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
-		};
-
-		// Find the user UTXO matching the category.
-		const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000 + DUST));
-		if(!userUTXO)
-		{
-			throw new UserUTXONotFoundError();
-		}
-
-		// Build the auction transaction.
-		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
-			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
-			.addInput(authorizedContractUTXO, this.contracts.Auction.unlock.call(nameBin))
-			.addInput(registrationCounterUTXO, this.contracts.Registry.unlock.call())
-			.addInput(userUTXO, placeholderUnlocker)
-			.addOutput({
-				to: this.contracts.Registry.tokenAddress,
-				amount: threadNFTUTXO.satoshis,
-				token: {
-					category: threadNFTUTXO.token.category,
-					amount: threadNFTUTXO.token.amount,
-					nft: {
-						capability: threadNFTUTXO.token.nft.capability,
-						commitment: threadNFTUTXO.token.nft.commitment,
-					},
-				},
-			})
-			.addOutput({
-				to: this.contracts.Auction.tokenAddress,
-				amount: authorizedContractUTXO.satoshis,
-			})
-			.addOutput({
-				to: this.contracts.Registry.tokenAddress,
-				amount: registrationCounterUTXO.satoshis,
-				token: {
-					category: registrationCounterUTXO.token.category,
-					amount: registrationCounterUTXO.token.amount  - BigInt(newRegistrationId),
-					nft: {
-						capability: registrationCounterUTXO.token.nft.capability,
-						commitment: newRegistrationIdCommitment,
-					},
-				},
-			})
-			.addOutput({
-				to: this.contracts.Registry.tokenAddress,
-				amount: BigInt(amount),
-				token: {
-					category: registrationCounterUTXO.token.category,
-					amount: BigInt(newRegistrationId),
-					nft: {
-						capability: 'mutable',
-						commitment: userPkh + binToHex(nameBin),
-					},
-				},
-			})
-			.addOpReturnOutput([ name ])
-			.addOutput({
-				to: address,
-				amount: userUTXO.satoshis - BigInt(amount + 2000),
-			});
-
-		// Return the constructed transaction.
-		return transaction;
+		return this.auctionManager.createAuctionTransaction({ name, amount, address });
 	}
 
 	public async createBidTransaction({ name, amount, address }: { name: string; amount: number; address: string }): Promise<TransactionBuilder>
 	{
-		// Validate the domain name.
-		if(!isValidName(name))
-		{
-			throw new InvalidNameError();
-		}
-
-		// Convert the domain name to hexadecimal and binary formats.
-		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
-			.padStart(2, '0'))
-			.join('');
-		const nameBin = hexToBin(nameHex);
-
-		// Fetch UTXOs for registry, auction, and user addresses.
-		const [ registryUtxos, bidUtxos, userUtxos ] = await Promise.all([
-			this.networkProvider.getUtxos(this.contracts.Registry.address),
-			this.networkProvider.getUtxos(this.contracts.Bid.address),
-			this.networkProvider.getUtxos(address),
-		]);
-
-		// Retrieve necessary UTXOs for the transaction.
-		const threadNFTUTXO = getThreadUtxo({
-			utxos: registryUtxos,
-			category: this.category,
-			threadContractAddress: this.contracts.Bid.address,
-		});
-
-		const authorizedContractUTXO = getAuthorizedContractUtxo({
-			utxos: bidUtxos,
-		});
-
-		const runningAuctionUTXO = getRunningAuctionUtxo({
-			name,
-			utxos: registryUtxos,
-			category: this.category,
-		});
-
-		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * (1 + this.minBidIncreasePercentage / 100))))
-		{
-			throw new InvalidBidAmountError();
-		}
-
-		// Convert user address to public key hash.
-		const userPkh = convertAddressToPkh(address);
-
-		// Define a placeholder unlocker for the user UTXO.
-		// @ts-ignore
-		const placeholderUnlocker: Unlocker = {
-			generateLockingBytecode: () => convertPkhToLockingBytecode(userPkh),
-			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
-		};
-
-		// Find the user UTXO matching the category.
-		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + EXPECTED_MAX_TRANSACTION_FEE) && !utxo.token);
-		if(!fundingUTXO)
-		{
-			throw new UserUTXONotFoundError();
-		}
-
-		const prevBidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
-		const prevBidderLockingBytecode = convertPkhToLockingBytecode(prevBidderPKH);
-		// @ts-ignore
-		const prevBidderAddress = lockingBytecodeToCashAddress({ bytecode: prevBidderLockingBytecode }).address;
-
-		if(typeof prevBidderAddress !== 'string')
-		{
-			throw new Error('Invalid prev bidder address');
-		}
-
-		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
-			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
-			.addInput(authorizedContractUTXO, this.contracts.Bid.unlock.call())
-			.addInput(runningAuctionUTXO, this.contracts.Registry.unlock.call())
-			.addInput(fundingUTXO, placeholderUnlocker)
-			.addOutput({
-				to: this.contracts.Registry.tokenAddress,
-				amount: threadNFTUTXO.satoshis,
-				token: {
-					category: threadNFTUTXO.token.category,
-					amount: threadNFTUTXO.token.amount,
-					nft: {
-						capability: threadNFTUTXO.token.nft.capability,
-						commitment: threadNFTUTXO.token.nft.commitment,
-					},
-				},
-			})
-			.addOutput({
-				to: this.contracts.Bid.tokenAddress,
-				amount: authorizedContractUTXO.satoshis,
-			})
-			.addOutput({
-				to: this.contracts.Registry.tokenAddress,
-				amount: BigInt(amount),
-				token: {
-					category: runningAuctionUTXO.token.category,
-					amount: runningAuctionUTXO.token.amount,
-					nft: {
-						capability: 'mutable',
-						commitment: userPkh + binToHex(nameBin),
-					},
-				},
-			})
-			.addOutput({
-				to: prevBidderAddress,
-				amount: runningAuctionUTXO.satoshis,
-			})
-			.addOutput({
-				to: address,
-				amount: fundingUTXO.satoshis - (BigInt(amount) + BigInt(EXPECTED_MAX_TRANSACTION_FEE)),
-			});
-		
-		const tranasctionSize = transaction.build().length;
-		transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(amount) + BigInt(tranasctionSize));
-
-		return transaction;
+		return this.bidManager.createBidTransaction({ name, amount, address });
 	}
 
 	public async createClaimDomainTransaction({ name }: { name: string }): Promise<TransactionBuilder>
@@ -781,16 +563,16 @@ export class BitCANNManager
 		// Reverse the category bytes for use in contract parameters.
 		const reversedCategory = binToHex(hexToBin(this.category).reverse());
 	
-		// Dummy name used for constructing a partial domain contract bytecode.
-		const dummyName = 'test';
-		const dummyNameHex = Array.from(dummyName).map(char => char.charCodeAt(0).toString(16)
+		// Placeholder name used for constructing a partial domain contract bytecode.
+		const placeholderName = 'test';
+		const placeholderNameHex = Array.from(placeholderName).map(char => char.charCodeAt(0).toString(16)
 			.padStart(2, '0'))
 			.join('');
 	
-		// Construct a dummy domain contract to extract partial bytecode.
-		const DummyDomainContract = new Contract(Domain, [ BigInt(1), dummyNameHex, reversedCategory ], this.options);
-		const sliceIndex = 2 + 64 + 2 + dummyName.length * 2;
-		const domainPartialBytecode = DummyDomainContract.bytecode.slice(sliceIndex, DummyDomainContract.bytecode.length);
+		// Construct a placeholder domain contract to extract partial bytecode.
+		const PlaceholderDomainContract = new Contract(BitCANNArtifacts.Domain, [ BigInt(1), placeholderNameHex, reversedCategory ], this.options);
+		const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
+		const domainPartialBytecode = PlaceholderDomainContract.bytecode.slice(sliceIndex, PlaceholderDomainContract.bytecode.length);
 	
 		return domainPartialBytecode;
 	};
@@ -819,14 +601,14 @@ export class BitCANNManager
 	
 		// Return an object containing all the constructed contracts.
 		return {
-			Accumulator: new Contract(Accumulator, [], this.options),
-			Auction: new Contract(Auction, [ BigInt(params.minStartingBid) ], this.options),
-			AuctionConflictResolver: new Contract(AuctionConflictResolver, [], this.options),
-			AuctionNameEnforcer: new Contract(AuctionNameEnforcer, [], this.options),
-			Bid: new Contract(Bid, [ BigInt(params.minBidIncreasePercentage) ], this.options),
-			DomainFactory: new Contract(DomainFactory, [ domainPartialBytecode, BigInt(params.minWaitTime), BigInt(params.maxPlatformFeePercentage) ], this.options),
-			DomainOwnershipGuard: new Contract(DomainOwnershipGuard, [ domainPartialBytecode ], this.options),
-			Registry: new Contract(Registry, [ reversedCategory ], this.options),
+			Accumulator: new Contract(BitCANNArtifacts.Accumulator, [], this.options),
+			Auction: new Contract(BitCANNArtifacts.Auction, [ BigInt(params.minStartingBid) ], this.options),
+			AuctionConflictResolver: new Contract(BitCANNArtifacts.AuctionConflictResolver, [], this.options),
+			AuctionNameEnforcer: new Contract(BitCANNArtifacts.AuctionNameEnforcer, [], this.options),
+			Bid: new Contract(BitCANNArtifacts.Bid, [ BigInt(params.minBidIncreasePercentage) ], this.options),
+			DomainFactory: new Contract(BitCANNArtifacts.DomainFactory, [ domainPartialBytecode, BigInt(params.minWaitTime), BigInt(params.maxPlatformFeePercentage) ], this.options),
+			DomainOwnershipGuard: new Contract(BitCANNArtifacts.DomainOwnershipGuard, [ domainPartialBytecode ], this.options),
+			Registry: new Contract(BitCANNArtifacts.Registry, [ reversedCategory ], this.options),
 		};
 	};
 	
@@ -853,7 +635,7 @@ export class BitCANNManager
 	
 		// Construct the Domain contract with the provided parameters.
 		return new Contract(
-			Domain,
+			BitCANNArtifacts.Domain,
 			[ BigInt(params.inactivityExpiryTime), nameHex, reversedCategory ],
 			this.options,
 		);

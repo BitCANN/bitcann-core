@@ -1,4 +1,5 @@
 import { cashAddressToLockingBytecode, encodeLockingBytecodeP2sh32, lockingBytecodeToCashAddress, hash256, hexToBin, binToHex, numberToBinUint16BE } from '@bitauth/libauth';
+import { convertAddressToPkh, convertPkhToLockingBytecode } from './utxo-util';
 
 export const intToBytesToHex = function({ value, length }: { value: number; length: number }): string
 {
@@ -143,3 +144,11 @@ export const addressToLockScript = function(address: string): string
 
 	return lockScript;
 };
+
+export function createPlaceholderUnlocker(address: string): any {
+  const userPkh = convertAddressToPkh(address);
+  return {
+      generateLockingBytecode: () => convertPkhToLockingBytecode(userPkh),
+      generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
+  };
+} 

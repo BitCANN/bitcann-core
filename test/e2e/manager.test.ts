@@ -1,7 +1,10 @@
+
+import { cashAddressToLockingBytecode } from '@bitauth/libauth';
+import { binToHex } from '@bitauth/libauth';
 import { describe, it, expect } from '@jest/globals';
-import { createManager, BitCANNManager } from '../lib/manager';
 import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import type { NetworkProvider } from 'cashscript';
+import { createManager, BitCANNManager } from '../../lib/manager';
 import
 {
 	accumulatorContractAddress,
@@ -22,10 +25,8 @@ import
 	mockOptions,
 	registryContractAddress,
 	registryLockingBytecodeHex,
-} from './config';
-import { cashAddressToLockingBytecode } from '@bitauth/libauth';
-import { binToHex } from '@bitauth/libauth';
-import { intToBytesToHex } from '../lib/util';
+} from '../config';
+import { intToBytesToHex } from '../../lib/util';
 
 describe('BitCANNManager', () => 
 {
@@ -39,9 +40,9 @@ describe('BitCANNManager', () =>
 
 		manager = createManager(mockOptions);
 
-		networkProvider.addUtxo(aliceAddress, { ...randomUtxo() });	
+		networkProvider.addUtxo(aliceAddress, { ...randomUtxo() });
 
-		networkProvider.addUtxo(auctionContractAddress, { ...randomUtxo() });	
+		networkProvider.addUtxo(auctionContractAddress, { ...randomUtxo() });
 
 		networkProvider.addUtxo(registryContractAddress, {
 			token: {
