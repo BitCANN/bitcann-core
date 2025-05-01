@@ -1,4 +1,4 @@
-import { binToHex } from '@bitauth/libauth';
+import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import type { NetworkProvider, Utxo } from 'cashscript';
 import { TransactionBuilder } from 'cashscript';
 
@@ -113,5 +113,49 @@ export class AuctionManager {
 	public async getAuctions(): Promise<Utxo[]> {
 		const registryUtxos = await this.networkProvider.getUtxos(this.contracts.Registry.address);
 		return registryUtxos.filter((utxo) => utxo.token?.category === this.category && utxo.token?.nft?.capability === 'mutable');
+	}
+
+	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
+	{
+		// @ts-ignore
+		const history = await fetchHistory(this.networkProvider.electrum, this.contracts.DomainFactory.address);
+		
+		const validTransactions = [];
+
+		for(const txn of history)
+		{
+			// @ts-ignore
+			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+			let decodedTx = decodeTransaction(hexToBin(tx));
+
+			if(typeof decodedTx === 'string')
+			{
+				continue;
+			}
+
+			if(decodedTx.inputs.length !== 4
+				|| decodedTx.outputs.length !== 7
+				|| !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== this.category
+				|| !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== this.category
+				|| !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== this.category
+				|| !decodedTx.outputs[4].token?.category || binToHex(decodedTx.outputs[4].token.category) !== this.category
+				|| !decodedTx.outputs[5].token?.category || binToHex(decodedTx.outputs[5].token.category) !== this.category
+				|| decodedTx.outputs[2].token?.nft?.capability != 'minting'
+			)
+			{
+				continue;
+			}
+
+			// @ts-ignore
+			const nameHex = binToHex(decodedTx.outputs[5].token?.nft?.commitment).slice(16);
+			const name = Buffer.from(nameHex, 'hex').toString('utf8');
+
+			validTransactions.push({
+				transactionHex: tx,
+				name,
+			});
+		}
+
+		return validTransactions;
 	}
 }

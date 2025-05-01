@@ -1,0 +1,396 @@
+import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { AddressType, Contract, NetworkProvider, TransactionBuilder, Utxo } from 'cashscript';
+import { constructDomainContract, getDomainPartialBytecode } from '../util/contract.js';
+import { buildLockScriptP2SH32, extractOpReturnPayload, lockScriptToAddress, pushDataHex } from '../util/index.js';
+import { DomainConfig } from './types.js';
+import { DomainStatusType } from '../interfaces/domain.js';
+import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRunningAuctionUtxo, getThreadUtxo } from '../util/utxo-util.js';
+import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from '../errors.js';
+import { isValidName } from '../util/name.js';
+
+
+
+export class DomainManager {
+	private category: string;
+	private networkProvider: NetworkProvider;
+	private contracts: Record<string, any>;
+  private inactivityExpiryTime: number;
+  private platformFeeAddress: string;
+  private maxPlatformFeePercentage: number;
+  private minWaitTime: number;
+  private options: { provider: NetworkProvider; addressType: AddressType };
+
+	constructor(params: DomainConfig) {
+		this.category = params.category;
+		this.networkProvider = params.networkProvider;
+		this.contracts = params.contracts;
+    this.inactivityExpiryTime = params.inactivityExpiryTime;
+    this.platformFeeAddress = params.platformFeeAddress;
+    this.maxPlatformFeePercentage = params.maxPlatformFeePercentage;
+    this.minWaitTime = params.minWaitTime;
+	}
+
+	/**
+	 * Retrieves the records for a given domain.
+	 * 
+	 * @param {string} name - The domain name to retrieve records for.
+	 * @returns {Promise<string[]>} A promise that resolves to the domain records.
+	 */
+	public async getRecords(name: string): Promise<string[]> 
+	{
+		const domainContract = constructDomainContract({
+			name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
+
+		// @ts-ignore
+		const history = await fetchHistory(this.networkProvider.electrum, domainContract.address);
+
+		const records = [];
+		const validCandidateTransactions = [];
+
+		for(const txn of history)
+		{
+			// @ts-ignore
+			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+			let decodedTx = decodeTransaction(hexToBin(tx));
+
+			let hasOpReturn = false;
+			let hasCategoryFromContract = false;
+
+			// @ts-ignore
+			for(const output of decodedTx.outputs)
+			{		
+				if(output.valueSatoshis == 0)
+				{
+					hasOpReturn = true;
+					continue;
+				}
+
+				if(!output.token || binToHex(output.token.category) != this.category)
+				{
+					continue;
+				}
+
+				// @ts-ignore
+				const lockingBytecode = cashAddressToLockingBytecode(domainContract.address).bytecode;
+				if(binToHex(output.lockingBytecode) === binToHex(lockingBytecode))
+				{
+					hasCategoryFromContract = true;
+				}
+			}
+
+			if(hasOpReturn && hasCategoryFromContract)
+			{
+				validCandidateTransactions.push(decodedTx);
+			}
+			
+		}
+
+		for(const tx of validCandidateTransactions)
+		{
+			// @ts-ignore
+			for(const output of tx.outputs)
+			{
+				if(output.valueSatoshis == 0)
+				{
+					const opReturnPayload = extractOpReturnPayload(binToHex(output.lockingBytecode));
+					const utf8String = Buffer.from(opReturnPayload, 'hex').toString('utf8');
+					records.push(utf8String);
+				}
+			}
+		}
+		
+		return records;
+	}
+
+  	/**
+	 * Retrieves the domain information for a given full domain name.
+	 * 
+	 * @param {string} fullName - The full domain name to retrieve information for.
+	 * @returns {Promise<{ address: string; contract: Contract; utxos: Utxo[] }>} 
+	 * A promise that resolves to an object containing the domain address, contract, and UTXOs.
+	 */
+	public async getDomain(fullName: string): Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>
+	{
+		// Extract the domain name from the full domain name.
+		const name = fullName.split('.')[0];
+
+		// Reverse the category bytes for use in contract parameters.
+		const domainCategoryReversed = binToHex(hexToBin(this.category).reverse());
+
+		// Retrieve the partial bytecode of the Domain contract.
+		const domainPartialBytecode = getDomainPartialBytecode(this.category, this.options);
+
+		// Construct the Domain contract with the provided parameters.
+		const domainContract = constructDomainContract({
+			name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
+
+		// Build the lock script hash for the domain.
+		const scriptHash = buildLockScriptP2SH32(20 + domainCategoryReversed + pushDataHex(name) + domainPartialBytecode);
+
+		// Convert the lock script hash to an address.
+		const address = lockScriptToAddress(scriptHash);
+
+		// Fetch the UTXOs for the domain address.
+		const utxos = await this.networkProvider.getUtxos(address);
+
+		// from the utxos, search if the internal and external authNFTs exist or not, if they do, they also return the status of the domain.
+
+		// Return the domain address, contract, and UTXOs.
+		return {
+			address,
+			contract: domainContract,
+			utxos,
+			status: DomainStatusType.UNDER_AUCTION,
+		};
+	}
+
+  public async createRecordTransaction({ name, record, address }: { name: string; record: string; address: string }): Promise<TransactionBuilder>
+	{
+		// Construct the Domain contract with the provided parameters.
+		const domainContract = constructDomainContract({
+			name: name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
+		// Fetch UTXOs for registry, auction, and user addresses.
+		const [ domainUTXOs, userUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(domainContract.address),
+			this.networkProvider.getUtxos(address),
+		]);
+
+		// Utxo from registry contract that has authorizedContract's lockingbytecode in the nftCommitment
+		const internalAuthNFTUTXO: Utxo | null = domainUTXOs.find(utxo => 
+			utxo.token?.nft?.capability === 'none'
+			&& utxo.token?.category === this.category
+			&& utxo.token?.nft?.commitment.length > 0,
+		) || null;
+
+		if(!internalAuthNFTUTXO)
+		{
+			throw new InternalAuthNFTUTXONotFoundError();
+		}
+
+		const ownershipNFTUTXO: Utxo | null = userUtxos.find(utxo => 
+			utxo.token?.nft?.capability === 'none' && utxo.token?.category === this.category,
+		) || null;
+
+		if(!ownershipNFTUTXO)
+		{
+			throw new UserOwnershipNFTUTXONotFoundError();
+		}
+	
+		const fundingUTXO: Utxo | null = userUtxos.reduce<Utxo | null>((max, utxo) => (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, null);
+
+		if(!fundingUTXO)
+		{
+			throw new UserFundingUTXONotFoundError();
+		}
+
+		const change = fundingUTXO.satoshis - BigInt(2000);
+
+		// Convert user address to public key hash.
+		const pkh = convertAddressToPkh(address);
+
+		// Define a placeholder unlocker for the user UTXO.
+		// @ts-ignore
+		const placeholderUnlocker: Unlocker = {
+			generateLockingBytecode: () => convertPkhToLockingBytecode(pkh),
+			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
+		};
+		
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(internalAuthNFTUTXO, domainContract.unlock.useAuth(BigInt(1)))
+			.addInput(ownershipNFTUTXO, placeholderUnlocker)
+			.addInput(fundingUTXO, placeholderUnlocker)
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: internalAuthNFTUTXO.satoshis,
+				token: {
+					category: internalAuthNFTUTXO.token!.category,
+					amount: internalAuthNFTUTXO.token!.amount,
+					nft: {
+						capability: internalAuthNFTUTXO.token!.nft!.capability,
+						commitment: internalAuthNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: convertCashAddressToTokenAddress(address),
+				amount: ownershipNFTUTXO.satoshis,
+				token: {
+					category: ownershipNFTUTXO.token!.category,
+					amount: ownershipNFTUTXO.token!.amount,
+					nft: {
+						capability: ownershipNFTUTXO.token!.nft!.capability,
+						commitment: ownershipNFTUTXO.token!.nft!.commitment,
+					},
+				},
+			})
+			.addOpReturnOutput([ record ])
+			.addOutput({
+				to: address,
+				amount: change,
+			});
+
+		return transaction;
+	}
+
+  public async createClaimDomainTransaction({ name }: { name: string }): Promise<TransactionBuilder>
+	{
+		// Validate the domain name.
+		if(!isValidName(name))
+		{
+			throw new InvalidNameError();
+		}
+
+		// Convert the domain name to hexadecimal and binary formats.
+		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
+			.padStart(2, '0'))
+			.join('');
+		const nameBin = hexToBin(nameHex);
+
+		// Fetch UTXOs for registry, auction, and user addresses.
+		const [ registryUtxos, domainFactoryUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(this.contracts.Registry.address),
+			this.networkProvider.getUtxos(this.contracts.DomainFactory.address),
+		]);
+
+		// Retrieve necessary UTXOs for the transaction.
+		const threadNFTUTXO = getThreadUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+			threadContractAddress: this.contracts.DomainFactory.address,
+		});
+
+		const authorizedContractUTXO = getAuthorizedContractUtxo({
+			utxos: domainFactoryUtxos,
+		});
+
+		const domainMintingUTXO = getDomainMintingUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+		const runningAuctionUTXO = getRunningAuctionUtxo({
+			name,
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+
+		const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
+		const bidderLockingBytecode = convertPkhToLockingBytecode(bidderPKH);
+		// @ts-ignore
+		const bidderAddress = lockingBytecodeToCashAddress({ bytecode: bidderLockingBytecode }).address;
+
+		if(typeof bidderAddress !== 'string')
+		{
+			throw new Error('Invalid prev bidder address');
+		}
+
+		// Construct the Domain contract with the provided parameters.
+		const domainContract = constructDomainContract({
+			name: name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
+
+		const registrationId = runningAuctionUTXO.token?.amount.toString(16).padStart(16, '0');
+
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+			.addInput(authorizedContractUTXO, this.contracts.DomainFactory.unlock.call())
+			.addInput(domainMintingUTXO, this.contracts.Registry.unlock.call())
+			.addInput(runningAuctionUTXO, this.contracts.Registry.unlock.call(), { sequence: this.minWaitTime })
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token.category,
+					amount: threadNFTUTXO.token.amount + runningAuctionUTXO.token.amount,
+					nft: {
+						capability: threadNFTUTXO.token.nft.capability,
+						commitment: threadNFTUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.DomainFactory.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: domainMintingUTXO.satoshis,
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: domainMintingUTXO.token.amount,
+					nft: {
+						capability: domainMintingUTXO.token.nft.capability,
+						commitment: domainMintingUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: '',
+					},
+				},
+			})
+			.addOutput({
+				to: domainContract.tokenAddress,
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: registrationId,
+					},
+				},
+			})
+			.addOutput({
+				to: convertCashAddressToTokenAddress(bidderAddress),
+				amount: BigInt(1000),
+				token: {
+					category: domainMintingUTXO.token.category,
+					amount: BigInt(0),
+					nft: {
+						capability: 'none',
+						commitment: registrationId + binToHex(nameBin),
+					},
+				},
+			});
+		
+		if(this.platformFeeAddress)
+		{
+			const platformFee = runningAuctionUTXO.satoshis * BigInt(this.maxPlatformFeePercentage) / BigInt(100);
+
+			transaction.addOutput({
+				to: this.platformFeeAddress,
+				amount: platformFee,
+			});
+
+			const tranasctionSize = transaction.build().length;
+			transaction.outputs[transaction.outputs.length - 1].amount = platformFee - BigInt(tranasctionSize);
+		}
+
+		return transaction;
+	}
+}
