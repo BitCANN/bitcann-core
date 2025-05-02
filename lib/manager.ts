@@ -95,10 +95,8 @@ export class BitCANNManager
 			category: this.category,
 			networkProvider: this.networkProvider,
 			contracts: this.contracts,
-			options: {
-				platformFeeAddress: this.platformFeeAddress || '',
-				maxPlatformFeePercentage: this.maxPlatformFeePercentage,
-			},
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
 		});
 	}
 
@@ -237,9 +235,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeIllegalAuction(name: string): Promise<void>
+	public async penalizeIllegalAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeIllegalAuction(name);
+		return this.guardManager.penalizeIllegalAuction({ name, rewardTo });
 	}
 
 	/**

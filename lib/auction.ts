@@ -4,7 +4,7 @@ import { TransactionBuilder } from 'cashscript';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { DUST } from './constants.js';
 import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
-import { getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo.js';
+import { convertAddressToPkh, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo.js';
 import type { AuctionConfig, AuctionParams } from './interfaces/auction.js';
 import { createPlaceholderUnlocker } from './util/index.js';
 import { convertNameToBinary, isValidName } from './util/name.js';
@@ -80,9 +80,11 @@ export class AuctionManager
 			throw new UserUTXONotFoundError();
 		}
 
+		const userPkh = convertAddressToPkh(address);
+
 		const placeholderUnlocker = createPlaceholderUnlocker(address);
 
-		return new TransactionBuilder({ provider: this.networkProvider })
+		const transaction = new TransactionBuilder({ provider: this.networkProvider })
 			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
 			.addInput(authorizedContractUTXO, this.contracts.Auction.unlock.call(nameBin))
 			.addInput(registrationCounterUTXO, this.contracts.Registry.unlock.call())
@@ -123,15 +125,20 @@ export class AuctionManager
 					amount: BigInt(newRegistrationId),
 					nft: {
 						capability: 'mutable',
-						commitment: binToHex(convertNameToBinary(address).nameBin) + binToHex(nameBin),
+						commitment: userPkh + binToHex(nameBin),
 					},
 				},
 			})
 			.addOpReturnOutput([ name ])
 			.addOutput({
 				to: address,
-				amount: userUTXO.satoshis - BigInt(amount + 2000),
+				amount: userUTXO.satoshis - BigInt(amount),
 			});
+
+		const transactionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = userUTXO.satoshis - (BigInt(amount) + BigInt(transactionSize));
+
+		return transaction;
 	}
 
 	/**

@@ -248,8 +248,8 @@ describe('BitCANNManager', () =>
 
 		it('should return void for penalizeIllegalAuction', async () => 
 		{
-			const result = await manager.penalizeIllegalAuction('test.bch');
-			expect(result).toBeUndefined();
+			const result = await manager.penalizeIllegalAuction({ name: 'test.bch', rewardTo: aliceAddress });
+			expect(result).toBeDefined();
 		});
 	});
 }); 

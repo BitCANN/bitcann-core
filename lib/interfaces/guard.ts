@@ -1,13 +1,14 @@
-import type { NetworkProvider } from 'cashscript';
+import type { AddressType, NetworkProvider } from 'cashscript';
 
 export interface GuardConfig 
 {
 	category: string;
 	networkProvider: NetworkProvider;
 	contracts: Record<string, any>;
+	inactivityExpiryTime: number;
 	options: {
-		platformFeeAddress: string;
-		maxPlatformFeePercentage: number;
+		provider: NetworkProvider;
+		addressType: AddressType;
 	};
 }
 

@@ -72,6 +72,16 @@ export class InternalAuthNFTUTXONotFoundError extends Error
 	}
 }
 
+export class ExternalAuthNFTUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'External Auth NFT UTXO not found';
+
+		super(message);
+	}
+}
+
 export class UserOwnershipNFTUTXONotFoundError extends Error
 {
 	constructor()
