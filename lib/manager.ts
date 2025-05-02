@@ -3,10 +3,11 @@ import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscrip
 
 import type { ManagerConfig } from './interfaces/common.js';
 import { DomainStatusType } from './interfaces/domain.js';
-import { AuctionManager } from './auction/index.js';
-import { BidManager } from './bid/index.js';
+import { AuctionManager } from './auction.js';
+import { BidManager } from './bid.js';
 import { constructContracts } from './util/contract.js';
-import { DomainManager } from './domain/index.js';
+import { DomainManager } from './domain.js';
+import { GuardManager } from './guard.js';
 
 
 export class BitCANNManager 
@@ -31,6 +32,7 @@ export class BitCANNManager
 	private auctionManager: AuctionManager;
 	private bidManager: BidManager;
 	private domainManager: DomainManager;
+	private guardManager: GuardManager;
 
 	constructor(config: ManagerConfig) 
 	{
@@ -87,6 +89,16 @@ export class BitCANNManager
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			minWaitTime: this.minWaitTime,
 			options: this.options,
+		});
+
+		this.guardManager = new GuardManager({
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			options: {
+				platformFeeAddress: this.platformFeeAddress || '',
+				maxPlatformFeePercentage: this.maxPlatformFeePercentage,
+			},
 		});
 	}
 
@@ -203,11 +215,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to validate.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async proveInvalidAuctionName(name: string): Promise<void>
+	public async penalizeInvalidAuctionName(name: string): Promise<void>
 	{
-		console.log(name);
-
-		return;
+		return this.guardManager.penalizeInvalidAuctionName(name);
 	}
 
 	/**
@@ -216,11 +226,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to check for duplication.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async proveDuplicateAuction(name: string): Promise<void>
+	public async penalizeDuplicateAuction(name: string): Promise<void>
 	{
-		console.log(name);
-
-		return;
+		return this.guardManager.penalizeDuplicateAuction(name);
 	}
 
 	/**
@@ -229,11 +237,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async proveIllegalAuction(name: string): Promise<void>
+	public async penalizeIllegalAuction(name: string): Promise<void>
 	{
-		console.log(name);
-
-		return;
+		return this.guardManager.penalizeIllegalAuction(name);
 	}
 
 	/**
@@ -250,8 +256,3 @@ export class BitCANNManager
 		return this.domainManager.createRecordTransaction({ name, record, address });
 	}
 }
-
-export const createManager = function(config: ManagerConfig): BitCANNManager 
-{
-	return new BitCANNManager(config);
-};

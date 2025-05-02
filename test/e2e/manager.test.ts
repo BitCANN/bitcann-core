@@ -1,10 +1,9 @@
 
-import { cashAddressToLockingBytecode } from '@bitauth/libauth';
-import { binToHex } from '@bitauth/libauth';
+import { cashAddressToLockingBytecode, binToHex } from '@bitauth/libauth';
 import { describe, it, expect } from '@jest/globals';
 import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import type { NetworkProvider } from 'cashscript';
-import { createManager, BitCANNManager } from '../../lib/manager';
+import { BitCANNManager } from '../../lib/manager';
 import
 {
 	accumulatorContractAddress,
@@ -38,7 +37,7 @@ describe('BitCANNManager', () =>
 		networkProvider = new MockNetworkProvider();
 		mockOptions.networkProvider = networkProvider;
 
-		manager = createManager(mockOptions);
+		manager = new BitCANNManager(mockOptions);
 
 		networkProvider.addUtxo(aliceAddress, { ...randomUtxo() });
 
@@ -97,7 +96,7 @@ describe('BitCANNManager', () =>
 		it('should use provided network provider if specified', () => 
 		{
 			const mockNetworkProvider = {} as NetworkProvider;
-			const customManager = createManager({ ...mockOptions, networkProvider: mockNetworkProvider });
+			const customManager = new BitCANNManager({ ...mockOptions, networkProvider: mockNetworkProvider });
 			expect(customManager.networkProvider).toBe(mockNetworkProvider);
 		});
 
@@ -235,21 +234,21 @@ describe('BitCANNManager', () =>
 			expect(result).toBeUndefined();
 		});
 
-		it('should return void for proveInvalidAuctionName', async () => 
+		it('should return void for penalizeInvalidAuctionName', async () => 
 		{
-			const result = await manager.proveInvalidAuctionName('test.bch');
+			const result = await manager.penalizeInvalidAuctionName('test.bch');
 			expect(result).toBeUndefined();
 		});
 
-		it('should return void for proveDuplicateAuction', async () => 
+		it('should return void for penalizeDuplicateAuction', async () => 
 		{
-			const result = await manager.proveDuplicateAuction('test.bch');
+			const result = await manager.penalizeDuplicateAuction('test.bch');
 			expect(result).toBeUndefined();
 		});
 
-		it('should return void for proveIllegalAuction', async () => 
+		it('should return void for penalizeIllegalAuction', async () => 
 		{
-			const result = await manager.proveIllegalAuction('test.bch');
+			const result = await manager.penalizeIllegalAuction('test.bch');
 			expect(result).toBeUndefined();
 		});
 	});

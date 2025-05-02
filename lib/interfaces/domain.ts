@@ -1,3 +1,11 @@
+import type { NetworkProvider, Contract, AddressType, Utxo } from 'cashscript';
+
+
+export type DomainStatusType = 
+	| 'NOT_REGISTERED'
+	| 'UNDER_AUCTION'
+	| 'CLAIMED';
+
 export interface DomainRecord 
 {
 	domain: string;
@@ -5,9 +13,37 @@ export interface DomainRecord
 	records: Record<string, string>;
 }
 
-export enum DomainStatusType
-	{
-	NOT_REGISTERED = 'NOT_REGISTERED',
-	UNDER_AUCTION = 'UNDER_AUCTION',
-	CLAIMED = 'CLAIMED',
+export interface DomainConfig 
+{
+	category: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, Contract>;
+	inactivityExpiryTime: number;
+	platformFeeAddress: string;
+	maxPlatformFeePercentage: number;
+	minWaitTime: number;
+	options: {
+		provider: NetworkProvider;
+		addressType: AddressType;
+	};
+}
+
+export interface CreateRecordParams 
+{
+	name: string;
+	record: string;
+	address: string;
+}
+
+export interface CreateClaimDomainParams 
+{
+	name: string;
+}
+
+export interface DomainInfo 
+{
+	address: string;
+	contract: Contract;
+	utxos: Utxo[];
+	status: DomainStatusType;
 }

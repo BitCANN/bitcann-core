@@ -6,8 +6,8 @@
         "node": true
     },
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint"],
-    "extends": ["airbnb-typescript/base"],
+    "plugins": ["import", "@typescript-eslint"],
+    "extends": ["airbnb-typescript/base", "plugin:import/recommended"],
     "parserOptions": {
         "project": "./tsconfig.json",
         "ecmaVersion": 2018,
@@ -34,7 +34,7 @@
             "while": { "after": false },
             "throw": { "after": false },
             "catch": { "after": false },
-            "switch": { "after": false },
+            "switch": { "after": false }
         }}],
         "line-comment-position": ["error", {
             "position": "above",
@@ -47,18 +47,18 @@
             "ignoreComments": false,
             "ignoreRegExpLiterals": true,
             "ignoreStrings": true,
-            "ignoreTemplateLiterals": true,
+            "ignoreTemplateLiterals": true
         }],
         "max-lines": ["off", {
             "max": 250,
             "skipBlankLines": true,
-            "skipComments": true,
+            "skipComments": true
         }],
         "max-lines-per-function": ["off", {
             "max": 25,
             "skipBlankLines": true,
             "skipComments": true,
-            "IIFEs": true,
+            "IIFEs": true
         }],
         "max-params": ["warn", 5],
         "max-statements-per-line": ["error", { "max": 1 }],
@@ -89,12 +89,21 @@
         "no-dupe-else-if": ["error"],
         "no-import-assign": ["error"],
         "no-setter-return": ["error"],
-        "import/extensions": ["error", { "js": "always" }],
         "import/order": ["off"],
         "import/prefer-default-export": ["off"],
+        "import/extensions": [
+            "error",
+            "ignorePackages",
+            {
+                "js": "always",
+                "ts": "never",
+                "tsx": "never",
+                "jsx": "never"
+            }
+        ],
         "object-shorthand": ["off"],
         "prefer-arrow-callback": ["error", {
-            "allowNamedFunctions": true,
+            "allowNamedFunctions": true
         }],
         "no-promise-executor-return": "off",
         "function-paren-newline": "off",
@@ -114,7 +123,7 @@
             "while": { "after": false },
             "throw": { "after": false },
             "catch": { "after": false },
-            "switch": { "after": false },
+            "switch": { "after": false }
         }}],
         "@typescript-eslint/lines-between-class-members": ["error", "always", { "exceptAfterSingleLine": true }],
         "@typescript-eslint/no-unused-vars": ["warn"],
@@ -130,4 +139,4 @@
         "no-undef": ["off"],
         "@typescript-eslint/space-before-blocks": "off"
     }
-}; 
+}

@@ -15,9 +15,9 @@ npm install @bitcann/core
 
 ### Setup
 ```js
-import { createManager } from '@bitcann/core';
+import { BitCANNManager } from '@bitcann/core';
 
-const manager = createManager({
+const manager = new BitCANNManager({
     network: 'mainnet',
     config: {
       // Category ID for the BitCANN system

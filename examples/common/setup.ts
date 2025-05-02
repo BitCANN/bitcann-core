@@ -1,6 +1,5 @@
 import { ElectrumNetworkProvider } from "cashscript";
-import { createManager } from "../../lib/index.js";
-// import { createManager } from "@bitcann/core";
+import { BitCANNManager } from "../../lib/index.js";
 
 
 export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
@@ -13,7 +12,7 @@ export const platformFeeAddress = 'bitcoincash:qznn6uyfuj9t7da5mv2ul66t63tmtgggr
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
-const bitcannManager = createManager({
+const bitcannManager = new BitCANNManager({
 	category: domainTokenCategory,
 	minStartingBid: minStartingBid,
 	minBidIncreasePercentage: minBidIncreasePercentage,

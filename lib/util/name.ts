@@ -1,6 +1,4 @@
-import { hexToBin } from "@bitauth/libauth";
-import { convertAddressToPkh, convertPkhToLockingBytecode } from "./utxo-util";
-
+import { hexToBin } from '@bitauth/libauth';
 
 /**
  * Checks if the given name is valid.
@@ -29,10 +27,13 @@ export const isValidName = (name: string): boolean =>
  *  - nameHex: The hexadecimal representation of the name.
  *  - nameBin: The binary (Uint8Array) representation of the name.
  */
-export function convertNameToBinary(name: string): { nameHex: string; nameBin: Uint8Array } {
-  const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
-      .padStart(2, '0'))
-      .join('');
-  const nameBin = hexToBin(nameHex);
-  return { nameHex, nameBin };
-}
+export const convertNameToBinary = (name: string): { nameHex: string; nameBin: Uint8Array } =>
+{
+	const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+	const nameBin = hexToBin(nameHex);
+	
+	return { nameHex, nameBin };
+};
+
