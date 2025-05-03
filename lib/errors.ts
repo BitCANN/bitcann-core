@@ -131,3 +131,23 @@ export class DomainMintingUTXONotFoundError extends Error
 		super(message);
 	}
 }
+
+export class AuctionNameDoesNotContainInvalidCharacterError extends Error
+{
+	constructor()
+	{
+		const message = 'The auction name does not contain an invalid character';
+
+		super(message);
+	}
+}
+
+export class DuplicateAuctionsDoNotExistError extends Error
+{
+	constructor()
+	{
+		const message = 'Duplicate auctions do not exist';
+
+		super(message);
+	}
+}

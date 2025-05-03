@@ -44,27 +44,34 @@ export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; catego
 	
 	return utxo;
 };
-	
+
+export const getAllRunningAuctionUtxos = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any[] =>
+{
+	const auctionUtxos = utxos.filter((utxo) =>
+	{
+		if(utxo.token?.category === category && utxo.token?.nft?.capability === 'mutable')
+		{
+			const nameHex = utxo.token.nft.commitment.slice(40);
+			const nameFromCommitment = Buffer.from(nameHex, 'hex').toString('utf8');
+
+			return nameFromCommitment === name;
+		}
+
+		return false;
+	});
+
+	if(auctionUtxos.length === 0)
+	{
+		throw new RunningAuctionUTXONotFoundError();
+	}
+
+	return auctionUtxos.sort((a, b) => (a.token.amount < b.token.amount ? -1 : 1));
+};
+
 
 export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any =>
 {
-	const auctionUtxo = utxos
-		.filter((utxo) =>
-		{
-			if(utxo.token?.category === category)
-			{
-				if(utxo.token?.nft?.capability === 'mutable')
-				{
-
-					const nameHex = utxo.token.nft.commitment.slice(40);
-					const nameFromCommitment = Buffer.from(nameHex, 'hex').toString('utf8');
-
-					return nameFromCommitment === name;
-				}
-			}
-			
-			return false;
-		})
+	const auctionUtxo = getAllRunningAuctionUtxos({ name, utxos, category })
 		.reduce((prev, current) =>
 		{
 			if(!prev) return current;

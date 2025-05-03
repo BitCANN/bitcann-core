@@ -1,8 +1,9 @@
 import { type AddressType, TransactionBuilder, type NetworkProvider, type Utxo } from 'cashscript';
 import type { GuardConfig } from './interfaces/guard.js';
-import { getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
+import { getAllRunningAuctionUtxos, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
 import { constructDomainContract } from './util/contract.js';
-import { ExternalAuthNFTUTXONotFoundError } from './errors.js';
+import { AuctionNameDoesNotContainInvalidCharacterError, DuplicateAuctionsDoNotExistError, ExternalAuthNFTUTXONotFoundError } from './errors.js';
+import { findFirstInvalidCharacterIndex } from './util/name.js';
 
 /**
  * The GuardManager class is responsible for managing guard-related operations,
@@ -37,18 +38,141 @@ export class GuardManager
 	 * @param {string} name - The auction name to validate.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeInvalidAuctionName(name: string): Promise<void>
+	public async penalizeInvalidAuctionName({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		console.log(name);
-	
-		return;
+		const invalidCharacterIndex = findFirstInvalidCharacterIndex(name);
+
+		if(invalidCharacterIndex === -1)
+		{
+			throw new AuctionNameDoesNotContainInvalidCharacterError();
+		}
+
+		const [ registryUtxos, guardUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(this.contracts.Registry.address),
+			this.networkProvider.getUtxos(this.contracts.AuctionNameEnforcer.address),
+		]);
+
+		const threadNFTUTXO = getThreadUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+			threadContractAddress: this.contracts.AuctionNameEnforcer.address,
+		});
+
+		const authorizedContractUTXO = getAuthorizedContractUtxo({
+			utxos: guardUtxos,
+		});
+
+		const runningAuctionUTXO = getRunningAuctionUtxo({
+			name,
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+			.addInput(authorizedContractUTXO, this.contracts.AuctionNameEnforcer.unlock.call(BigInt(invalidCharacterIndex)))
+			.addInput(runningAuctionUTXO, this.contracts.Registry.unlock.call())
+			.addOutput({
+				to: this.contracts.Registry.tokenAddress,
+				amount: threadNFTUTXO.satoshis,
+				token: {
+					category: threadNFTUTXO.token.category,
+					amount: threadNFTUTXO.token.amount + runningAuctionUTXO.token.amount,
+					nft: {
+						capability: threadNFTUTXO.token.nft.capability,
+						commitment: threadNFTUTXO.token.nft.commitment,
+					},
+				},
+			})
+			.addOutput({
+				to: this.contracts.AuctionNameEnforcer.tokenAddress,
+				amount: authorizedContractUTXO.satoshis,
+			})
+			.addOutput({
+				to: rewardTo,
+				amount: runningAuctionUTXO.satoshis,
+			});
+
+		const transactionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = runningAuctionUTXO.satoshis - (BigInt(transactionSize * 2));
+
+		return transaction;
 	}
 
-	public async penalizeDuplicateAuction(name: string): Promise<void>
+	public async penalizeDuplicateAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		console.log(name);
-	
-		return;
+		
+		const [ registryUtxos, guardUtxos ] = await Promise.all([
+			this.networkProvider.getUtxos(this.contracts.Registry.address),
+			this.networkProvider.getUtxos(this.contracts.AuctionConflictResolver.address),
+		]);
+
+		const threadNFTUTXO = getThreadUtxo({
+			utxos: registryUtxos,
+			category: this.category,
+			threadContractAddress: this.contracts.AuctionConflictResolver.address,
+		});
+
+		const authorizedContractUTXO = getAuthorizedContractUtxo({
+			utxos: guardUtxos,
+		});
+
+		const auctionUTXOs = getAllRunningAuctionUtxos({
+			name,
+			utxos: registryUtxos,
+			category: this.category,
+		});
+
+		if(auctionUTXOs.length < 2)
+		{
+			throw new DuplicateAuctionsDoNotExistError();
+		}
+
+		const runningValidAuctionUTXO = auctionUTXOs[0];
+		const runningInValidAuctionUTXO = auctionUTXOs[1];
+
+		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
+		  .addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
+		  .addInput(authorizedContractUTXO, this.contracts.AuctionConflictResolver.unlock.call())
+		  .addInput(runningValidAuctionUTXO, this.contracts.Registry.unlock.call())
+		  .addInput(runningInValidAuctionUTXO, this.contracts.Registry.unlock.call())
+		  .addOutput({
+		    to: this.contracts.Registry.tokenAddress,
+		    amount: threadNFTUTXO.satoshis,
+		    token: {
+		      category: threadNFTUTXO.token.category,
+		      amount: threadNFTUTXO.token.amount + runningInValidAuctionUTXO.token.amount,
+		      nft: {
+		        capability: threadNFTUTXO.token.nft.capability,
+		        commitment: threadNFTUTXO.token.nft.commitment,
+		      },
+		    },
+		  })
+		  .addOutput({
+		    to: this.contracts.AuctionConflictResolver.tokenAddress,
+		    amount: authorizedContractUTXO.satoshis,
+		  })
+		  .addOutput({
+		    to: this.contracts.Registry.tokenAddress,
+		    amount: runningValidAuctionUTXO.satoshis,
+		    token: {
+		      category: runningValidAuctionUTXO.token.category,
+		      amount: runningValidAuctionUTXO.token.amount,
+		      nft: {
+		        capability: runningValidAuctionUTXO.token.nft.capability,
+		        commitment: runningValidAuctionUTXO.token.nft.commitment,
+		      },
+		    },
+		  })
+		  .addOutput({
+		    to: rewardTo,
+		    amount: runningInValidAuctionUTXO.satoshis,
+		  });
+		
+		const transactionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = runningInValidAuctionUTXO.satoshis - (BigInt(transactionSize * 2));
+		
+		return transaction;
 	}
 		
 	public async penalizeIllegalAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>

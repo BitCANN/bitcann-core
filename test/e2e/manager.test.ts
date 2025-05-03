@@ -236,13 +236,13 @@ describe('BitCANNManager', () =>
 
 		it('should return void for penalizeInvalidAuctionName', async () => 
 		{
-			const result = await manager.penalizeInvalidAuctionName('test.bch');
+			const result = await manager.penalizeInvalidAuctionName({ name: 'test.bch', rewardTo: aliceAddress });
 			expect(result).toBeUndefined();
 		});
 
 		it('should return void for penalizeDuplicateAuction', async () => 
 		{
-			const result = await manager.penalizeDuplicateAuction('test.bch');
+			const result = await manager.penalizeDuplicateAuction({ name: 'test.bch', rewardTo: aliceAddress });
 			expect(result).toBeUndefined();
 		});
 

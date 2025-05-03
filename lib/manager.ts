@@ -213,9 +213,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to validate.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeInvalidAuctionName(name: string): Promise<void>
+	public async penalizeInvalidAuctionName({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeInvalidAuctionName(name);
+		return this.guardManager.penalizeInvalidAuctionName({ name, rewardTo });
 	}
 
 	/**
@@ -224,9 +224,9 @@ export class BitCANNManager
 	 * @param {string} name - The auction name to check for duplication.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeDuplicateAuction(name: string): Promise<void>
+	public async penalizeDuplicateAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeDuplicateAuction(name);
+		return this.guardManager.penalizeDuplicateAuction({ name, rewardTo });
 	}
 
 	/**

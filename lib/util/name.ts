@@ -16,6 +16,27 @@ export const isValidName = (name: string): boolean =>
 
 
 /**
+ * Finds the first index of an invalid character in the given name.
+ * An invalid character is any character that does not match the regex /^[a-zA-Z0-9-]+$/.
+ *
+ * @param {string} name - The name to check for invalid characters.
+ * @returns {number} The index of the first invalid character, or -1 if all characters are valid.
+ */
+export const findFirstInvalidCharacterIndex = (name: string): number =>
+{
+	for(let i = 0; i < name.length; i++)
+	{
+		if(!/^[a-zA-Z0-9-]$/.test(name[i]))
+		{
+			return i + 1;
+		}
+	}
+
+	return -1;
+};
+
+
+/**
  * Converts a given name into its hexadecimal and binary representations.
  *
  * This function takes a string name and converts each character into its
