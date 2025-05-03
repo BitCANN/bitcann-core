@@ -1,4 +1,4 @@
-import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode } from '@bitauth/libauth';
+import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import type { AddressType,  NetworkProvider, Utxo } from 'cashscript';
 import { Contract, TransactionBuilder } from 'cashscript';

@@ -18,23 +18,22 @@ npm install @bitcann/core
 import { BitCANNManager } from '@bitcann/core';
 
 const manager = new BitCANNManager({
-    network: 'mainnet',
-    config: {
-      // Category ID for the BitCANN system
-      category: '0x0000000000000000000000000000000000000000',
-      // Minimum starting bid in satoshis
-      minStartingBid: 100000000,
-      // Minimum bid increase percentage
-      minBidIncreasePercentage: 5,
-      // Inactivity expiry time in blocks/MTP
-      inactivityExpiryTime: 1000000,
-      // Minimum wait time in blocks/MTP
-      minWaitTime: 1,
-      // Maximum platform fee percentage
-      maxPlatformFeePercentage: 50,
-      // Optional platform fee address
-      platformFeeAddress: 'bitcoincash:...'
-    }
+  // Category ID for the BitCANN system
+  category: '0x0000000000000000000000000000000000000000',
+  // Minimum starting bid in satoshis
+  minStartingBid: 100000000,
+  // Minimum bid increase percentage
+  minBidIncreasePercentage: 5,
+  // Inactivity expiry time in blocks/MTP
+  inactivityExpiryTime: 1000000,
+  // Minimum wait time in blocks/MTP
+  minWaitTime: 1,
+  // Maximum platform fee percentage
+  maxPlatformFeePercentage: 50,
+  // Optional platform fee address
+  platformFeeAddress: 'bitcoincash:...',
+  // Network provider (optional)
+  networkProvider: new ElectrumNetworkProvider('mainnet'),
 });
 ```
 
@@ -97,6 +96,7 @@ For support, please open an issue on our GitHub repository or create a PR, or jo
 | minWaitTime | Minimum wait time in blocks/MTP | Required |
 | maxPlatformFeePercentage | Maximum platform fee percentage | Required |
 | platformFeeAddress | Platform fee address | Optional |
+| networkProvider | Network provider | Optional |
 
 ## License
 

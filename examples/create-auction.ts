@@ -20,5 +20,4 @@ import { getSignedTransaction } from './common/sign.js';
   })
 
   console.log(preparedTransaction);
-	
 })();
