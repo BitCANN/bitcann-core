@@ -4,16 +4,14 @@ import { TransactionBuilder } from 'cashscript';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { DUST } from './constants.js';
 import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
-import { convertAddressToPkh, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from './util/utxo.js';
+import { convertAddressToPkh, convertNameToBinary, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, isValidName } from './util/index.js';
 import type { AuctionConfig, AuctionParams } from './interfaces/auction.js';
-import { createPlaceholderUnlocker } from './util/index.js';
-import { convertNameToBinary, isValidName } from './util/name.js';
 
 /**
  * The AuctionManager class is responsible for managing auction-related operations,
  * including creating auction transactions and retrieving auction data.
  */
-export class AuctionManager 
+export class AuctionManager
 {
 	private category: string;
 	private networkProvider: NetworkProvider;
@@ -21,10 +19,10 @@ export class AuctionManager
 
 	/**
 	 * Constructs a new AuctionManager instance with the specified configuration parameters.
-	 * 
+	 *
 	 * @param {AuctionConfig} params - The configuration parameters for the auction manager.
 	 */
-	constructor(params: AuctionConfig) 
+	constructor(params: AuctionConfig)
 	{
 		this.category = params.category;
 		this.networkProvider = params.networkProvider;
@@ -33,7 +31,7 @@ export class AuctionManager
 
 	/**
 	 * Creates a transaction for initiating an auction.
-	 * 
+	 *
 	 * @param {AuctionParams} params - The parameters for the auction transaction.
 	 * @param {string} params.name - The name of the auction.
 	 * @param {number} params.amount - The amount for the auction.
@@ -42,9 +40,9 @@ export class AuctionManager
 	 * @throws {InvalidNameError} If the auction name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the auction.
 	 */
-	public async createAuctionTransaction({ name, amount, address }: AuctionParams): Promise<TransactionBuilder> 
+	public async createAuctionTransaction({ name, amount, address }: AuctionParams): Promise<TransactionBuilder>
 	{
-		if(!isValidName(name)) 
+		if(!isValidName(name))
 		{
 			throw new InvalidNameError();
 		}
@@ -75,7 +73,7 @@ export class AuctionManager
 		const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0');
 
 		const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000 + DUST));
-		if(!userUTXO) 
+		if(!userUTXO)
 		{
 			throw new UserUTXONotFoundError();
 		}
@@ -143,26 +141,26 @@ export class AuctionManager
 
 	/**
 	 * Retrieves all active auctions.
-	 * 
+	 *
 	 * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
-	public async getAuctions(): Promise<Utxo[]> 
+	public async getAuctions(): Promise<Utxo[]>
 	{
 		const registryUtxos = await this.networkProvider.getUtxos(this.contracts.Registry.address);
-		
+
 		return registryUtxos.filter((utxo) => utxo.token?.category === this.category && utxo.token?.nft?.capability === 'mutable');
 	}
 
 	/**
 	 * Retrieves the transaction history of auctions.
-	 * 
+	 *
 	 * @returns {Promise<{ transactionHex: string; name: string }[]>} A promise that resolves to an array of transaction history objects, each containing a transaction hex and an auction name.
 	 */
 	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
 	{
 		// @ts-ignore
 		const history = await fetchHistory(this.networkProvider.electrum, this.contracts.DomainFactory.address);
-		
+
 		const validTransactions = [];
 
 		for(const txn of history)

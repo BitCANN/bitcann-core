@@ -35,7 +35,7 @@ export const inactivityExpiryTime = 1;
 export const minWaitTime = 1;
 export const maxPlatformFeePercentage = 50;
 
-export const mockOptions: ManagerConfig = 
+export const mockOptions: ManagerConfig =
 {
 	category: domainTokenCategory,
 	minStartingBid: minStartingBid,

@@ -1,15 +1,24 @@
 import { type AddressType, TransactionBuilder, type NetworkProvider, type Utxo } from 'cashscript';
 import type { GuardConfig } from './interfaces/guard.js';
-import { getAllRunningAuctionUtxos, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
-import { constructDomainContract } from './util/contract.js';
-import { AuctionNameDoesNotContainInvalidCharacterError, DuplicateAuctionsDoNotExistError, ExternalAuthNFTUTXONotFoundError } from './errors.js';
-import { findFirstInvalidCharacterIndex } from './util/name.js';
+import {
+	getAllRunningAuctionUtxos,
+	getAuthorizedContractUtxo,
+	getRunningAuctionUtxo,
+	getThreadUtxo,
+	constructDomainContract,
+	findFirstInvalidCharacterIndex,
+} from './util/index.js';
+import {
+	AuctionNameDoesNotContainInvalidCharacterError,
+	DuplicateAuctionsDoNotExistError,
+	ExternalAuthNFTUTXONotFoundError,
+} from './errors.js';
 
 /**
  * The GuardManager class is responsible for managing guard-related operations,
  * including creating guard transactions and retrieving guard data.
  */
-export class GuardManager 
+export class GuardManager
 {
 	private category: string;
 	private networkProvider: NetworkProvider;
@@ -19,10 +28,10 @@ export class GuardManager
 
 	/**
 	 * Constructs a new GuardManager instance with the specified configuration parameters.
-	 * 
+	 *
 	 * @param {GuardConfig} params - The configuration parameters for the guard manager.
 	 */
-	constructor(params: GuardConfig) 
+	constructor(params: GuardConfig)
 	{
 		this.category = params.category;
 		this.networkProvider = params.networkProvider;
@@ -34,7 +43,7 @@ export class GuardManager
 
 	/**
 	 * Proves that an auction name is invalid. Currently logs the name.
-	 * 
+	 *
 	 * @param {string} name - The auction name to validate.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
@@ -101,7 +110,7 @@ export class GuardManager
 
 	public async penalizeDuplicateAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		
+
 		const [ registryUtxos, guardUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(this.contracts.Registry.address),
 			this.networkProvider.getUtxos(this.contracts.AuctionConflictResolver.address),
@@ -168,13 +177,13 @@ export class GuardManager
 		    to: rewardTo,
 		    amount: runningInValidAuctionUTXO.satoshis,
 		  });
-		
+
 		const transactionSize = transaction.build().length;
 		transaction.outputs[transaction.outputs.length - 1].amount = runningInValidAuctionUTXO.satoshis - (BigInt(transactionSize * 2));
-		
+
 		return transaction;
 	}
-		
+
 	public async penalizeIllegalAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
 		const domainContract = constructDomainContract({
@@ -213,7 +222,7 @@ export class GuardManager
 			&& utxo.token?.nft?.commitment.length === 0,
 		) || null;
 
-		if(!externalAuthUTXO) 
+		if(!externalAuthUTXO)
 		{
 			throw new ExternalAuthNFTUTXONotFoundError();
 		}
@@ -258,8 +267,8 @@ export class GuardManager
 
 		const transactionSize = transaction.build().length;
 		transaction.outputs[transaction.outputs.length - 1].amount = runningAuctionUTXO.satoshis - (BigInt(transactionSize * 2));
-	
+
 		return transaction;
 	}
-		
+
 }

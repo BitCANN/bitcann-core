@@ -1,11 +1,12 @@
-import { binToHex, hexToBin, cashAddressToLockingBytecode, decodeCashAddress, lockingBytecodeToCashAddress, addressContentsToLockingBytecode } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
 import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
+import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 
 /**
  * Retrieves the registration UTXO from a list of UTXOs.
- * 
+ *
  * @param {Object} params - The parameters for the function.
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
@@ -14,7 +15,7 @@ import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
  */
 export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
-	const utxo = utxos.find(u => 
+	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
 		&& u.token?.category === category
 		&& u.token?.nft?.commitment
@@ -25,13 +26,13 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
 	{
 		throw new RegistrationCounterUTXONotFoundError();
 	}
-  
+
 	return utxo;
 };
 
 export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
-{	
-	const utxo = utxos.find(u => 
+{
+	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
 		&& u.token?.category === category
 		&& u.token?.amount == BigInt(0),
@@ -41,7 +42,7 @@ export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; catego
 	{
 		throw new DomainMintingUTXONotFoundError();
 	}
-	
+
 	return utxo;
 };
 
@@ -89,7 +90,7 @@ export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string;
 
 /**
  * Retrieves the thread UTXO from a list of UTXOs.
- * 
+ *
  * @param {Object} params - The parameters for the function.
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
@@ -99,7 +100,7 @@ export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string;
  */
 export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxos: any[]; category: string; threadContractAddress: string }): any =>
 {
-	const utxo = utxos.find(u => 
+	const utxo = utxos.find(u =>
 		// @ts-ignore
 		u.token?.nft?.commitment === binToHex(cashAddressToLockingBytecode(threadContractAddress).bytecode)
 		&& u.token?.nft?.capability === 'none'
@@ -118,7 +119,7 @@ export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxo
 
 /**
  * Retrieves the auction UTXO from a list of UTXOs.
- * 
+ *
  * @param {Object} params - The parameters for the function.
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
@@ -127,7 +128,7 @@ export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxo
  */
 export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
-	const utxo = utxos.find(u => 
+	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'mutable'
 		&& u.token?.category === category
 		&& u.token?.amount > 0,
@@ -145,7 +146,7 @@ export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: st
 
 /**
  * Retrieves a random authorized contract UTXO from a list of UTXOs.
- * 
+ *
  * @param {Object} params - The parameters for the function.
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @returns {any} The authorized contract UTXO.
@@ -180,14 +181,25 @@ export const generateSourceOutputs = (inputs: UnlockableUtxo[]): LibauthOutput[]
 	return sourceOutputs;
 };
 
-export const convertAddressToPkh = (userAddress: string): string =>
+export const findPureUTXO = (utxos: any[]): any =>
 {
-	const decodeAddressObj = decodeCashAddress(userAddress);
-	if(typeof decodeAddressObj == 'string') throw new Error('error decodeCashAddress()');
-	const userPkh = decodeAddressObj.payload;
-	const userPkhHex = binToHex(userPkh);
+	const utxo = utxos.reduce((max, val) =>
+		(!val.token && val.satoshis > (max?.satoshis || 0)) ? val : max,
+	null);
 
-	return userPkhHex;
+	if(!utxo) throw new Error('Could not find user UTXO without token');
+
+	return utxo;
+};
+
+export const createPlaceholderUnlocker = (address: string): any =>
+{
+	const userPkh = convertAddressToPkh(address);
+
+	return {
+		generateLockingBytecode: () => convertPkhToLockingBytecode(userPkh),
+		generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
+	};
 };
 
 export const convertCashAddressToTokenAddress = (cashAddress: string): string =>
@@ -199,28 +211,3 @@ export const convertCashAddressToTokenAddress = (cashAddress: string): string =>
 	// @ts-ignore
 	return addressContents.address;
 };
-
-export const convertPkhToLockingBytecode = (userPkh: string): any =>
-{
-	const userPkhBin = hexToBin(userPkh);
-	const userLockingBytecode = addressContentsToLockingBytecode({ type: 'P2PKH', payload: userPkhBin });
-
-	return userLockingBytecode;
-};
-
-export const formatTimestamp = (unixTimestamp: string | number): string =>
-{
-	if(Number(unixTimestamp) > 500_000_000)
-	{
-		const date = new Date(Number(unixTimestamp) * 1000);
-		const year = date.getUTCFullYear();
-		const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-		const day = String(date.getUTCDate()).padStart(2, '0');
-
-		return `${year}-${month}-${day}`;
-	}
-
-	return `blockheight ${unixTimestamp}`;
-};
-
-export const satsToBchAmount = (sats: number): number => sats / 100_000_000;

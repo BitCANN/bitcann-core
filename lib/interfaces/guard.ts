@@ -1,6 +1,6 @@
 import type { AddressType, NetworkProvider } from 'cashscript';
 
-export interface GuardConfig 
+export interface GuardConfig
 {
 	category: string;
 	networkProvider: NetworkProvider;
@@ -12,7 +12,7 @@ export interface GuardConfig
 	};
 }
 
-export interface GuardParams 
+export interface GuardParams
 {
 	name: string;
 	amount: number;

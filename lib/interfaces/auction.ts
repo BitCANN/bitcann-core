@@ -1,16 +1,16 @@
 import type { NetworkProvider, Contract } from 'cashscript';
 
 
-export interface AuctionConfig 
+export interface AuctionConfig
 {
 	category: string;
 	networkProvider: NetworkProvider;
 	contracts: Record<string, Contract>;
 }
 
-export interface AuctionParams 
+export interface AuctionParams
 {
 	name: string;
 	amount: number;
 	address: string;
-} 
+}

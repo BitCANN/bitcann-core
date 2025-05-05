@@ -4,16 +4,14 @@ import { TransactionBuilder } from 'cashscript';
 
 import { EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
 import { InvalidBidAmountError, InvalidNameError, UserUTXONotFoundError } from './errors.js';
-import { isValidName, convertNameToBinary } from './util/name.js';
-import { getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
+import { convertNameToBinary, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, isValidName } from './util/index.js';
 import type { BidConfig, BidParams } from './interfaces/bid.js';
-import { createPlaceholderUnlocker } from './util/index.js';
 
 /**
  * The BidManager class is responsible for managing bid-related operations,
  * including creating bid transactions for auctions.
  */
-export class BidManager 
+export class BidManager
 {
 	private category: string;
 	private minBidIncreasePercentage: number;
@@ -22,10 +20,10 @@ export class BidManager
 
 	/**
      * Constructs a new BidManager instance with the specified configuration parameters.
-     * 
+     *
      * @param {BidConfig} params - The configuration parameters for the bid manager.
      */
-	constructor(params: BidConfig) 
+	constructor(params: BidConfig)
 	{
 		this.category = params.category;
 		this.minBidIncreasePercentage = params.minBidIncreasePercentage;
@@ -35,7 +33,7 @@ export class BidManager
 
 	/**
      * Creates a transaction for placing a bid in an auction.
-     * 
+     *
      * @param {BidParams} params - The parameters for the bid transaction.
      * @param {string} params.name - The name of the auction.
      * @param {number} params.amount - The bid amount.
@@ -45,9 +43,9 @@ export class BidManager
      * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
      * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
      */
-	public async createBidTransaction({ name, amount, address }: BidParams): Promise<TransactionBuilder> 
+	public async createBidTransaction({ name, amount, address }: BidParams): Promise<TransactionBuilder>
 	{
-		if(!isValidName(name)) 
+		if(!isValidName(name))
 		{
 			throw new InvalidNameError();
 		}
@@ -75,13 +73,13 @@ export class BidManager
 			category: this.category,
 		});
 
-		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * (1 + this.minBidIncreasePercentage / 100)))) 
+		if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * (1 + this.minBidIncreasePercentage / 100))))
 		{
 			throw new InvalidBidAmountError();
 		}
 
 		const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + EXPECTED_MAX_TRANSACTION_FEE) && !utxo.token);
-		if(!fundingUTXO) 
+		if(!fundingUTXO)
 		{
 			throw new UserUTXONotFoundError();
 		}
@@ -132,10 +130,10 @@ export class BidManager
 				to: address,
 				amount: fundingUTXO.satoshis - (BigInt(amount) + BigInt(EXPECTED_MAX_TRANSACTION_FEE)),
 			});
-        
+
 		const transactionSize = transaction.build().length;
 		transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(amount) + BigInt(transactionSize));
 
 		return transaction;
 	}
-} 
+}

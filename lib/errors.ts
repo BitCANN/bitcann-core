@@ -1,17 +1,23 @@
 /* eslint-disable max-classes-per-file */
 
+/**
+ * Error thrown when an invalid name is provided.
+ */
 export class InvalidNameError extends Error
 {
 	constructor()
 	{
-		// Define a message indicating that no authentication token was provided.
+		// Message indicating the name is invalid.
 		const message = 'The name provided is invalid. Please ensure that the name contains only alphanumeric characters and hyphens.';
 
-		// Create an instance of the parent Error class using the specified message.
+		// Call the parent Error class with the message.
 		super(message);
 	}
 }
 
+/**
+ * Error thrown when a Thread NFT UTXO is not found.
+ */
 export class ThreadNFTUTXONotFoundError extends Error
 {
 	constructor()
@@ -22,6 +28,9 @@ export class ThreadNFTUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a Registration Counter UTXO is not found.
+ */
 export class RegistrationCounterUTXONotFoundError extends Error
 {
 	constructor()
@@ -32,6 +41,9 @@ export class RegistrationCounterUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when an Auction UTXO is not found.
+ */
 export class AuctionUTXONotFoundError extends Error
 {
 	constructor()
@@ -42,6 +54,9 @@ export class AuctionUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when an Authorized Contract UTXO is not found.
+ */
 export class AuthorizedContractUTXONotFoundError extends Error
 {
 	constructor()
@@ -52,6 +67,9 @@ export class AuthorizedContractUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a User UTXO is not found.
+ */
 export class UserUTXONotFoundError extends Error
 {
 	constructor()
@@ -62,6 +80,9 @@ export class UserUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when an Internal Auth NFT UTXO is not found.
+ */
 export class InternalAuthNFTUTXONotFoundError extends Error
 {
 	constructor()
@@ -72,6 +93,9 @@ export class InternalAuthNFTUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when an External Auth NFT UTXO is not found.
+ */
 export class ExternalAuthNFTUTXONotFoundError extends Error
 {
 	constructor()
@@ -82,6 +106,9 @@ export class ExternalAuthNFTUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a User Ownership NFT UTXO is not found.
+ */
 export class UserOwnershipNFTUTXONotFoundError extends Error
 {
 	constructor()
@@ -92,6 +119,9 @@ export class UserOwnershipNFTUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a User Funding UTXO is not found.
+ */
 export class UserFundingUTXONotFoundError extends Error
 {
 	constructor()
@@ -102,6 +132,9 @@ export class UserFundingUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a Running Auction UTXO is not found.
+ */
 export class RunningAuctionUTXONotFoundError extends Error
 {
 	constructor()
@@ -112,6 +145,9 @@ export class RunningAuctionUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when a bid amount is invalid.
+ */
 export class InvalidBidAmountError extends Error
 {
 	constructor()
@@ -122,6 +158,9 @@ export class InvalidBidAmountError extends Error
 	}
 }
 
+/**
+ * Error thrown when a Domain Minting UTXO is not found.
+ */
 export class DomainMintingUTXONotFoundError extends Error
 {
 	constructor()
@@ -132,6 +171,9 @@ export class DomainMintingUTXONotFoundError extends Error
 	}
 }
 
+/**
+ * Error thrown when an auction name does not contain an invalid character.
+ */
 export class AuctionNameDoesNotContainInvalidCharacterError extends Error
 {
 	constructor()
@@ -142,6 +184,9 @@ export class AuctionNameDoesNotContainInvalidCharacterError extends Error
 	}
 }
 
+/**
+ * Error thrown when duplicate auctions do not exist.
+ */
 export class DuplicateAuctionsDoNotExistError extends Error
 {
 	constructor()

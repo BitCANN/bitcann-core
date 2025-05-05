@@ -1,20 +1,41 @@
-import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, lockingBytecodeToCashAddress, hash256 } from '@bitauth/libauth';
-import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
-import type { AddressType,  NetworkProvider, Utxo, Unlocker } from 'cashscript';
+import { binToHex, hexToBin, lockingBytecodeToCashAddress } from '@bitauth/libauth';
+import { fetchHistory } from '@electrum-cash/protocol';
+import type { AddressType,  NetworkProvider } from 'cashscript';
 import { Contract, TransactionBuilder } from 'cashscript';
-import { constructDomainContract, getDomainPartialBytecode } from './util/contract.js';
-import { buildLockScriptP2SH32, extractOpReturnPayload, lockScriptToAddress, pushDataHex } from './util/index.js';
 import { DomainConfig, CreateClaimDomainParams, DomainInfo, DomainStatusType, CreateRecordsParams } from './interfaces/domain.js';
-import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
 import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from './errors.js';
-import { isValidName } from './util/name.js';
+import {
+	adjustLastOutputForFee,
+	buildLockScriptP2SH32,
+	constructDomainContract,
+	convertCashAddressToTokenAddress,
+	convertNameToBinary,
+	convertPkhToLockingBytecode,
+	createPlaceholderUnlocker,
+	createRegistrationId,
+	extractRecordsFromTransaction,
+	filterValidRecords,
+	findFundingUTXO,
+	findInternalAuthNFTUTXO,
+	findOwnershipNFTUTXO,
+	getAuthorizedContractUtxo,
+	getDomainMintingUtxo,
+	getDomainPartialBytecode,
+	getRunningAuctionUtxo,
+	getThreadUtxo,
+	getValidCandidateTransactions,
+	isValidName,
+	lockScriptToAddress,
+	pushDataHex,
+} from './util/index.js';
+
 
 /**
  * The DomainManager class is responsible for managing domain-related operations
  * such as retrieving domain records, domain information, and creating transactions
  * for adding records or claiming domains.
  */
-export class DomainManager 
+export class DomainManager
 {
 	private readonly category: string;
 	private readonly networkProvider: NetworkProvider;
@@ -27,10 +48,10 @@ export class DomainManager
 
 	/**
 	 * Constructs a new DomainManager instance with the specified configuration parameters.
-	 * 
+	 *
 	 * @param {DomainConfig} params - The configuration parameters for the domain manager.
 	 */
-	constructor(params: DomainConfig) 
+	constructor(params: DomainConfig)
 	{
 		this.category = params.category;
 		this.networkProvider = params.networkProvider;
@@ -44,11 +65,11 @@ export class DomainManager
 
 	/**
 	 * Retrieves the records for a given domain.
-	 * 
+	 *
 	 * @param {string} name - The domain name to retrieve records for.
 	 * @returns {Promise<string[]>} A promise that resolves to the domain records.
 	 */
-	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]> 
+	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]>
 	{
 		const domainContract = constructDomainContract({
 			name,
@@ -57,97 +78,26 @@ export class DomainManager
 			options: this.options,
 		});
 
-		// Fetch the transaction history for the domain contract address.
-		// @ts-ignore
+		// @ts-ignore - NetworkProvider type doesn't expose electrum property
 		const history = await fetchHistory(this.networkProvider.electrum, domainContract.address);
-
-		let records: string[] = [];
-		const validCandidateTransactions = [];
-
-		// Iterate over each transaction in the history.
-		for(const txn of history) 
-		{
-			// Fetch and decode the transaction.
-			// @ts-ignore
-			let tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
-			let decodedTx = decodeTransaction(hexToBin(tx));
-
-			let hasOpReturn = false;
-			let hasCategoryFromContract = false;
-
-			// Check each output in the transaction for specific conditions.
-			// @ts-ignore
-			for(const output of decodedTx.outputs) 
-			{
-				if(output.valueSatoshis == 0) 
-				{
-					hasOpReturn = true;
-					continue;
-				}
-
-				if(!output.token || binToHex(output.token.category) != this.category) 
-				{
-					continue;
-				}
-
-				// Verify if the output locking bytecode matches the domain contract.
-				// @ts-ignore
-				const lockingBytecode = cashAddressToLockingBytecode(domainContract.address).bytecode;
-				if(binToHex(output.lockingBytecode) === binToHex(lockingBytecode)) 
-				{
-					hasCategoryFromContract = true;
-				}
-			}
-
-			// If both conditions are met, add the transaction to valid candidates.
-			if(hasOpReturn && hasCategoryFromContract) 
-			{
-				validCandidateTransactions.push(decodedTx);
-			}
-		}
-
-		// Extract and decode OP_RETURN payloads from valid transactions.
-		for(const tx of validCandidateTransactions) 
-		{
-			// @ts-ignore
-			for(const output of tx.outputs) 
-			{
-				if(output.valueSatoshis == 0) 
-				{
-					const opReturnPayload = extractOpReturnPayload(binToHex(output.lockingBytecode));
-					const utf8String = Buffer.from(opReturnPayload, 'hex').toString('utf8');
-					records.push(utf8String);
-				}
-			}
-		}
+		const validCandidateTransactions = await getValidCandidateTransactions(history, domainContract, this.category, this.networkProvider);
+		let records = validCandidateTransactions.flatMap(tx => extractRecordsFromTransaction(tx));
 
 		if(keepDuplicates)
 		{
 			records = [ ...new Set(records) ];
 		}
 
-		// Filter out 'RMV' records and records that match the hash256 of the 'RMV' record
-		records = records.filter(record =>
-		{
-			if(record.startsWith('RMV ')) 
-			{
-				// Exclude the 'RMV' record itself
-				return false;
-			}
-			
-			return !records.some(rmvRecord => rmvRecord.startsWith('RMV ') && binToHex(hash256(hexToBin(record))) === rmvRecord.split(' ')[1]);
-		});
-
-		return records;
+		return filterValidRecords(records);
 	}
 
 	/**
 	 * Retrieves the domain information for a given full domain name.
-	 * 
+	 *
 	 * @param {string} fullName - The full domain name to retrieve information for.
 	 * @returns {Promise<DomainInfo>} A promise that resolves to an object containing the domain address, contract, and UTXOs.
 	 */
-	public async getDomain(fullName: string): Promise<DomainInfo> 
+	public async getDomain(fullName: string): Promise<DomainInfo>
 	{
 		// Extract the domain name from the full domain name.
 		const name = fullName.split('.')[0];
@@ -186,13 +136,12 @@ export class DomainManager
 
 	/**
 	 * Creates a transaction for adding a record to a domain.
-	 * 
+	 *
 	 * @param {CreateRecordsParams} params - The parameters for creating the record transaction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
 	 */
-	public async createRecordsTransaction({ name, records, address }: CreateRecordsParams): Promise<TransactionBuilder> 
+	public async createRecordsTransaction({ name, records, address }: CreateRecordsParams): Promise<TransactionBuilder>
 	{
-		// Construct the Domain contract with the provided parameters.
 		const domainContract = constructDomainContract({
 			name: name,
 			category: this.category,
@@ -200,55 +149,31 @@ export class DomainManager
 			options: this.options,
 		});
 
-		// Fetch UTXOs for registry, auction, and user addresses.
 		const [ domainUTXOs, userUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(domainContract.address),
 			this.networkProvider.getUtxos(address),
 		]);
 
-		// Find the internal authorization NFT UTXO.
-		const internalAuthNFTUTXO: Utxo | null = domainUTXOs.find(utxo =>
-			utxo.token?.nft?.capability === 'none'
-			&& utxo.token?.category === this.category
-			&& utxo.token?.nft?.commitment.length > 0,
-		) || null;
-
-		if(!internalAuthNFTUTXO) 
+		const internalAuthNFTUTXO = findInternalAuthNFTUTXO(domainUTXOs, this.category);
+		if(!internalAuthNFTUTXO)
 		{
 			throw new InternalAuthNFTUTXONotFoundError();
 		}
 
-		// Find the ownership NFT UTXO.
-		const ownershipNFTUTXO: Utxo | null = userUtxos.find(utxo =>
-			utxo.token?.nft?.capability === 'none'
-			&& utxo.token?.category === this.category
-			&& Buffer.from(utxo.token?.nft?.commitment.slice(16), 'hex').toString('utf8') === name,
-		) || null;
-
-		if(!ownershipNFTUTXO) 
+		const ownershipNFTUTXO = findOwnershipNFTUTXO(userUtxos, this.category, name);
+		if(!ownershipNFTUTXO)
 		{
 			throw new UserOwnershipNFTUTXONotFoundError();
 		}
 
-		// Find the funding UTXO with the highest satoshis.
-		const fundingUTXO: Utxo | null = userUtxos.reduce<Utxo | null>((max, utxo) => (!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max, null);
-
-		if(!fundingUTXO) 
+		const fundingUTXO = findFundingUTXO(userUtxos);
+		if(!fundingUTXO)
 		{
 			throw new UserFundingUTXONotFoundError();
 		}
 
-		// Convert user address to public key hash.
-		const pkh = convertAddressToPkh(address);
+		const placeholderUnlocker = createPlaceholderUnlocker(address);
 
-		// Define a placeholder unlocker for the user UTXO.
-		// @ts-ignore
-		const placeholderUnlocker: Unlocker = {
-			generateLockingBytecode: () => convertPkhToLockingBytecode(pkh),
-			generateUnlockingBytecode: () => Uint8Array.from(Array(0)),
-		};
-
-		// Build the transaction for adding a record.
 		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
 			.addInput(internalAuthNFTUTXO, domainContract.unlock.useAuth(BigInt(1)))
 			.addInput(ownershipNFTUTXO, placeholderUnlocker)
@@ -288,39 +213,31 @@ export class DomainManager
 			amount: fundingUTXO.satoshis,
 		});
 
-		const transactionSize = transaction.build().length;
-		transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - BigInt(transactionSize);
+		adjustLastOutputForFee(transaction, fundingUTXO, fundingUTXO.satoshis);
 
 		return transaction;
 	}
 
 	/**
 	 * Creates a transaction for claiming a domain.
-	 * 
+	 *
 	 * @param {CreateClaimDomainParams} params - The parameters for creating the claim domain transaction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
 	 */
-	public async createClaimDomainTransaction({ name }: CreateClaimDomainParams): Promise<TransactionBuilder> 
+	public async createClaimDomainTransaction({ name }: CreateClaimDomainParams): Promise<TransactionBuilder>
 	{
-		// Validate the domain name.
-		if(!isValidName(name)) 
+		if(!isValidName(name))
 		{
 			throw new InvalidNameError();
 		}
 
-		// Convert the domain name to hexadecimal and binary formats.
-		const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
-			.padStart(2, '0'))
-			.join('');
-		const nameBin = hexToBin(nameHex);
+		const { nameBin } = convertNameToBinary(name);
 
-		// Fetch UTXOs for registry, auction, and user addresses.
 		const [ registryUtxos, domainFactoryUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(this.contracts.Registry.address),
 			this.networkProvider.getUtxos(this.contracts.DomainFactory.address),
 		]);
 
-		// Retrieve necessary UTXOs for the transaction.
 		const threadNFTUTXO = getThreadUtxo({
 			utxos: registryUtxos,
 			category: this.category,
@@ -342,18 +259,17 @@ export class DomainManager
 			category: this.category,
 		});
 
-		// Extract bidder's public key hash and convert to address.
 		const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
 		const bidderLockingBytecode = convertPkhToLockingBytecode(bidderPKH);
-		// @ts-ignore
-		const bidderAddress = lockingBytecodeToCashAddress({ bytecode: bidderLockingBytecode }).address;
+		const bidderAddressResult = lockingBytecodeToCashAddress({ bytecode: bidderLockingBytecode });
 
-		if(typeof bidderAddress !== 'string') 
+		if(typeof bidderAddressResult !== 'object' || !bidderAddressResult.address)
 		{
 			throw new Error('Invalid prev bidder address');
 		}
 
-		// Construct the Domain contract with the provided parameters.
+		const bidderAddress = bidderAddressResult.address;
+
 		const domainContract = constructDomainContract({
 			name: name,
 			category: this.category,
@@ -361,9 +277,8 @@ export class DomainManager
 			options: this.options,
 		});
 
-		const registrationId = runningAuctionUTXO.token?.amount.toString(16).padStart(16, '0');
+		const registrationId = createRegistrationId(runningAuctionUTXO);
 
-		// Build the transaction for claiming the domain.
 		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
 			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())
 			.addInput(authorizedContractUTXO, this.contracts.DomainFactory.unlock.call())
@@ -442,9 +357,7 @@ export class DomainManager
 			amount: platformFee,
 		});
 
-		const transactionSize = transaction.build().length;
-		transaction.outputs[transaction.outputs.length - 1].amount = platformFee - BigInt(transactionSize);
-	
+		adjustLastOutputForFee(transaction, runningAuctionUTXO, platformFee);
 
 		return transaction;
 	}

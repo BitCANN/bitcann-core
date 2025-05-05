@@ -36,7 +36,7 @@ export const constructDomainContract = (params: {
 
 /**
  * Retrieves the partial bytecode of the Domain contract.
- * 
+ *
  * @param {string} category - The category identifier for the domain.
  * @param {Object} options - The options for constructing the Domain contract.
  * @param {NetworkProvider} options.provider - The network provider.
@@ -47,18 +47,18 @@ export const getDomainPartialBytecode = (category: string, options: { provider: 
 {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(category).reverse());
-	
+
 	// Placeholder name used for constructing a partial domain contract bytecode.
 	const placeholderName = 'test';
 	const placeholderNameHex = Array.from(placeholderName).map(char => char.charCodeAt(0).toString(16)
 		.padStart(2, '0'))
 		.join('');
-	
+
 	// Construct a placeholder domain contract to extract partial bytecode.
 	const PlaceholderDomainContract = new Contract(BitCANNArtifacts.Domain, [ BigInt(1), placeholderNameHex, reversedCategory ], options);
 	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
 	const domainPartialBytecode = PlaceholderDomainContract.bytecode.slice(sliceIndex, PlaceholderDomainContract.bytecode.length);
-	
+
 	return domainPartialBytecode;
 };
 

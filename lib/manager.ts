@@ -5,12 +5,12 @@ import type { ManagerConfig } from './interfaces/common.js';
 import { DomainStatusType } from './interfaces/domain.js';
 import { AuctionManager } from './auction.js';
 import { BidManager } from './bid.js';
-import { constructContracts } from './util/contract.js';
 import { DomainManager } from './domain.js';
 import { GuardManager } from './guard.js';
+import { constructContracts } from './util/index.js';
 
 
-export class BitCANNManager 
+export class BitCANNManager
 {
 	// Config to build the contracts in the BitCANN system.
 	public category: string;
@@ -34,7 +34,7 @@ export class BitCANNManager
 	private domainManager: DomainManager;
 	private guardManager: GuardManager;
 
-	constructor(config: ManagerConfig) 
+	constructor(config: ManagerConfig)
 	{
 		this.category = config.category;
 		this.minStartingBid = config.minStartingBid;
@@ -104,19 +104,19 @@ export class BitCANNManager
 
 	/**
 	 * Retrieves the records associated with a specified domain.
-	 * 
+	 *
 	 * @param {string} name - The domain name for which to retrieve records.
 	 * @param {boolean} keepDuplicates - Whether to keep duplicate records.
 	 * @returns {Promise<string[]>} A promise that resolves to an array of domain records.
 	 */
-	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]> 
+	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]>
 	{
 		return this.domainManager.getRecords({ name, keepDuplicates });
 	}
 
 	/**
 	 * Fetches all active auctions.
-	 * 
+	 *
 	 * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
 	public async getAuctions(): Promise<Utxo[]>
@@ -126,7 +126,7 @@ export class BitCANNManager
 
 	/**
 	 * Retrieves the transaction history.
-	 * 
+	 *
 	 * @returns {Promise<{ transactionHex: string; name: string }[]>} A promise that resolves to an array of transaction history objects, each containing a transaction hex and a domain name.
 	 */
 	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
@@ -136,9 +136,9 @@ export class BitCANNManager
 
 	/**
 	 * Retrieves detailed information about a specific domain.
-	 * 
+	 *
 	 * @param {string} fullName - The full domain name to retrieve information for.
-	 * @returns {Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>} 
+	 * @returns {Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>}
 	 * A promise that resolves to an object containing the domain's address, contract, UTXOs, and status.
 	 */
 	public async getDomain(fullName: string): Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>
@@ -150,7 +150,7 @@ export class BitCANNManager
 
 	/**
 	 * Accumulates internal tokens. Currently a placeholder method.
-	 * 
+	 *
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
 	public async accumulateInternalTokens(): Promise<void>
@@ -160,7 +160,7 @@ export class BitCANNManager
 
 	/**
 	 * Initiates the creation of an auction transaction for a specified domain.
-	 * 
+	 *
 	 * @param {Object} params - The parameters required for the auction transaction.
 	 * @param {string} params.name - The domain name to be auctioned.
 	 * @param {number} params.amount - The bid amount for the auction.
@@ -169,8 +169,8 @@ export class BitCANNManager
 	 * @throws {InvalidNameError} If the provided domain name is invalid.
 	 * @throws {UserUTXONotFoundError} If no user UTXO is found for the transaction.
 	 */
-	public async createAuctionTransaction({ 
-		name, 
+	public async createAuctionTransaction({
+		name,
 		amount,
 		address,
 	}: {
@@ -184,7 +184,7 @@ export class BitCANNManager
 
 	/**
 	 * Creates a bid transaction for a specified domain auction.
-	 * 
+	 *
 	 * @param {Object} params - The parameters for the bid transaction.
 	 * @param {string} params.name - The domain name being bid on.
 	 * @param {number} params.amount - The bid amount.
@@ -198,7 +198,7 @@ export class BitCANNManager
 
 	/**
 	 * Creates a transaction to claim a domain.
-	 * 
+	 *
 	 * @param {Object} params - The parameters for claiming the domain.
 	 * @param {string} params.name - The domain name to claim.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the domain.
@@ -210,7 +210,7 @@ export class BitCANNManager
 
 	/**
 	 * Proves that an auction name is invalid. Currently logs the name.
-	 * 
+	 *
 	 * @param {string} name - The auction name to validate.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
@@ -221,7 +221,7 @@ export class BitCANNManager
 
 	/**
 	 * Proves that an auction is a duplicate. Currently logs the name.
-	 * 
+	 *
 	 * @param {string} name - The auction name to check for duplication.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
@@ -232,7 +232,7 @@ export class BitCANNManager
 
 	/**
 	 * Proves that an auction is illegal. Currently logs the name.
-	 * 
+	 *
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
@@ -243,7 +243,7 @@ export class BitCANNManager
 
 	/**
 	 * Creates a transaction to add a record to a domain.
-	 * 
+	 *
 	 * @param {Object} params - The parameters for the record transaction.
 	 * @param {string} params.name - The domain name to which the record will be added.
 	 * @param {string} params.record - The record data to add.

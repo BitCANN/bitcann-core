@@ -50,11 +50,13 @@ export const findFirstInvalidCharacterIndex = (name: string): number =>
  */
 export const convertNameToBinary = (name: string): { nameHex: string; nameBin: Uint8Array } =>
 {
-	const nameHex = Array.from(name).map(char => char.charCodeAt(0).toString(16)
-		.padStart(2, '0'))
+	const nameHex = Array.from(name)
+		.map(char => char.charCodeAt(0)
+			.toString(16)
+			.padStart(2, '0'))
 		.join('');
 	const nameBin = hexToBin(nameHex);
-	
+
 	return { nameHex, nameBin };
 };
 

@@ -108,6 +108,7 @@
         }],
         "no-promise-executor-return": "off",
         "function-paren-newline": "off",
+        "no-trailing-spaces": ["error", { "skipBlankLines": false }],
 
         // TypeScript specific rules
         "@typescript-eslint/member-delimiter-style": ["error"],

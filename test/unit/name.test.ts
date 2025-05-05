@@ -1,16 +1,16 @@
 import { describe, it, expect } from '@jest/globals';
-import { isValidName } from '../../lib/util/name';
+import { isValidName } from '../../lib/util';
 
-describe('isValidName', () => 
+describe('isValidName', () =>
 {
-	it('should return true for valid names', () => 
+	it('should return true for valid names', () =>
 	{
 		expect(isValidName('valid-name')).toBe(true);
 		expect(isValidName('ValidName123')).toBe(true);
 		expect(isValidName('another-valid-name')).toBe(true);
 	});
 
-	it('should return false for invalid names', () => 
+	it('should return false for invalid names', () =>
 	{
 		// contains space
 		expect(isValidName('invalid name')).toBe(false);

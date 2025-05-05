@@ -1,6 +1,6 @@
 import type { NetworkProvider } from 'cashscript';
 
-export type ManagerConfig = 
+export type ManagerConfig =
 {
 	/** network provider to use for BCH network operations. */
 	networkProvider?: NetworkProvider;

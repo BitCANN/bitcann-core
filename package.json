@@ -54,7 +54,7 @@
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.31.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.3.1",
+    "ts-jest": "^29.3.2",
     "ts-node": "^10.9.2",
     "typedoc": "^0.27.9",
     "typedoc-plugin-coverage": "^3.4.1",

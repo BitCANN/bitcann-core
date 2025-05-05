@@ -1,6 +1,6 @@
 import type { NetworkProvider, Contract } from 'cashscript';
 
-export interface BidConfig 
+export interface BidConfig
 {
 	category: string;
 	minBidIncreasePercentage: number;
@@ -8,9 +8,9 @@ export interface BidConfig
 	contracts: Record<string, Contract>;
 }
 
-export interface BidParams 
+export interface BidParams
 {
 	name: string;
 	amount: number;
 	address: string;
-} 
+}
