@@ -1,10 +1,10 @@
-import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
+import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, lockingBytecodeToCashAddress, hash256 } from '@bitauth/libauth';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
-import type { AddressType,  NetworkProvider, Utxo } from 'cashscript';
+import type { AddressType,  NetworkProvider, Utxo, Unlocker } from 'cashscript';
 import { Contract, TransactionBuilder } from 'cashscript';
 import { constructDomainContract, getDomainPartialBytecode } from './util/contract.js';
 import { buildLockScriptP2SH32, extractOpReturnPayload, lockScriptToAddress, pushDataHex } from './util/index.js';
-import { DomainConfig, CreateRecordParams, CreateClaimDomainParams, DomainInfo, DomainStatusType } from './interfaces/domain.js';
+import { DomainConfig, CreateClaimDomainParams, DomainInfo, DomainStatusType, CreateRecordsParams } from './interfaces/domain.js';
 import { convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode, getAuthorizedContractUtxo, getDomainMintingUtxo, getRunningAuctionUtxo, getThreadUtxo } from './util/utxo.js';
 import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from './errors.js';
 import { isValidName } from './util/name.js';
@@ -48,7 +48,7 @@ export class DomainManager
 	 * @param {string} name - The domain name to retrieve records for.
 	 * @returns {Promise<string[]>} A promise that resolves to the domain records.
 	 */
-	public async getRecords(name: string): Promise<string[]> 
+	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]> 
 	{
 		const domainContract = constructDomainContract({
 			name,
@@ -61,7 +61,7 @@ export class DomainManager
 		// @ts-ignore
 		const history = await fetchHistory(this.networkProvider.electrum, domainContract.address);
 
-		const records: string[] = [];
+		let records: string[] = [];
 		const validCandidateTransactions = [];
 
 		// Iterate over each transaction in the history.
@@ -121,6 +121,23 @@ export class DomainManager
 			}
 		}
 
+		if(keepDuplicates)
+		{
+			records = [ ...new Set(records) ];
+		}
+
+		// Filter out 'RMV' records and records that match the hash256 of the 'RMV' record
+		records = records.filter(record =>
+		{
+			if(record.startsWith('RMV ')) 
+			{
+				// Exclude the 'RMV' record itself
+				return false;
+			}
+			
+			return !records.some(rmvRecord => rmvRecord.startsWith('RMV ') && binToHex(hash256(hexToBin(record))) === rmvRecord.split(' ')[1]);
+		});
+
 		return records;
 	}
 
@@ -170,10 +187,10 @@ export class DomainManager
 	/**
 	 * Creates a transaction for adding a record to a domain.
 	 * 
-	 * @param {CreateRecordParams} params - The parameters for creating the record transaction.
+	 * @param {CreateRecordsParams} params - The parameters for creating the record transaction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
 	 */
-	public async createRecordTransaction({ name, record, address }: CreateRecordParams): Promise<TransactionBuilder> 
+	public async createRecordsTransaction({ name, records, address }: CreateRecordsParams): Promise<TransactionBuilder> 
 	{
 		// Construct the Domain contract with the provided parameters.
 		const domainContract = constructDomainContract({
@@ -203,7 +220,9 @@ export class DomainManager
 
 		// Find the ownership NFT UTXO.
 		const ownershipNFTUTXO: Utxo | null = userUtxos.find(utxo =>
-			utxo.token?.nft?.capability === 'none' && utxo.token?.category === this.category,
+			utxo.token?.nft?.capability === 'none'
+			&& utxo.token?.category === this.category
+			&& Buffer.from(utxo.token?.nft?.commitment.slice(16), 'hex').toString('utf8') === name,
 		) || null;
 
 		if(!ownershipNFTUTXO) 
@@ -218,8 +237,6 @@ export class DomainManager
 		{
 			throw new UserFundingUTXONotFoundError();
 		}
-
-		const change = fundingUTXO.satoshis - BigInt(2000);
 
 		// Convert user address to public key hash.
 		const pkh = convertAddressToPkh(address);
@@ -259,12 +276,20 @@ export class DomainManager
 						commitment: ownershipNFTUTXO.token!.nft!.commitment,
 					},
 				},
-			})
-			.addOpReturnOutput([ record ])
-			.addOutput({
-				to: address,
-				amount: change,
 			});
+
+		for(const record of records)
+		{
+			transaction.addOpReturnOutput([ record ]);
+		}
+
+		transaction.addOutput({
+			to: address,
+			amount: fundingUTXO.satoshis,
+		});
+
+		const transactionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - BigInt(transactionSize);
 
 		return transaction;
 	}

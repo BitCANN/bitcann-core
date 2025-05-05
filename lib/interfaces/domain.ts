@@ -28,10 +28,10 @@ export interface DomainConfig
 	};
 }
 
-export interface CreateRecordParams 
+export interface CreateRecordsParams 
 {
 	name: string;
-	record: string;
+	records: string[];
 	address: string;
 }
 

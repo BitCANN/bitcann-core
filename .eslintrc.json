@@ -3,7 +3,8 @@
         "browser": true,
         "commonjs": true,
         "es6": true,
-        "node": true
+        "node": true,
+        "jest": true
     },
     "parser": "@typescript-eslint/parser",
     "plugins": ["import", "@typescript-eslint"],
@@ -135,8 +136,8 @@
         }],
         "import/no-unresolved": ["off"],
         "import/no-extraneous-dependencies": ["off"],
-        "no-undefined": ["off"],
-        "no-undef": ["off"],
+        "no-undefined": ["error"],
+        "no-undef": ["error"],
         "@typescript-eslint/space-before-blocks": "off"
     }
 }

@@ -106,11 +106,12 @@ export class BitCANNManager
 	 * Retrieves the records associated with a specified domain.
 	 * 
 	 * @param {string} name - The domain name for which to retrieve records.
+	 * @param {boolean} keepDuplicates - Whether to keep duplicate records.
 	 * @returns {Promise<string[]>} A promise that resolves to an array of domain records.
 	 */
-	public async getRecords(name: string): Promise<string[]> 
+	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]> 
 	{
-		return this.domainManager.getRecords(name);
+		return this.domainManager.getRecords({ name, keepDuplicates });
 	}
 
 	/**
@@ -249,8 +250,8 @@ export class BitCANNManager
 	 * @param {string} params.address - The address associated with the record.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the record transaction.
 	 */
-	public async createRecordTransaction({ name, record, address }: { name: string; record: string; address: string }): Promise<TransactionBuilder>
+	public async createRecordsTransaction({ name, records, address }: { name: string; records: string[]; address: string }): Promise<TransactionBuilder>
 	{
-		return this.domainManager.createRecordTransaction({ name, record, address });
+		return this.domainManager.createRecordsTransaction({ name, records, address });
 	}
 }

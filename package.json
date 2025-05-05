@@ -15,6 +15,7 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
     "prepare": "npm run build",
     "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix",
     "syntax": "tsc --noEmit"
   },
   "files": [

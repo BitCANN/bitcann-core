@@ -14,12 +14,6 @@ import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
  */
 export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
-	// console.log('utxos: ', utxos);
-	for (const utxo of utxos) {
-		// @ts-ignore
-		console.log('utxo: ', utxo.token);
-	}
-
 	const utxo = utxos.find(u => 
 		u.token?.nft?.capability === 'minting'
 		&& u.token?.category === category

@@ -174,9 +174,9 @@ describe('BitCANNManager', () =>
 		it('should return empty object for a domain', async () => 
 		{
 			const domain = 'test.bch';
-			const records = await manager.getRecords(domain);
+			const records = await manager.getRecords({ name: domain });
 			expect(records).toBeDefined();
-			expect(records).toStrictEqual({});
+			expect(records).toStrictEqual([]);
 		});
 	});
 

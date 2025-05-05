@@ -6,6 +6,6 @@ import {
 (async () =>
 {
 	const name = 'test';
-	const records = await bitcannManager.getRecords(name);
+	const records = await bitcannManager.getRecords({ name });
 	console.log(records);
 })();
