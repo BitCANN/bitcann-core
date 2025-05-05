@@ -409,19 +409,17 @@ export class DomainManager
 				},
 			});
 
-		// Add platform fee if applicable.
-		if(this.platformFeeAddress) 
-		{
-			const platformFee = runningAuctionUTXO.satoshis * BigInt(this.maxPlatformFeePercentage) / BigInt(100);
+		const feeRecipient = this.platformFeeAddress ? this.platformFeeAddress : bidderAddress;
+		const platformFee = runningAuctionUTXO.satoshis * BigInt(this.maxPlatformFeePercentage) / BigInt(100);
 
-			transaction.addOutput({
-				to: this.platformFeeAddress,
-				amount: platformFee,
-			});
+		transaction.addOutput({
+			to: feeRecipient,
+			amount: platformFee,
+		});
 
-			const transactionSize = transaction.build().length;
-			transaction.outputs[transaction.outputs.length - 1].amount = platformFee - BigInt(transactionSize);
-		}
+		const transactionSize = transaction.build().length;
+		transaction.outputs[transaction.outputs.length - 1].amount = platformFee - BigInt(transactionSize);
+	
 
 		return transaction;
 	}

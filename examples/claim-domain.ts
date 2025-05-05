@@ -1,3 +1,4 @@
+import { ElectrumNetworkProvider } from 'cashscript';
 import {
 	bitcannManager,
 } from './common/setup.js';
@@ -19,5 +20,9 @@ import { getSignedTransaction } from './common/sign.js';
   })
 
   console.log(preparedTransaction);
-	
+
+  const electrum = new ElectrumNetworkProvider('mainnet');
+  // @ts-ignore
+  const txid = await electrum.sendRawTransaction(preparedTransaction.hex);
+  console.log('txid: ', txid);
 })();

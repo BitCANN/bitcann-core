@@ -4,12 +4,13 @@ import { BitCANNManager } from "../../lib/index.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Previous.
-// export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
-// export const minWaitTime = 1;
+// Test with block-based relative timelock.
+export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
+export const minWaitTime = 1;
 
-export const domainTokenCategory = '6020caed04c53335f4c9418ae1c999f5678a2743a8c3ec38eebcc4f794c3e7a6';
-export const minWaitTime = 3;
+// Test with time-based relative timelock.
+// export const domainTokenCategory = 'a78e4d0bb8d9c4227e3e03b20bef87b31a6e03ddcd56053671ab95770abd5099';
+// export const minWaitTime = 4194306;
 
 export const minStartingBid = 10000;
 export const minBidIncreasePercentage = 5;

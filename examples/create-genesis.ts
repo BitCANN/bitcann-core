@@ -7,13 +7,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // STEP 1: Create the genesis category using the `createGenesisCategory` function
-const domainTokenCategory = '6020caed04c53335f4c9418ae1c999f5678a2743a8c3ec38eebcc4f794c3e7a6';
+const domainTokenCategory = 'a78e4d0bb8d9c4227e3e03b20bef87b31a6e03ddcd56053671ab95770abd5099';
 
 // STEP 2: Figure out the following parameters
 const minStartingBid = 10000;
 const minBidIncreasePercentage = 5;
 const inactivityExpiryTime = 1;
-const minWaitTime = 3;
+const minWaitTime = 4194306;
 const maxPlatformFeePercentage = 50;
 const platformFeeAddress = process.env.FEE_COLLECTION_ADDRESS;
 const genesisTokenAmount = BigInt('9223372036854775807');
@@ -147,7 +147,7 @@ const createMintingSetup = async () => {
 
 (async () =>
   {
-    await createSuitableUTXO();
+    // await createSuitableUTXO();
     // await createGenesisCategory();
     await createMintingSetup();
   })();
