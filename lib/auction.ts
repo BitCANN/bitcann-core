@@ -3,8 +3,8 @@ import type { NetworkProvider, Utxo } from 'cashscript';
 import { TransactionBuilder } from 'cashscript';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { DUST } from './constants.js';
-import { InvalidNameError, UserUTXONotFoundError } from './errors.js';
-import { convertAddressToPkh, convertNameToBinary, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, isValidName } from './util/index.js';
+import { UserUTXONotFoundError } from './errors.js';
+import { adjustLastOutputForFee, convertAddressToPkh, convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, validateName } from './util/index.js';
 import type { AuctionConfig, AuctionParams } from './interfaces/auction.js';
 
 /**
@@ -42,12 +42,9 @@ export class AuctionManager
 	 */
 	public async createAuctionTransaction({ name, amount, address }: AuctionParams): Promise<TransactionBuilder>
 	{
-		if(!isValidName(name))
-		{
-			throw new InvalidNameError();
-		}
+		validateName(name);
 
-		const { nameBin } = convertNameToBinary(name);
+		const { nameBin } = convertNameToBinaryAndHex(name);
 		const [ registryUtxos, auctionUtxos, userUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(this.contracts.Registry.address),
 			this.networkProvider.getUtxos(this.contracts.Auction.address),
@@ -130,13 +127,10 @@ export class AuctionManager
 			.addOpReturnOutput([ name ])
 			.addOutput({
 				to: address,
-				amount: userUTXO.satoshis - BigInt(amount),
+				amount: userUTXO.satoshis,
 			});
 
-		const transactionSize = transaction.build().length;
-		transaction.outputs[transaction.outputs.length - 1].amount = userUTXO.satoshis - (BigInt(amount) + BigInt(transactionSize));
-
-		return transaction;
+		return adjustLastOutputForFee(transaction, userUTXO, BigInt(amount));
 	}
 
 	/**

@@ -18,9 +18,9 @@ export {
 
 // Name utilities
 export {
-	isValidName,
+	validateName,
 	findFirstInvalidCharacterIndex,
-	convertNameToBinary,
+	convertNameToBinaryAndHex,
 } from './name.js';
 
 // UTXO utilities

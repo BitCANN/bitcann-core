@@ -48,13 +48,17 @@ export const createPlaceholderUnlocker = (address: string): Unlocker =>
 	};
 };
 
+
+
 /**
  * Adjusts the last output of a transaction to account for transaction size fee
  */
-export const adjustLastOutputForFee = (transaction: TransactionBuilder, fundingUTXO: Utxo, fee: bigint): void =>
+export const adjustLastOutputForFee = (transaction: TransactionBuilder, fundingUTXO: Utxo, deductable: bigint = BigInt(0)): TransactionBuilder =>
 {
 	const transactionSize = transaction.build().length;
-	transaction.outputs[transaction.outputs.length - 1].amount = fee - BigInt(transactionSize);
+	transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(transactionSize) + deductable);
+
+	return transaction;
 };
 
 /**

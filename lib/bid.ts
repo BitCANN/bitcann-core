@@ -3,8 +3,8 @@ import type { NetworkProvider } from 'cashscript';
 import { TransactionBuilder } from 'cashscript';
 
 import { EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
-import { InvalidBidAmountError, InvalidNameError, UserUTXONotFoundError } from './errors.js';
-import { convertNameToBinary, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, isValidName } from './util/index.js';
+import { InvalidBidAmountError, UserUTXONotFoundError } from './errors.js';
+import { convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from './util/index.js';
 import type { BidConfig, BidParams } from './interfaces/bid.js';
 
 /**
@@ -45,12 +45,9 @@ export class BidManager
      */
 	public async createBidTransaction({ name, amount, address }: BidParams): Promise<TransactionBuilder>
 	{
-		if(!isValidName(name))
-		{
-			throw new InvalidNameError();
-		}
+		validateName(name);
 
-		const { nameBin } = convertNameToBinary(name);
+		const { nameBin } = convertNameToBinaryAndHex(name);
 		const [ registryUtxos, bidUtxos, userUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(this.contracts.Registry.address),
 			this.networkProvider.getUtxos(this.contracts.Bid.address),
@@ -85,7 +82,7 @@ export class BidManager
 		}
 
 		const prevBidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
-		const prevBidderAddress = binToHex(convertNameToBinary(prevBidderPKH).nameBin);
+		const prevBidderAddress = binToHex(convertNameToBinaryAndHex(prevBidderPKH).nameBin);
 
 		const placeholderUnlocker = createPlaceholderUnlocker(address);
 
@@ -118,7 +115,7 @@ export class BidManager
 					amount: runningAuctionUTXO.token.amount,
 					nft: {
 						capability: 'mutable',
-						commitment: binToHex(convertNameToBinary(address).nameBin) + binToHex(nameBin),
+						commitment: binToHex(convertNameToBinaryAndHex(address).nameBin) + binToHex(nameBin),
 					},
 				},
 			})

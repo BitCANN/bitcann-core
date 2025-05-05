@@ -1,17 +1,21 @@
 import { hexToBin } from '@bitauth/libauth';
+import { InvalidNameError } from '../errors';
 
 /**
- * Checks if the given name is valid.
+ * Validates the given name.
  * A valid name contains only alphanumeric characters and hyphens.
  *
  * @param {string} name - The name to validate.
- * @returns {boolean} True if the name is valid, false otherwise.
+ * @throws {InvalidNameError} If the name is invalid.
  */
-export const isValidName = (name: string): boolean =>
+export const validateName = (name: string): void =>
 {
 	const regex = /^[a-zA-Z0-9-]+$/;
 
-	return regex.test(name);
+	if(!regex.test(name))
+	{
+		throw new InvalidNameError();
+	}
 };
 
 
@@ -48,7 +52,7 @@ export const findFirstInvalidCharacterIndex = (name: string): number =>
  *  - nameHex: The hexadecimal representation of the name.
  *  - nameBin: The binary (Uint8Array) representation of the name.
  */
-export const convertNameToBinary = (name: string): { nameHex: string; nameBin: Uint8Array } =>
+export const convertNameToBinaryAndHex = (name: string): { nameHex: string; nameBin: Uint8Array } =>
 {
 	const nameHex = Array.from(name)
 		.map(char => char.charCodeAt(0)

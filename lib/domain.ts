@@ -3,13 +3,13 @@ import { fetchHistory } from '@electrum-cash/protocol';
 import type { AddressType,  NetworkProvider } from 'cashscript';
 import { Contract, TransactionBuilder } from 'cashscript';
 import { DomainConfig, CreateClaimDomainParams, DomainInfo, DomainStatusType, CreateRecordsParams } from './interfaces/domain.js';
-import { InternalAuthNFTUTXONotFoundError, InvalidNameError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from './errors.js';
+import { InternalAuthNFTUTXONotFoundError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from './errors.js';
 import {
 	adjustLastOutputForFee,
 	buildLockScriptP2SH32,
 	constructDomainContract,
 	convertCashAddressToTokenAddress,
-	convertNameToBinary,
+	convertNameToBinaryAndHex,
 	convertPkhToLockingBytecode,
 	createPlaceholderUnlocker,
 	createRegistrationId,
@@ -24,9 +24,9 @@ import {
 	getRunningAuctionUtxo,
 	getThreadUtxo,
 	getValidCandidateTransactions,
-	isValidName,
 	lockScriptToAddress,
 	pushDataHex,
+	validateName,
 } from './util/index.js';
 
 
@@ -213,9 +213,7 @@ export class DomainManager
 			amount: fundingUTXO.satoshis,
 		});
 
-		adjustLastOutputForFee(transaction, fundingUTXO, fundingUTXO.satoshis);
-
-		return transaction;
+		return adjustLastOutputForFee(transaction, fundingUTXO);
 	}
 
 	/**
@@ -226,12 +224,9 @@ export class DomainManager
 	 */
 	public async createClaimDomainTransaction({ name }: CreateClaimDomainParams): Promise<TransactionBuilder>
 	{
-		if(!isValidName(name))
-		{
-			throw new InvalidNameError();
-		}
+		validateName(name);
 
-		const { nameBin } = convertNameToBinary(name);
+		const { nameBin } = convertNameToBinaryAndHex(name);
 
 		const [ registryUtxos, domainFactoryUtxos ] = await Promise.all([
 			this.networkProvider.getUtxos(this.contracts.Registry.address),
@@ -357,8 +352,6 @@ export class DomainManager
 			amount: platformFee,
 		});
 
-		adjustLastOutputForFee(transaction, runningAuctionUTXO, platformFee);
-
-		return transaction;
+		return adjustLastOutputForFee(transaction, runningAuctionUTXO);
 	}
 }

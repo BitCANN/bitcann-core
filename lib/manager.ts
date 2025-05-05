@@ -8,6 +8,7 @@ import { BidManager } from './bid.js';
 import { DomainManager } from './domain.js';
 import { GuardManager } from './guard.js';
 import { constructContracts } from './util/index.js';
+import { createClaimDomainTransaction } from './functions/claim-domain.js';
 
 
 export class BitCANNManager
@@ -205,7 +206,18 @@ export class BitCANNManager
 	 */
 	public async createClaimDomainTransaction({ name }: { name: string }): Promise<TransactionBuilder>
 	{
-		return this.domainManager.createClaimDomainTransaction({ name });
+		return createClaimDomainTransaction({
+			category: this.category,
+			registryContract: this.contracts.Registry,
+			domainFactoryContract: this.contracts.DomainFactory,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
+			minWaitTime: this.minWaitTime,
+			name,
+			networkProvider: this.networkProvider,
+			options: this.options,
+			platformFeeAddress: this.platformFeeAddress,
+		});
 	}
 
 	/**
