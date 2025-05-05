@@ -13,7 +13,7 @@ import {
 	getThreadUtxo,
 	validateName,
 } from '../util/index.js';
-import type { FetchClaimDomainUtxosParams, CreateClaimDomainTransactionParams } from '../interfaces/claim-domain.js';
+import type { FetchClaimDomainUtxosParams, CreateClaimDomainTransactionParams } from '../interfaces/index.js';
 
 /**
  * Fetches UTXOs required for claiming a domain.

@@ -5,7 +5,7 @@ import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import { DUST } from './constants.js';
 import { UserUTXONotFoundError } from './errors.js';
 import { adjustLastOutputForFee, convertAddressToPkh, convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, validateName } from './util/index.js';
-import type { AuctionConfig, AuctionParams } from './interfaces/auction.js';
+import type { AuctionConfig, AuctionParams } from './interfaces/index.js';
 
 /**
  * The AuctionManager class is responsible for managing auction-related operations,

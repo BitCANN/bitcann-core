@@ -1,5 +1,5 @@
 import { type AddressType, TransactionBuilder, type NetworkProvider, type Utxo } from 'cashscript';
-import type { GuardConfig } from './interfaces/guard.js';
+import type { GuardConfig } from './interfaces/index.js';
 import {
 	getAllRunningAuctionUtxos,
 	getAuthorizedContractUtxo,

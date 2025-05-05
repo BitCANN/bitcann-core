@@ -1,5 +1,5 @@
 import { hexToBin } from '@bitauth/libauth';
-import { InvalidNameError } from '../errors';
+import { InvalidNameError } from '../errors.js';
 
 /**
  * Validates the given name.

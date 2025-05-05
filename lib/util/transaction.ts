@@ -1,9 +1,10 @@
-import type { Utxo, Unlocker, Contract, NetworkProvider } from 'cashscript';
+import type { Utxo, Unlocker, Contract } from 'cashscript';
 import { TransactionBuilder } from 'cashscript';
-import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, hash256 } from '@bitauth/libauth';
 import { fetchTransaction } from '@electrum-cash/protocol';
+import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 import { extractOpReturnPayload } from './binary.js';
+import type { GetValidCandidateTransactionsParams } from '../interfaces/index.js';
 
 /**
  * Finds the internal authorization NFT UTXO from a list of UTXOs
@@ -100,19 +101,18 @@ export const isValidTransaction = (tx: any, domainContract: Contract, category: 
 /**
  * Gets valid candidate transactions from history
  */
-export const getValidCandidateTransactions = async (
-	history: any[],
-	domainContract: Contract,
-	category: string,
-	networkProvider: NetworkProvider,
-): Promise<any[]> =>
+export const getValidCandidateTransactions = async ({
+	history,
+	domainContract,
+	category,
+	electrumClient,
+}: GetValidCandidateTransactionsParams): Promise<any[]> =>
 {
 	const validCandidateTransactions = [];
 
 	for(const txn of history)
 	{
-		// @ts-ignore - NetworkProvider type doesn't expose electrum property
-		const tx = await fetchTransaction(networkProvider.electrum, txn.tx_hash);
+		const tx = await fetchTransaction(electrumClient, txn.tx_hash);
 		const decodedTx = decodeTransaction(hexToBin(tx));
 
 		if(isValidTransaction(decodedTx, domainContract, category))

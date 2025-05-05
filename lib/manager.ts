@@ -1,14 +1,15 @@
 import type { NetworkProvider, AddressType, Utxo } from 'cashscript';
 import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
 
-import type { ManagerConfig } from './interfaces/common.js';
-import { DomainStatusType } from './interfaces/domain.js';
+import type { ManagerConfig, DomainInfo } from './interfaces/index.js';
 import { AuctionManager } from './auction.js';
 import { BidManager } from './bid.js';
-import { DomainManager } from './domain.js';
 import { GuardManager } from './guard.js';
 import { constructContracts } from './util/index.js';
 import { createClaimDomainTransaction } from './functions/claim-domain.js';
+import { fetchRecords } from './functions/fetch-records.js';
+import { getDomain } from './functions/get-domain.js';
+import { createRecordsTransaction } from './functions/create-records.js';
 
 
 export class BitCANNManager
@@ -32,7 +33,6 @@ export class BitCANNManager
 	// Managers for handling specific operations
 	private auctionManager: AuctionManager;
 	private bidManager: BidManager;
-	private domainManager: DomainManager;
 	private guardManager: GuardManager;
 
 	constructor(config: ManagerConfig)
@@ -81,17 +81,6 @@ export class BitCANNManager
 			contracts: this.contracts,
 		});
 
-		this.domainManager = new DomainManager({
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			inactivityExpiryTime: this.inactivityExpiryTime,
-			platformFeeAddress: this.platformFeeAddress || '',
-			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
-			minWaitTime: this.minWaitTime,
-			options: this.options,
-		});
-
 		this.guardManager = new GuardManager({
 			category: this.category,
 			networkProvider: this.networkProvider,
@@ -112,7 +101,15 @@ export class BitCANNManager
 	 */
 	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]>
 	{
-		return this.domainManager.getRecords({ name, keepDuplicates });
+		return fetchRecords({
+			name,
+			keepDuplicates,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+			// @ts-ignore
+			electrumClient: this.networkProvider.electrum,
+		});
 	}
 
 	/**
@@ -138,13 +135,17 @@ export class BitCANNManager
 	/**
 	 * Retrieves detailed information about a specific domain.
 	 *
-	 * @param {string} fullName - The full domain name to retrieve information for.
-	 * @returns {Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>}
-	 * A promise that resolves to an object containing the domain's address, contract, UTXOs, and status.
+	 * @param {string} name - The domain name to retrieve information for.
+	 * @returns {Promise<DomainInfo>} A promise that resolves to an object containing the domain's address and contract.
 	 */
-	public async getDomain(fullName: string): Promise<{ address: string; contract: Contract; utxos: Utxo[]; status: DomainStatusType }>
+	public async getDomain(name: string): Promise<DomainInfo>
 	{
-		return this.domainManager.getDomain(fullName);
+		return getDomain({
+			name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
 	}
 
 	// Write Methods
@@ -264,6 +265,14 @@ export class BitCANNManager
 	 */
 	public async createRecordsTransaction({ name, records, address }: { name: string; records: string[]; address: string }): Promise<TransactionBuilder>
 	{
-		return this.domainManager.createRecordsTransaction({ name, records, address });
+		return createRecordsTransaction({
+			name,
+			records,
+			address,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+			networkProvider: this.networkProvider,
+		});
 	}
 }

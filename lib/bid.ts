@@ -5,7 +5,7 @@ import { TransactionBuilder } from 'cashscript';
 import { EXPECTED_MAX_TRANSACTION_FEE } from './constants.js';
 import { InvalidBidAmountError, UserUTXONotFoundError } from './errors.js';
 import { convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from './util/index.js';
-import type { BidConfig, BidParams } from './interfaces/bid.js';
+import type { BidConfig, BidParams } from './interfaces/index.js';
 
 /**
  * The BidManager class is responsible for managing bid-related operations,
