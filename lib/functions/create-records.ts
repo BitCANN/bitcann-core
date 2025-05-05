@@ -2,16 +2,20 @@ import { TransactionBuilder } from 'cashscript';
 import { InternalAuthNFTUTXONotFoundError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from '../errors.js';
 import {
 	adjustLastOutputForFee,
-	constructDomainContract,
 	convertCashAddressToTokenAddress,
 	createPlaceholderUnlocker,
 	findFundingUTXO,
 	findInternalAuthNFTUTXO,
 	findOwnershipNFTUTXO,
 } from '../util/index.js';
-import { CreateRecordsParams } from '../interfaces/index.js';
+import { CreateRecordsParams, FetchRecordsUtxosParams, FetchRecordsUtxosReturnType } from '../interfaces/index.js';
 
-const fetchRecordsUtxos = async ({ name, category, domainContract, address, networkProvider }: any): Promise<any> =>
+
+export const fetchRecordsUtxos = async ({ name,
+	category,
+	domainContract,
+	address,
+	networkProvider }: FetchRecordsUtxosParams): Promise<FetchRecordsUtxosReturnType> =>
 {
 	const [ domainUTXOs, userUtxos ] = await Promise.all([
 		networkProvider.getUtxos(domainContract.address),
@@ -49,27 +53,14 @@ const fetchRecordsUtxos = async ({ name, category, domainContract, address, netw
  * @param {CreateRecordsParams} params - The parameters for creating the record transaction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
  */
-export const createRecordsTransaction = async ({ name,
-	records,
+export const createRecordsTransaction = async ({
 	address,
-	category,
-	inactivityExpiryTime,
-	options,
+	domainContract,
 	networkProvider,
-	utxos }: CreateRecordsParams): Promise<TransactionBuilder> =>
+	records,
+	utxos,
+}: CreateRecordsParams): Promise<TransactionBuilder> =>
 {
-	const domainContract = constructDomainContract({
-		name: name,
-		category: category,
-		inactivityExpiryTime: inactivityExpiryTime,
-		options: options,
-	});
-
-	if(!utxos)
-	{
-		utxos = await fetchRecordsUtxos({ name, category, inactivityExpiryTime, options, networkProvider });
-	}
-
 	const { internalAuthNFTUTXO, ownershipNFTUTXO, fundingUTXO } = utxos;
 
 	const placeholderUnlocker = createPlaceholderUnlocker(address);

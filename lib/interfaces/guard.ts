@@ -3,18 +3,18 @@ import type { AddressType, NetworkProvider } from 'cashscript';
 export interface GuardConfig
 {
 	category: string;
-	networkProvider: NetworkProvider;
 	contracts: Record<string, any>;
 	inactivityExpiryTime: number;
+	networkProvider: NetworkProvider;
 	options: {
-		provider: NetworkProvider;
 		addressType: AddressType;
+		provider: NetworkProvider;
 	};
 }
 
 export interface GuardParams
 {
-	name: string;
-	amount: number;
 	address: string;
+	amount: number;
+	name: string;
 }

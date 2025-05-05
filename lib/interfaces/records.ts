@@ -1,25 +1,37 @@
 import type { ElectrumClient } from '@electrum-cash/network';
 import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
-import type { NetworkProvider } from 'cashscript';
-
-export interface FetchRecordsParams
-{
-	name: string;
-	keepDuplicates?: boolean;
-	category: string;
-	inactivityExpiryTime: number;
-	options: any;
-	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
-}
+import type { Contract, NetworkProvider, Utxo } from 'cashscript';
 
 export interface CreateRecordsParams
 {
-	name: string;
+	address: string;
+	domainContract: Contract;
+	networkProvider: NetworkProvider;
 	records: string[];
+	utxos: FetchRecordsUtxosReturnType;
+}
+
+export interface FetchRecordsParams
+{
+	category: string;
+	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
+	inactivityExpiryTime: number;
+	keepDuplicates?: boolean;
+	name: string;
+	options: any;
+}
+
+export interface FetchRecordsUtxosParams
+{
 	address: string;
 	category: string;
-	inactivityExpiryTime: number;
-	options: any;
+	domainContract: Contract;
+	name: string;
 	networkProvider: NetworkProvider;
-	utxos?: any;
 }
+
+export type FetchRecordsUtxosReturnType = {
+	fundingUTXO: Utxo;
+	internalAuthNFTUTXO: Utxo;
+	ownershipNFTUTXO: Utxo;
+};

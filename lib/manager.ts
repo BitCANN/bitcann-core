@@ -5,11 +5,11 @@ import type { ManagerConfig, DomainInfo } from './interfaces/index.js';
 import { AuctionManager } from './auction.js';
 import { BidManager } from './bid.js';
 import { GuardManager } from './guard.js';
-import { constructContracts } from './util/index.js';
+import { constructContracts, constructDomainContract } from './util/index.js';
 import { createClaimDomainTransaction } from './functions/claim-domain.js';
 import { fetchRecords } from './functions/fetch-records.js';
 import { getDomain } from './functions/get-domain.js';
-import { createRecordsTransaction } from './functions/create-records.js';
+import { createRecordsTransaction, fetchRecordsUtxos } from './functions/create-records.js';
 
 
 export class BitCANNManager
@@ -265,14 +265,27 @@ export class BitCANNManager
 	 */
 	public async createRecordsTransaction({ name, records, address }: { name: string; records: string[]; address: string }): Promise<TransactionBuilder>
 	{
-		return createRecordsTransaction({
-			name,
-			records,
-			address,
+		const domainContract = constructDomainContract({
+			name: name,
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,
 			options: this.options,
+		});
+
+		const utxos = await fetchRecordsUtxos({
+			name,
+			category: this.category,
+			domainContract,
+			address,
 			networkProvider: this.networkProvider,
+		});
+
+		return createRecordsTransaction({
+			records,
+			address,
+			domainContract,
+			networkProvider: this.networkProvider,
+			utxos,
 		});
 	}
 }

@@ -4,8 +4,8 @@ import type { ElectrumClient } from '@electrum-cash/network';
 
 export interface GetValidCandidateTransactionsParams
 {
-	history: any[];
-	domainContract: Contract;
 	category: string;
+	domainContract: Contract;
 	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
+	history: any[];
 }
