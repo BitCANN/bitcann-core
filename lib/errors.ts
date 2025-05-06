@@ -196,3 +196,16 @@ export class DuplicateAuctionsDoNotExistError extends Error
 		super(message);
 	}
 }
+
+/**
+ * Error thrown when a Thread With Token UTXO is not found.
+ */
+export class ThreadWithTokenUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'Thread With Token UTXO not found';
+
+		super(message);
+	}
+}

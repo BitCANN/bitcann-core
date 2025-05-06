@@ -1,6 +1,6 @@
 import { binToHex, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
-import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError } from '../errors.js';
+import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError, ThreadWithTokenUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 
@@ -116,6 +116,30 @@ export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxo
 	return utxo;
 };
 
+/**
+ * Retrieves the thread UTXO with a token from a list of UTXOs.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @param {string} params.category - The category to match against.
+ * @returns {any} The thread UTXO with a token.
+ * @throws {ThreadWithTokenUTXONotFoundError} If no thread UTXO with a token is found.
+ */
+export const getThreadWithTokenUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+{
+	const utxo = utxos.find(u =>
+		u.token?.nft?.capability === 'none'
+		&& u.token?.category === category
+		&& u.token?.amount > BigInt(0),
+	);
+
+	if(!utxo)
+	{
+		throw new ThreadWithTokenUTXONotFoundError();
+	}
+
+	return utxo;
+};
 
 /**
  * Retrieves the auction UTXO from a list of UTXOs.

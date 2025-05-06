@@ -14,6 +14,7 @@ import { createBidTransaction, fetchBidUtxos } from './functions/place-bid.js';
 import { fetchInvalidNameGuardUtxos, penalizeInvalidAuctionName } from './functions/penalise-invalid-name.js';
 import { fetchDuplicateAuctionGuardUtxos, penalizeDuplicateAuction } from './functions/penalise-duplicate-auction.js';
 import { fetchIllegalAuctionGuardUtxos, penalizeIllegalAuction } from './functions/penalise-illegal-auction.js';
+import { accumulate, fetchAccumulationUtxos } from './functions/accumulation.js';
 
 
 export class BitCANNManager
@@ -342,6 +343,29 @@ export class BitCANNManager
 			domainContract,
 			networkProvider: this.networkProvider,
 			utxos,
+		});
+	}
+
+	/**
+	 * Accumulates tokens from thread to the minting utxo.
+	 *
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the accumulation.
+	 */
+	public async accumulateTokens({ address }: { address: string }): Promise<TransactionBuilder>
+	{
+		const utxos = await fetchAccumulationUtxos({
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			category: this.category,
+			address,
+		});
+
+		return accumulate({
+			networkProvider: this.networkProvider,
+			registryContract: this.contracts.Registry,
+			accumulatorContract: this.contracts.Accumulator,
+			utxos,
+			address,
 		});
 	}
 }
