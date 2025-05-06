@@ -1,16 +1,30 @@
-import type { NetworkProvider, Contract } from 'cashscript';
+import type { Contract, NetworkProvider, Utxo } from 'cashscript';
 
-export interface BidConfig
+export interface FetchBidUtxosParams
 {
+	name: string;
 	category: string;
-	contracts: Record<string, Contract>;
-	minBidIncreasePercentage: number;
+	address: string;
 	networkProvider: NetworkProvider;
+	contracts: Record<string, Contract>;
+	amount: number;
+}
+
+export interface FetchBidUtxosReturnType
+{
+	threadNFTUTXO: Utxo;
+	authorizedContractUTXO: Utxo;
+	runningAuctionUTXO: Utxo;
+	fundingUTXO: Utxo;
 }
 
 export interface BidParams
 {
-	address: string;
-	amount: number;
 	name: string;
+	amount: number;
+	address: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+	minBidIncreasePercentage: number;
+	utxos: FetchBidUtxosReturnType;
 }

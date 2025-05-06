@@ -1,20 +1,82 @@
-import type { AddressType, NetworkProvider } from 'cashscript';
+import type { AddressType, NetworkProvider, Utxo } from 'cashscript';
 
-export interface GuardConfig
+// Segregated and sorted interfaces for fetching UTXOs
+export interface FetchDuplicateAuctionGuardUtxosParams
 {
+	name: string;
 	category: string;
-	contracts: Record<string, any>;
-	inactivityExpiryTime: number;
 	networkProvider: NetworkProvider;
-	options: {
-		addressType: AddressType;
-		provider: NetworkProvider;
-	};
+	contracts: Record<string, any>;
+	options: { provider: NetworkProvider; addressType: AddressType };
 }
 
-export interface GuardParams
+export interface FetchDuplicateAuctionGuardUtxosReturn
 {
-	address: string;
-	amount: number;
+	threadNFTUTXO: Utxo;
+	authorizedContractUTXO: Utxo;
+	runningValidAuctionUTXO: Utxo;
+	runningInValidAuctionUTXO: Utxo;
+}
+
+export interface FetchIllegalAuctionGuardUtxosParams
+{
 	name: string;
+	category: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+	inactivityExpiryTime: number;
+	options: { provider: NetworkProvider; addressType: AddressType };
+}
+
+export interface FetchIllegalAuctionGuardUtxosReturn
+{
+	threadNFTUTXO: Utxo;
+	authorizedContractUTXO: Utxo;
+	runningAuctionUTXO: Utxo;
+	externalAuthUTXO: Utxo;
+}
+
+export interface FetchInvalidNameGuardUtxosParams
+{
+	name: string;
+	category: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+}
+
+export interface FetchInvalidNameGuardUtxosReturn
+{
+	threadNFTUTXO: Utxo;
+	authorizedContractUTXO: Utxo;
+	runningAuctionUTXO: Utxo;
+}
+
+// Segregated and sorted interfaces for penalizing actions
+export interface PenaliseDuplicateAuctionParams
+{
+	rewardTo: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+	utxos: FetchDuplicateAuctionGuardUtxosReturn;
+}
+
+export interface PenaliseIllegalAuctionParams
+{
+	name: string;
+	rewardTo: string;
+	category: string;
+	inactivityExpiryTime: number;
+	options: { provider: NetworkProvider; addressType: AddressType };
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+	utxos: FetchIllegalAuctionGuardUtxosReturn;
+}
+
+export interface PenalizeInvalidNameParams
+{
+	name: string;
+	rewardTo: string;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, any>;
+	utxos: FetchInvalidNameGuardUtxosReturn;
 }

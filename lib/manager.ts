@@ -2,8 +2,6 @@ import type { NetworkProvider, AddressType, Utxo } from 'cashscript';
 import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
 
 import type { ManagerConfig, DomainInfo, PastAuctionResult } from './interfaces/index.js';
-import { BidManager } from './bid.js';
-import { GuardManager } from './guard.js';
 import { constructContracts, constructDomainContract } from './util/index.js';
 import { createClaimDomainTransaction } from './functions/claim-domain.js';
 import { fetchRecords } from './functions/fetch-records.js';
@@ -12,6 +10,10 @@ import { createRecordsTransaction, fetchRecordsUtxos } from './functions/create-
 import { getPastAuctions } from './functions/get-past-auctions.js';
 import { getAuctions } from './functions/get-auctions.js';
 import { createAuctionTransaction, fetchCreateAuctionUtxos } from './functions/create-auction.js';
+import { createBidTransaction, fetchBidUtxos } from './functions/place-bid.js';
+import { fetchInvalidNameGuardUtxos, penalizeInvalidAuctionName } from './functions/penalise-invalid-name.js';
+import { fetchDuplicateAuctionGuardUtxos, penalizeDuplicateAuction } from './functions/penalise-duplicate-auction.js';
+import { fetchIllegalAuctionGuardUtxos, penalizeIllegalAuction } from './functions/penalise-illegal-auction.js';
 
 
 export class BitCANNManager
@@ -31,10 +33,6 @@ export class BitCANNManager
 
 	// Contracts in the BitCANN system.
 	public contracts: Record<string, Contract>;
-
-	// Managers for handling specific operations
-	private bidManager: BidManager;
-	private guardManager: GuardManager;
 
 	constructor(config: ManagerConfig)
 	{
@@ -65,21 +63,6 @@ export class BitCANNManager
 			minWaitTime: this.minWaitTime,
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			category: this.category,
-			options: this.options,
-		});
-
-		this.bidManager = new BidManager({
-			category: this.category,
-			minBidIncreasePercentage: this.minBidIncreasePercentage,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-		});
-
-		this.guardManager = new GuardManager({
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			inactivityExpiryTime: this.inactivityExpiryTime,
 			options: this.options,
 		});
 	}
@@ -207,7 +190,24 @@ export class BitCANNManager
 	 */
 	public async createBidTransaction({ name, amount, address }: { name: string; amount: number; address: string }): Promise<TransactionBuilder>
 	{
-		return this.bidManager.createBidTransaction({ name, amount, address });
+		const utxos = await fetchBidUtxos({
+			name,
+			category: this.category,
+			address,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			amount,
+		});
+
+		return createBidTransaction({
+			name,
+			amount,
+			address,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			minBidIncreasePercentage: this.minBidIncreasePercentage,
+			utxos,
+		});
 	}
 
 	/**
@@ -241,7 +241,20 @@ export class BitCANNManager
 	 */
 	public async penalizeInvalidAuctionName({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeInvalidAuctionName({ name, rewardTo });
+		const utxos = await fetchInvalidNameGuardUtxos({
+			name,
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+		});
+
+		return penalizeInvalidAuctionName({
+			name,
+			rewardTo,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			utxos,
+		});
 	}
 
 	/**
@@ -252,7 +265,20 @@ export class BitCANNManager
 	 */
 	public async penalizeDuplicateAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeDuplicateAuction({ name, rewardTo });
+		const utxos = await fetchDuplicateAuctionGuardUtxos({
+			name,
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			options: this.options,
+		});
+
+		return penalizeDuplicateAuction({
+			rewardTo,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			utxos,
+		});
 	}
 
 	/**
@@ -263,7 +289,25 @@ export class BitCANNManager
 	 */
 	public async penalizeIllegalAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
 	{
-		return this.guardManager.penalizeIllegalAuction({ name, rewardTo });
+		const utxos = await fetchIllegalAuctionGuardUtxos({
+			name,
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+		});
+
+		return penalizeIllegalAuction({
+			name,
+			rewardTo,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			utxos,
+		});
 	}
 
 	/**
