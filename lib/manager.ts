@@ -1,8 +1,7 @@
 import type { NetworkProvider, AddressType, Utxo } from 'cashscript';
 import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
 
-import type { ManagerConfig, DomainInfo } from './interfaces/index.js';
-import { AuctionManager } from './auction.js';
+import type { ManagerConfig, DomainInfo, PastAuctionResult } from './interfaces/index.js';
 import { BidManager } from './bid.js';
 import { GuardManager } from './guard.js';
 import { constructContracts, constructDomainContract } from './util/index.js';
@@ -10,6 +9,9 @@ import { createClaimDomainTransaction } from './functions/claim-domain.js';
 import { fetchRecords } from './functions/fetch-records.js';
 import { getDomain } from './functions/get-domain.js';
 import { createRecordsTransaction, fetchRecordsUtxos } from './functions/create-records.js';
+import { getPastAuctions } from './functions/get-past-auctions.js';
+import { getAuctions } from './functions/get-auctions.js';
+import { createAuctionTransaction, fetchCreateAuctionUtxos } from './functions/create-auction.js';
 
 
 export class BitCANNManager
@@ -31,7 +33,6 @@ export class BitCANNManager
 	public contracts: Record<string, Contract>;
 
 	// Managers for handling specific operations
-	private auctionManager: AuctionManager;
 	private bidManager: BidManager;
 	private guardManager: GuardManager;
 
@@ -65,13 +66,6 @@ export class BitCANNManager
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			category: this.category,
 			options: this.options,
-		});
-
-		// Initialize the managers
-		this.auctionManager = new AuctionManager({
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
 		});
 
 		this.bidManager = new BidManager({
@@ -119,17 +113,27 @@ export class BitCANNManager
 	 */
 	public async getAuctions(): Promise<Utxo[]>
 	{
-		return this.auctionManager.getAuctions();
+		return getAuctions({
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+		});
 	}
 
 	/**
 	 * Retrieves the transaction history.
 	 *
-	 * @returns {Promise<{ transactionHex: string; name: string }[]>} A promise that resolves to an array of transaction history objects, each containing a transaction hex and a domain name.
+	 * @returns {Promise<PastAuctionResult[]>} A promise that resolves to an array of transaction history objects,
+	 * each containing a transaction hex and a domain name.
 	 */
-	public async getHistory(): Promise<{ transactionHex: string; name: string }[]>
+	public async getHistory(): Promise<PastAuctionResult[]>
 	{
-		return this.auctionManager.getHistory();
+		return getPastAuctions({
+			category: this.category,
+			domainContract: this.contracts.DomainFactory,
+			// @ts-ignore
+			electrumClient: this.networkProvider.electrum,
+		});
 	}
 
 	/**
@@ -181,7 +185,15 @@ export class BitCANNManager
 		address: string;
 	}): Promise<TransactionBuilder>
 	{
-		return this.auctionManager.createAuctionTransaction({ name, amount, address });
+		const utxos = await fetchCreateAuctionUtxos({
+			amount,
+			address,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			category: this.category,
+		});
+
+		return createAuctionTransaction({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
 	}
 
 	/**
