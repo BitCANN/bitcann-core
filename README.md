@@ -2,6 +2,13 @@
 
 BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/@bitcann/core"><img src="https://img.shields.io/npm/v/@bitcann/core.svg" alt="NPM version" /></a>
+  <a href="https://t.me/bitcann_discussion"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN%20Devs-0088CC?logo=telegram"></a>
+  <a href="https://www.npmjs.com/package/@bitcann/core"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/core"></a>
+  <a href="https://github.com/bitcann/bitcann-core"><img src="https://img.shields.io/github/stars/bitcann/bitcann-core.svg?style=social&logo=github&label=Stars" alt="GitHub stars" /></a>
+</p>
+
 ## Contract and Documentation
 For more details, visit the [BitCANN Contracts and Documentation](https://github.com/BitCANN/bitcann-contracts) repository.
 

@@ -16,7 +16,8 @@
     "prepare": "npm run build",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
-    "syntax": "tsc --noEmit"
+    "syntax": "tsc --noEmit",
+    "coverage": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest --coverage"
   },
   "files": [
     "build/lib"
