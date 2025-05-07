@@ -1,0 +1,72 @@
+import { describe, it, expect, beforeAll } from '@jest/globals';
+import { MockNetworkProvider, randomUtxo } from 'cashscript';
+import * as config	from '../config.js';
+import {
+	BitCANNManager,
+	fetchCreateAuctionUtxos,
+	intToBytesToHex,
+	type FetchCreateAuctionUtxosResponse,
+} from '../../lib/index.js';
+
+describe('create-auction', () =>
+{
+	const networkProvider = new MockNetworkProvider();
+	config.mockOptions.networkProvider = networkProvider;
+
+	const manager = new BitCANNManager(config.mockOptions);
+
+	beforeAll( async () =>
+	{
+		networkProvider.addUtxo(config.aliceAddress, { ...randomUtxo() });
+		networkProvider.addUtxo(config.auctionContractAddress, { ...randomUtxo() });
+		networkProvider.addUtxo(config.registryContractAddress, {
+			token: {
+				category: config.mockOptions.category,
+				amount: BigInt(0),
+				nft: {
+					commitment: config.auctionLockingBytecodeHex,
+					capability: 'none',
+				},
+			},
+			...randomUtxo(),
+		});
+		networkProvider.addUtxo(config.registryContractAddress, {
+			token: {
+				category: config.mockOptions.category,
+				amount: BigInt('9223372036854775807'),
+				nft: {
+					commitment: intToBytesToHex({ value: 0, length: 8 }),
+					capability: 'minting',
+				},
+			},
+			...randomUtxo(),
+		});
+		networkProvider.addUtxo(config.registryContractAddress, {
+			token: {
+				category: config.mockOptions.category,
+				// @ts-ignore
+				nft: {
+					capability: 'minting',
+				},
+			},
+			...randomUtxo(),
+		});
+	});
+
+	it('should create an auction', async () =>
+	{
+		const utxos: FetchCreateAuctionUtxosResponse = await fetchCreateAuctionUtxos({
+			amount: 1000,
+			address: config.aliceAddress,
+			networkProvider,
+			contracts: manager.contracts,
+			category: config.mockOptions.category,
+		});
+
+		expect(utxos).toBeDefined();
+		// expect(utxos.registryUtxos).toBeDefined();
+		// expect(utxos.auctionUtxos).toBeDefined();
+		// expect(utxos.userUtxos).toBeDefined();
+	});
+
+});

@@ -13,7 +13,7 @@ beforeAll(() =>
 	});
 });
 
-afterAll(() =>
+afterAll(async () =>
 {
 	if(typeof (console.log as any).mockRestore === 'function')
 	{
