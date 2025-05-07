@@ -18,6 +18,8 @@ const config: Config = {
 	},
 	silent: false,
 	setupFilesAfterEnv: [ '<rootDir>/jest.setup.ts' ],
+	coverageReporters: [ 'lcov', 'text', 'html' ],
+	coverageDirectory: 'coverage',
 };
 
 export default config;
