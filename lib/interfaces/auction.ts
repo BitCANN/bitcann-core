@@ -55,3 +55,11 @@ export interface PastAuctionResult
 	name: string;
 	transactionHex: string;
 }
+
+export interface CreateAuctionTransactionParams
+{
+	name: string;
+	amount: number;
+	address: string;
+	utxos?: FetchCreateAuctionUtxosResponse;
+}

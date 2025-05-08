@@ -9,7 +9,7 @@ import { getSignedTransaction } from './common/sign.js';
 {
 	const name = 'satoshi';
 	const address = aliceAddress;
-	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 10000, address });
+	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 1000, address });
 
   console.log(auctionTransaction);
 

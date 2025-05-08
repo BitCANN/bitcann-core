@@ -9,6 +9,23 @@ import {
 	addressContentsToLockingBytecode,
 } from '@bitauth/libauth';
 
+/**
+ * Converts a locking bytecode to a CashAddr address.
+ * @param lockingBytecode - The locking bytecode to convert.
+ * @returns The CashAddr address as a string.
+ * @throws Will throw an error if the conversion result is invalid.
+ */
+export const toCashaddr = (lockingBytecode: any): string =>
+{
+	const result = lockingBytecodeToCashAddress({ bytecode: lockingBytecode, prefix: 'bitcoincash' });
+
+	// @ts-ignore
+	if(typeof result.address !== 'string') throw new Error('Invalid address conversion result');
+
+	// @ts-ignore
+	return result.address;
+};
+
 export const convertAddressToPkh = (userAddress: string): string =>
 {
 	const decodeAddressObj = decodeCashAddress(userAddress);

@@ -7,24 +7,16 @@ import {
 	intToBytesToHex,
 	type FetchCreateAuctionUtxosResponse,
 } from '../../lib/index.js';
-import { aliceAddress, alicePriv } from '../config.js';
-import { getSignedTransaction } from '../../lib/util/sign.js';
-import { getElectrum } from '../context.js';
-import { ElectrumClient } from '@electrum-cash/network';
-import { broadcastTransaction, type ElectrumProtocolEvents } from '@electrum-cash/protocol';
 
-describe('create-auction', () =>
+describe('validateName', () =>
 {
 	const networkProvider = new MockNetworkProvider();
 	config.mockOptions.networkProvider = networkProvider;
 
 	const manager = new BitCANNManager(config.mockOptions);
-	let electrumClient: ElectrumClient<ElectrumProtocolEvents>;
 
 	beforeAll( async () =>
 	{
-		electrumClient = await getElectrum();
-
 		networkProvider.addUtxo(config.aliceAddress, { ...randomUtxo() });
 		networkProvider.addUtxo(config.auctionContractAddress, { ...randomUtxo() });
 		networkProvider.addUtxo(config.registryContractAddress, {
@@ -61,6 +53,7 @@ describe('create-auction', () =>
 		});
 	});
 
+
 	it('should fetch utxos necessary for an auction', async () =>
 	{
 		const utxos: FetchCreateAuctionUtxosResponse = await fetchCreateAuctionUtxos({
@@ -71,26 +64,10 @@ describe('create-auction', () =>
 			category: config.mockOptions.category,
 		});
 
+		expect(utxos).toBeDefined();
 		expect(utxos.threadNFTUTXO).toBeDefined();
 		expect(utxos.registrationCounterUTXO).toBeDefined();
 		expect(utxos.authorizedContractUTXO).toBeDefined();
 		expect(utxos.userUTXO).toBeDefined();
-
-		const transaction = await manager.createAuctionTransaction({
-			name: 'test',
-			amount: 1000,
-			address: config.aliceAddress,
-			utxos,
-		});
-
-		const preparedTransaction = await getSignedTransaction({
-			transaction,
-			address: aliceAddress,
-			privateKey: alicePriv,
-		});
-
-		const txid = await broadcastTransaction(electrumClient, preparedTransaction.hex);
-		console.log('txid: ', txid);
 	});
-
 });

@@ -1,7 +1,7 @@
 import type { NetworkProvider, AddressType, Utxo } from 'cashscript';
 import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
 
-import type { ManagerConfig, DomainInfo, PastAuctionResult } from './interfaces/index.js';
+import type { ManagerConfig, DomainInfo, PastAuctionResult, CreateAuctionTransactionParams } from './interfaces/index.js';
 import { constructContracts, constructDomainContract } from './util/index.js';
 import { createClaimDomainTransaction } from './functions/claim-domain.js';
 import { fetchRecords } from './functions/fetch-records.js';
@@ -163,19 +163,19 @@ export class BitCANNManager
 		name,
 		amount,
 		address,
-	}: {
-		name: string;
-		amount: number;
-		address: string;
-	}): Promise<TransactionBuilder>
+		utxos,
+	}: CreateAuctionTransactionParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchCreateAuctionUtxos({
-			amount,
-			address,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			category: this.category,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchCreateAuctionUtxos({
+				amount,
+				address,
+				networkProvider: this.networkProvider,
+				contracts: this.contracts,
+				category: this.category,
+			});
+		}
 
 		return createAuctionTransaction({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
 	}

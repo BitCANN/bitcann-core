@@ -56,3 +56,10 @@ export {
 	getDomainPartialBytecode,
 	constructContracts,
 } from './contract.js';
+
+// Sign utilities
+export {
+	getWalletConnectTransaction,
+	getSignedTransaction,
+	signTransaction,
+} from './sign.js';
