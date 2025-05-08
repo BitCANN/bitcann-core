@@ -1,6 +1,4 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+export default {
 	verbose: true,
 	preset: 'ts-jest/presets/default-esm',
 	testEnvironment: 'node',
@@ -17,9 +15,9 @@ const config: Config = {
 		'^(\\.{1,2}/.*)\\.js$': '$1',
 	},
 	silent: false,
-	setupFilesAfterEnv: [ '<rootDir>/jest.setup.ts' ],
+	setupFilesAfterEnv: [ '<rootDir>/jest.setup.js' ],
 	coverageReporters: [ 'lcov', 'text', 'html' ],
 	coverageDirectory: 'coverage',
+	testTimeout: 12000,
+	maxWorkers: 1,
 };
-
-export default config;

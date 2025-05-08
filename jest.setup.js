@@ -15,8 +15,8 @@ beforeAll(() =>
 
 afterAll(async () =>
 {
-	if(typeof (console.log as any).mockRestore === 'function')
+	if(typeof console.log.mockRestore === 'function')
 	{
-		(console.log as any).mockRestore();
+		console.log.mockRestore();
 	}
 });

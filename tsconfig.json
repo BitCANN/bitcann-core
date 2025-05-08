@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "rootDir": ".",
     "outDir": "build",
     "incremental": true,
@@ -15,10 +15,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
   },
-  "include": ["**/*.ts", "**/*.js"],
   "exclude": ["node_modules", "build", "examples"],
   "compileOnSave": false
 }
