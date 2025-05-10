@@ -11,11 +11,11 @@ import {
 
 /**
  * Converts a locking bytecode to a CashAddr address.
- * @param lockingBytecode - The locking bytecode to convert.
- * @returns The CashAddr address as a string.
- * @throws Will throw an error if the conversion result is invalid.
+ * @param {Uint8Array} lockingBytecode - The locking bytecode to convert.
+ * @returns {string} The CashAddr address as a string.
+ * @throws {Error} Will throw an error if the conversion result is invalid.
  */
-export const toCashaddr = (lockingBytecode: any): string =>
+export const toCashaddr = (lockingBytecode: Uint8Array): string =>
 {
 	const result = lockingBytecodeToCashAddress({ bytecode: lockingBytecode, prefix: 'bitcoincash' });
 
@@ -26,6 +26,12 @@ export const toCashaddr = (lockingBytecode: any): string =>
 	return result.address;
 };
 
+/**
+ * Converts a CashAddr address to a public key hash (PKH).
+ * @param {string} userAddress - The CashAddr address to convert.
+ * @returns {string} The public key hash as a hexadecimal string.
+ * @throws {Error} Will throw an error if the address cannot be decoded.
+ */
 export const convertAddressToPkh = (userAddress: string): string =>
 {
 	const decodeAddressObj = decodeCashAddress(userAddress);
@@ -35,13 +41,24 @@ export const convertAddressToPkh = (userAddress: string): string =>
 	return binToHex(userPkh);
 };
 
-export const convertPkhToLockingBytecode = (userPkh: string): any =>
+/**
+ * Converts a public key hash (PKH) to a locking bytecode.
+ * @param {string} userPkh - The public key hash as a hexadecimal string.
+ * @returns {Uint8Array} The locking bytecode.
+ */
+export const convertPkhToLockingBytecode = (userPkh: string): Uint8Array =>
 {
 	const userPkhBin = hexToBin(userPkh);
 
 	return addressContentsToLockingBytecode({ type: 'P2PKH', payload: userPkhBin });
 };
 
+/**
+ * Converts a lock script to a CashAddr address.
+ * @param {string} lockScript - The lock script as a hexadecimal string.
+ * @returns {string} The CashAddr address.
+ * @throws {Error} Will throw an error if the lock script cannot be converted.
+ */
 export const lockScriptToAddress = (lockScript: string): string =>
 {
 	const result = lockingBytecodeToCashAddress({ bytecode: hexToBin(lockScript), prefix: 'bitcoincash' });
@@ -54,6 +71,11 @@ export const lockScriptToAddress = (lockScript: string): string =>
 	return result.address;
 };
 
+/**
+ * Builds a P2SH32 lock script from a script bytecode.
+ * @param {string} scriptBytecodeHex - The script bytecode as a hexadecimal string.
+ * @returns {string} The P2SH32 lock script as a hexadecimal string.
+ */
 export const buildLockScriptP2SH32 = (scriptBytecodeHex: string): string =>
 {
 	const scriptHashBin = hash256(hexToBin(scriptBytecodeHex));
@@ -62,6 +84,12 @@ export const buildLockScriptP2SH32 = (scriptBytecodeHex: string): string =>
 	return binToHex(lockScriptBin);
 };
 
+/**
+ * Converts a CashAddr address to a lock script.
+ * @param {string} address - The CashAddr address to convert.
+ * @returns {string} The lock script as a hexadecimal string.
+ * @throws {Error} Will throw an error if the address cannot be converted.
+ */
 export const addressToLockScript = (address: string): string =>
 {
 	const result = cashAddressToLockingBytecode(address);
@@ -70,6 +98,12 @@ export const addressToLockScript = (address: string): string =>
 	return binToHex(result.bytecode);
 };
 
+/**
+ * Converts a CashAddr address to a token address.
+ * @param {string} cashAddress - The CashAddr address to convert.
+ * @returns {string} The token address.
+ * @throws {Error} Will throw an error if the conversion fails.
+ */
 export const convertCashAddressToTokenAddress = (cashAddress: string): string =>
 {
 	const result = cashAddressToLockingBytecode(cashAddress);

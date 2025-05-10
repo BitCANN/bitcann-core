@@ -1,6 +1,5 @@
 import { binToHex } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
-import { DUST } from '../constants.js';
 import { UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee } from '../util/transaction.js';
 import { convertAddressToPkh } from '../util/address.js';
@@ -43,7 +42,7 @@ export const fetchCreateAuctionUtxos = async ({ amount, address, networkProvider
 		utxos: auctionUtxos,
 	});
 
-	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000 + DUST));
+	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000));
 	if(!userUTXO)
 	{
 		throw new UserUTXONotFoundError();

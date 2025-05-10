@@ -1,5 +1,14 @@
 import { numberToBinUint16BE, hexToBin, binToHex } from '@bitauth/libauth';
 
+/**
+ * Converts an integer to a hexadecimal string representation of a byte array with a specified length.
+ *
+ * @param {Object} params - The parameters for the conversion.
+ * @param {number} params.value - The integer value to convert.
+ * @param {number} params.length - The desired length of the resulting byte array.
+ * @returns {string} The hexadecimal string representation of the byte array.
+ * @throws {Error} If the value exceeds the specified length.
+ */
 export const intToBytesToHex = ({ value, length }: { value: number; length: number }): string =>
 {
 	const bin = numberToBinUint16BE(value);
@@ -14,6 +23,12 @@ export const intToBytesToHex = ({ value, length }: { value: number; length: numb
 	return binToHex(result);
 };
 
+/**
+ * Converts a hexadecimal string to an integer.
+ *
+ * @param {string} hex - The hexadecimal string to convert.
+ * @returns {number} The integer representation of the hexadecimal string.
+ */
 export const hexToInt = (hex: string): number =>
 {
 	const bytes = hexToBin(hex);
@@ -26,6 +41,12 @@ export const hexToInt = (hex: string): number =>
 	return intValue;
 };
 
+/**
+ * Encodes a string into a hexadecimal representation with a prefixed length indicator.
+ *
+ * @param {string} data - The string data to encode.
+ * @returns {string} The encoded hexadecimal string with length prefix.
+ */
 export const pushDataHex = (data: string): string =>
 {
 	const hexData = Buffer.from(data, 'utf8').toString('hex');
@@ -49,6 +70,13 @@ export const pushDataHex = (data: string): string =>
 	}
 };
 
+/**
+ * Extracts the payload from an OP_RETURN script in hexadecimal format.
+ *
+ * @param {string} opReturnHex - The OP_RETURN script in hexadecimal format.
+ * @returns {string} The extracted payload as a hexadecimal string.
+ * @throws {Error} If the input is not a valid OP_RETURN script.
+ */
 export const extractOpReturnPayload = (opReturnHex: string): string =>
 {
 	if(!opReturnHex.startsWith('6a'))

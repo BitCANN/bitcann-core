@@ -17,9 +17,9 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
-		&& u.token?.category === category
-		&& u.token?.nft?.commitment
-		&& u.token?.amount >= BigInt(0),
+    && u.token?.category === category
+    && u.token?.nft?.commitment
+    && u.token?.amount >= BigInt(0),
 	);
 
 	if(!utxo)
@@ -30,12 +30,21 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
 	return utxo;
 };
 
+/**
+ * Retrieves the domain minting UTXO from a list of UTXOs.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @param {string} params.category - The category to match against.
+ * @returns {any} The domain minting UTXO.
+ * @throws {DomainMintingUTXONotFoundError} If no domain minting UTXO is found.
+ */
 export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
-		&& u.token?.category === category
-		&& u.token?.amount == BigInt(0),
+    && u.token?.category === category
+    && u.token?.amount == BigInt(0),
 	);
 
 	if(!utxo)
@@ -46,6 +55,16 @@ export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; catego
 	return utxo;
 };
 
+/**
+ * Retrieves all running auction UTXOs from a list of UTXOs.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {string} params.name - The name to match against the UTXO's token commitment.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @param {string} params.category - The category to match against.
+ * @returns {any[]} An array of running auction UTXOs.
+ * @throws {RunningAuctionUTXONotFoundError} If no running auction UTXOs are found.
+ */
 export const getAllRunningAuctionUtxos = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any[] =>
 {
 	const auctionUtxos = utxos.filter((utxo) =>
@@ -69,7 +88,16 @@ export const getAllRunningAuctionUtxos = ({ name, utxos, category }: { name: str
 	return auctionUtxos.sort((a, b) => (a.token.amount < b.token.amount ? -1 : 1));
 };
 
-
+/**
+ * Retrieves the running auction UTXO with the smallest token amount from a list of UTXOs.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {string} params.name - The name to match against the UTXO's token commitment.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @param {string} params.category - The category to match against.
+ * @returns {any} The running auction UTXO with the smallest token amount.
+ * @throws {RunningAuctionUTXONotFoundError} If no running auction UTXO is found.
+ */
 export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any =>
 {
 	const auctionUtxo = getAllRunningAuctionUtxos({ name, utxos, category })
@@ -101,11 +129,11 @@ export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string;
 export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxos: any[]; category: string; threadContractAddress: string }): any =>
 {
 	const utxo = utxos.find(u =>
-		// @ts-ignore
+	// @ts-ignore
 		u.token?.nft?.commitment === binToHex(cashAddressToLockingBytecode(threadContractAddress).bytecode)
-		&& u.token?.nft?.capability === 'none'
-		&& u.token?.category === category
-		&& u.token?.amount >= BigInt(0),
+    && u.token?.nft?.capability === 'none'
+    && u.token?.category === category
+    && u.token?.amount >= BigInt(0),
 	);
 
 	if(!utxo)
@@ -129,8 +157,8 @@ export const getThreadWithTokenUtxo = ({ utxos, category }: { utxos: any[]; cate
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'none'
-		&& u.token?.category === category
-		&& u.token?.amount > BigInt(0),
+    && u.token?.category === category
+    && u.token?.amount > BigInt(0),
 	);
 
 	if(!utxo)
@@ -154,8 +182,8 @@ export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: st
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'mutable'
-		&& u.token?.category === category
-		&& u.token?.amount > 0,
+    && u.token?.category === category
+    && u.token?.amount > 0,
 	);
 
 	if(!utxo)
@@ -165,8 +193,6 @@ export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: st
 
 	return utxo;
 };
-
-
 
 /**
  * Retrieves a random authorized contract UTXO from a list of UTXOs.
@@ -188,6 +214,12 @@ export const getAuthorizedContractUtxo = ({ utxos }: { utxos: any[] }): any =>
 	return utxo;
 };
 
+/**
+ * Generates source outputs from a list of unlockable UTXOs.
+ *
+ * @param {UnlockableUtxo[]} inputs - The list of unlockable UTXOs.
+ * @returns {LibauthOutput[]} An array of LibauthOutput objects.
+ */
 export const generateSourceOutputs = (inputs: UnlockableUtxo[]): LibauthOutput[] =>
 {
 	// Generate source outputs from inputs (for signing with SIGHASH_UTXOS)
@@ -205,6 +237,13 @@ export const generateSourceOutputs = (inputs: UnlockableUtxo[]): LibauthOutput[]
 	return sourceOutputs;
 };
 
+/**
+ * Finds a pure UTXO (without a token) with the highest satoshis from a list of UTXOs.
+ *
+ * @param {any[]} utxos - The list of UTXOs to search through.
+ * @returns {any} The pure UTXO with the highest satoshis.
+ * @throws {Error} If no pure UTXO is found.
+ */
 export const findPureUTXO = (utxos: any[]): any =>
 {
 	const utxo = utxos.reduce((max, val) =>
@@ -216,6 +255,12 @@ export const findPureUTXO = (utxos: any[]): any =>
 	return utxo;
 };
 
+/**
+ * Creates a placeholder unlocker for a given address.
+ *
+ * @param {string} address - The address for which to create the unlocker.
+ * @returns {any} The created placeholder unlocker.
+ */
 export const createPlaceholderUnlocker = (address: string): any =>
 {
 	const userPkh = convertAddressToPkh(address);
@@ -226,6 +271,12 @@ export const createPlaceholderUnlocker = (address: string): any =>
 	};
 };
 
+/**
+ * Converts a cash address to a token address.
+ *
+ * @param {string} cashAddress - The cash address to convert.
+ * @returns {string} The converted token address.
+ */
 export const convertCashAddressToTokenAddress = (cashAddress: string): string =>
 {
 	// @ts-ignore

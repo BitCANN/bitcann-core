@@ -181,7 +181,7 @@ export const getWalletConnectTransaction = async ({
 };
 
 /**
- * Signs a transaction using a local private key.
+ * Signs a transaction using a provided private key.
  * @param transaction - The transaction to be signed.
  * @param address - The address associated with the transaction.
  * @param privateKey - The private key used for signing.

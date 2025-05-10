@@ -1,7 +1,6 @@
 import { binToHex } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
 
-import { EXPECTED_MAX_TRANSACTION_FEE } from '../constants.js';
 import { InvalidBidAmountError, UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee, convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
 import type { BidParams, FetchBidUtxosParams, FetchBidUtxosReturnType } from '../interfaces/index.js';
@@ -44,7 +43,7 @@ export const fetchBidUtxos = async ({
 		category,
 	});
 
-	const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + EXPECTED_MAX_TRANSACTION_FEE) && !utxo.token);
+	const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000) && !utxo.token);
 	if(!fundingUTXO)
 	{
 		throw new UserUTXONotFoundError();
