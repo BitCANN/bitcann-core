@@ -41,6 +41,18 @@ export interface GetAuctionsParams
 	category: string;
 	contracts: Record<string, Contract>;
 	networkProvider: NetworkProvider;
+	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
+}
+
+export interface GetAuctionsReturnType
+{
+	name: string;
+	createdAtTxHash: string;
+	createdAtHeight: number;
+	initialAmount: number;
+	amount: number;
+	hex: string;
+	utxo: Utxo;
 }
 
 export interface GetPastAuctionsParams
@@ -54,6 +66,9 @@ export interface PastAuctionResult
 {
 	name: string;
 	transactionHex: string;
+	finalAmount: number;
+	height: number;
+	txid: string;
 }
 
 export interface CreateAuctionTransactionParams

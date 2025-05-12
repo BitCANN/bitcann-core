@@ -2,8 +2,9 @@ import { binToHex } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
 
 import { InvalidBidAmountError, UserUTXONotFoundError } from '../errors.js';
-import { adjustLastOutputForFee, convertNameToBinaryAndHex, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
+import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
 import type { BidParams, FetchBidUtxosParams, FetchBidUtxosReturnType } from '../interfaces/index.js';
+import { convertAddressToPkh, toCashaddr } from '../util/address.js';
 
 /**
  * Fetches the necessary UTXOs for placing a bid in an auction.
@@ -87,7 +88,9 @@ export const createBidTransaction = async ({
 	}
 
 	const prevBidderPKH = runningAuctionUTXO.token!.nft!.commitment.slice(0, 40);
-	const prevBidderAddress = binToHex(convertNameToBinaryAndHex(prevBidderPKH).nameBin);
+	const prevBidderLockingBytecode = convertPkhToLockingBytecode(prevBidderPKH);
+	const prevBidderAddress = toCashaddr(prevBidderLockingBytecode);
+	const pkh = convertAddressToPkh(address);
 
 	const placeholderUnlocker = createPlaceholderUnlocker(address);
 
@@ -120,7 +123,7 @@ export const createBidTransaction = async ({
 				amount: runningAuctionUTXO.token!.amount,
 				nft: {
 					capability: 'mutable',
-					commitment: binToHex(convertNameToBinaryAndHex(address).nameBin) + binToHex(nameBin),
+					commitment: pkh + binToHex(nameBin),
 				},
 			},
 		})

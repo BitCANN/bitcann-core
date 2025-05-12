@@ -1,7 +1,7 @@
-import type { NetworkProvider, AddressType, Utxo } from 'cashscript';
+import type { NetworkProvider, AddressType } from 'cashscript';
 import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
 
-import type { ManagerConfig, DomainInfo, PastAuctionResult, CreateAuctionTransactionParams } from './interfaces/index.js';
+import type { ManagerConfig, DomainInfo, PastAuctionResult, CreateAuctionTransactionParams, GetAuctionsReturnType } from './interfaces/index.js';
 import { constructContracts, constructDomainContract } from './util/index.js';
 import { createClaimDomainTransaction } from './functions/claim-domain.js';
 import { fetchRecords } from './functions/fetch-records.js';
@@ -95,12 +95,14 @@ export class BitCANNManager
 	 *
 	 * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
-	public async getAuctions(): Promise<Utxo[]>
+	public async getAuctions(): Promise<GetAuctionsReturnType[]>
 	{
 		return getAuctions({
 			category: this.category,
 			networkProvider: this.networkProvider,
 			contracts: this.contracts,
+			// @ts-ignore
+			electrumClient: this.networkProvider.electrum,
 		});
 	}
 
@@ -176,6 +178,8 @@ export class BitCANNManager
 				category: this.category,
 			});
 		}
+
+		console.log(utxos);
 
 		return createAuctionTransaction({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
 	}

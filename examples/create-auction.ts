@@ -7,11 +7,11 @@ import { getSignedTransaction } from './common/sign.js';
 
 (async () =>
 {
-	const name = 'satoshi';
+	const name = 'tomato';
 	const address = aliceAddress;
-	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 1000, address });
+	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 10000, address });
 
-  console.log(auctionTransaction);
+  // console.log(auctionTransaction);
 
   const preparedTransaction = await getSignedTransaction({
     transaction: auctionTransaction,
