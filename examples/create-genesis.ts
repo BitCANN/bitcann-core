@@ -1,13 +1,13 @@
 import { cashAddressToLockingBytecode, binToHex } from '@bitauth/libauth';
 import { NFTCapability, SendRequest, TokenMintRequest, TokenSendRequest, Wallet } from 'mainnet-js'
-import { BitCANNManager } from "../lib/index.js";
+import { BitcannManager } from "../lib/index.js";
 import { ElectrumNetworkProvider } from "cashscript";
 
 import dotenv from 'dotenv';
 dotenv.config();
 
 // STEP 1: Create the genesis category using the `createGenesisCategory` function
-const domainTokenCategory = 'a78e4d0bb8d9c4227e3e03b20bef87b31a6e03ddcd56053671ab95770abd5099';
+const domainTokenCategory = 'cd9312b30fbf5bca4cf90a6167c5be7961603447879ed9851e01d7b2cdc0e451';
 
 // STEP 2: Figure out the following parameters
 const minStartingBid = 10000;
@@ -20,7 +20,7 @@ const genesisTokenAmount = BigInt('9223372036854775807');
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
-const bitcannManager = new BitCANNManager({
+const bitcannManager = new BitcannManager({
 	category: domainTokenCategory,
 	minStartingBid: minStartingBid,
 	minBidIncreasePercentage: minBidIncreasePercentage,
@@ -147,8 +147,17 @@ const createMintingSetup = async () => {
 
 (async () =>
   {
+    // Do this as Step 1 and once done, comment out the line below
     // await createSuitableUTXO();
+
+    // Do this as Step 2
+    // Copy the tokenID from the terminal and paste it above in the `const domainTokenCategory` variable
+    // and once done, comment out the line below
     // await createGenesisCategory();
+
+    // Do this as Step 3 and once done, comment out the line below
     await createMintingSetup();
+
+    // Once this is done, you are ready to go!
   })();
   

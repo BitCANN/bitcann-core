@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Test with block-based relative timelock.
-export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
+export const domainTokenCategory = 'cd9312b30fbf5bca4cf90a6167c5be7961603447879ed9851e01d7b2cdc0e451';
 export const minWaitTime = 1;
 
 // Test with time-based relative timelock.
