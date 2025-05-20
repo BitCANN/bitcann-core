@@ -3,6 +3,26 @@ import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
+ * Parameters required to retrieve domain records.
+ */
+export interface GetRecordsParams
+{
+	/** The domain name for which to retrieve records. */
+	name: string;
+	/** Optional flag to indicate if duplicate records should be retained. */
+	keepDuplicates?: boolean;
+}
+
+/**
+ * Response structure for retrieved domain records.
+ */
+export interface GetRecordsResponse
+{
+	/** An array of domain records. */
+	records: string[];
+}
+
+/**
  * Parameters required to create records.
  */
 export interface CreateRecordsParams

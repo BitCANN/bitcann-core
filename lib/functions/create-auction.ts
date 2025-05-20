@@ -52,24 +52,21 @@ export const fetchAuctionUtxos = async ({ amount, address, networkProvider, cont
 };
 
 /**
- * Creates a transaction for initiating an auction.
+/**
+ * Constructs a transaction to initiate an auction.
  *
- * This function constructs a transaction to start an auction by utilizing various UTXOs and contracts.
+ * This function creates a transaction to start an auction using various UTXOs and contracts.
  *
- * @param {CreateAuctionCoreParams} params - The parameters for the auction transaction.
- * @param {string} params.name - The name of the auction.
- * @param {number} params.amount - The amount for the auction.
- * @param {string} params.address - The address of the auction initiator.
- * @param {NetworkProvider} params.networkProvider - The network provider for blockchain interactions.
- * @param {Record<string, Contract>} params.contracts - The contracts involved in the auction.
- * @param {Object} params.utxos - The UTXOs required for the transaction.
- * @param {Utxo} params.utxos.threadNFTUTXO - The UTXO representing the thread NFT.
- * @param {Utxo} params.utxos.registrationCounterUTXO - The UTXO for the registration counter.
- * @param {Utxo} params.utxos.authorizedContractUTXO - The UTXO for the authorized contract.
- * @param {Utxo} params.utxos.userUTXO - The UTXO from the user for funding the auction.
+ * @param {CreateAuctionCoreParams} params - The parameters for constructing the auction transaction.
+ * @param {string} params.name - The domain name to be auctioned.
+ * @param {number} params.amount - The initial bid amount for the auction.
+ * @param {string} params.address - The address of the auction creator.
+ * @param {NetworkProvider} params.networkProvider - The network provider for blockchain operations.
+ * @param {Record<string, Contract>} params.contracts - The contracts associated with the auction.
+ * @param {FetchAuctionUtxosResponse} params.utxos - The UTXOs necessary for the transaction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the auction transaction.
- * @throws {InvalidNameError} If the auction name is invalid.
- * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the auction.
+ * @throws {InvalidNameError} If the provided auction name is invalid.
+ * @throws {UserUTXONotFoundError} If no suitable UTXO is found to fund the auction.
  */
 export const createAuctionTransactionCore = async ({
 	name,
@@ -87,7 +84,7 @@ export const createAuctionTransactionCore = async ({
 	const { nameBin } = convertNameToBinaryAndHex(name);
 
 	// Destructure the necessary UTXOs from the provided utxos object
-	const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO } = utxos;
+	const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO }: FetchAuctionUtxosResponse = utxos;
 
 	// Calculate the new registration ID and its commitment
 	const newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;

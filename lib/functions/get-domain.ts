@@ -12,8 +12,6 @@ import { buildLockScriptP2SH32, lockScriptToAddress, pushDataHex, validateName }
  * @param {string} params.category - The category of the domain.
  * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the domain.
  * @param {object} params.options - Additional options for the domain contract.
- * @param {AddressType} params.options.addressType - The type of address used.
- * @param {NetworkProvider} params.options.provider - The network provider for blockchain interactions.
  * @returns {Promise<DomainInfo>} A promise that resolves to an object containing the domain address and contract.
  */
 export const getDomain = async ({ name, category, inactivityExpiryTime, options }: GetDomainParams): Promise<DomainInfo> =>

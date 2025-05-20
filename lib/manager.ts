@@ -41,6 +41,8 @@ import type {
 	CreateRecordsParams,
 	DomainInfo,
 	GetAuctionsResponse,
+	GetRecordsParams,
+	GetRecordsResponse,
 	ManagerConfig,
 	PastAuctionResponse,
 	PenaliseDuplicateAuctionParams,
@@ -103,13 +105,17 @@ export class BitcannManager
 	// Read Methods
 
 	/**
-	 * Retrieves the records associated with a specified domain.
+	 * Fetches the domain records for a given domain name.
 	 *
-	 * @param {string} name - The domain name for which to retrieve records.
-	 * @param {boolean} keepDuplicates - Whether to keep duplicate records.
-	 * @returns {Promise<string[]>} A promise that resolves to an array of domain records.
+	 * This method interacts with the blockchain to retrieve records associated with the specified domain.
+	 * It allows the option to retain duplicate records if desired.
+	 *
+	 * @param {GetRecordsParams} params - The parameters for fetching domain records.
+	 * @param {string} params.name - The domain name for which records are to be fetched.
+	 * @param {boolean} [params.keepDuplicates=true] - Optional flag to determine if duplicate records should be retained.
+	 * @returns {Promise<GetRecordsResponse>} A promise that resolves to an object containing an array of domain records.
 	 */
-	public async getRecords({ name, keepDuplicates = true }: { name: string; keepDuplicates?: boolean }): Promise<string[]>
+	public async getRecords({ name, keepDuplicates = true }: GetRecordsParams): Promise<GetRecordsResponse>
 	{
 		return fetchRecords({
 			name,

@@ -1,6 +1,6 @@
 import { fetchHistory } from '@electrum-cash/protocol';
 import { constructDomainContract, extractRecordsFromTransaction, getValidCandidateTransactions, filterValidRecords } from '../util/index.js';
-import type { FetchRecordsParams } from '../interfaces/index.js';
+import type { FetchRecordsParams, GetRecordsResponse } from '../interfaces/index.js';
 
 /**
  * Fetches domain records based on the provided parameters.
@@ -21,7 +21,7 @@ export const fetchRecords = async ({
 	inactivityExpiryTime,
 	options,
 	electrumClient,
-}: FetchRecordsParams): Promise<string[]> =>
+}: FetchRecordsParams): Promise<GetRecordsResponse> =>
 {
 	const domainContract = constructDomainContract({
 		name,
@@ -44,5 +44,7 @@ export const fetchRecords = async ({
 		records = [ ...new Set(records) ];
 	}
 
-	return filterValidRecords(records);
+	return {
+		records: filterValidRecords(records),
+	};
 };

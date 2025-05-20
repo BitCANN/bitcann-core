@@ -13,16 +13,77 @@ import {
 	binToHex,
 	hexToBin,
 	decodeTransaction,
+	type TransactionCommon,
 } from '@bitauth/libauth';
+import { TransactionBuilder } from 'cashscript';
 import { generateSourceOutputs } from '../index.js';
 import { toCashaddr } from './address.js';
 
 /**
+ * Parameters for preparing a transaction for signing using WalletConnect.
+ */
+export interface GetWalletConnectTransactionParams
+{
+	transaction: TransactionBuilder;
+	prompt: string;
+}
+
+/**
+ * Response type for a prepared transaction for signing using WalletConnect.
+ */
+export interface GetWalletConnectTransactionResponse
+{
+	transaction: TransactionCommon;
+	sourceOutputs: any;
+	broadcast: boolean;
+	userPrompt: string;
+}
+
+/**
+ * Interface for the parameters required to sign a transaction.
+ */
+export interface GetSignedTransactionParams
+{
+	transaction: TransactionBuilder;
+	address: string;
+	privateKey: string;
+}
+
+/**
+ * Interface for the response returned after signing a transaction.
+ */
+export interface GetSignedTransactionResponse
+{
+	txn: any;
+	hex: string;
+	txHash: string;
+}
+
+
+/**
+ * Interface for the parameters required to sign a transaction.
+ */
+export interface SignTransactionParams
+{
+	address: any;
+	privateKey: any;
+	decoded: any;
+	sourceOutputsUnpacked: any;
+}
+
+/**
+ * Interface for the response returned after signing a transaction.
+ */
+export interface SignTransactionResponse
+{
+	txn: any;
+	hex: string;
+	txHash: string;
+}
+
+/**
  * Signs a transaction using the provided private key and address.
- * @param address - The address associated with the transaction.
- * @param privateKey - The private key used for signing.
- * @param decoded - The decoded transaction object.
- * @param sourceOutputsUnpacked - The source outputs unpacked from the transaction.
+ * @param params - The parameters required to sign the transaction.
  * @returns A promise that resolves to an object containing the signed transaction, its hex representation, and its hash.
  * @throws Will throw an error if the transaction template or public key is invalid.
  */
@@ -31,16 +92,7 @@ export const signTransaction = async ({
 	privateKey,
 	decoded,
 	sourceOutputsUnpacked,
-}: {
-	address: any;
-	privateKey: any;
-	decoded: any;
-	sourceOutputsUnpacked: any;
-}): Promise<{
-	txn: any;
-	hex: string;
-	txHash: string;
-}> =>
+}: SignTransactionParams): Promise<SignTransactionResponse> =>
 {
 	const template = importWalletTemplate(walletTemplateP2pkhNonHd);
 	if(typeof template === 'string')
@@ -139,21 +191,22 @@ export const signTransaction = async ({
 
 /**
  * Prepares a transaction for signing using WalletConnect.
- * @param transaction - The transaction to be prepared.
- * @param prompt - The user prompt for WalletConnect.
- * @returns A promise that resolves to an object containing the prepared transaction and source outputs.
- * @throws Will throw an error if the transaction cannot be decoded.
+ *
+ * This function processes a transaction and a user prompt to prepare it for signing,
+ * returning an object with the prepared transaction and its source outputs.
+ *
+ * @param {GetWalletConnectTransactionParams} params - The parameters for preparing the transaction.
+ * @param {Transaction} params.transaction - The transaction object to be prepared for signing.
+ * @param {string} params.prompt - A user prompt message for WalletConnect.
+ * @returns {Promise<GetWalletConnectTransactionResponse>} A promise that resolves to an object containing:
+ *   - transaction: The prepared transaction object.
+ *   - sourceOutputs: The source outputs associated with the transaction.
+ * @throws {Error} Throws an error if the transaction cannot be decoded.
  */
 export const getWalletConnectTransaction = async ({
 	transaction,
 	prompt,
-}: {
-	transaction: any;
-	prompt: string;
-}): Promise<{
-	transaction: any;
-	sourceOutputs: any;
-}> =>
+}: GetWalletConnectTransactionParams): Promise<GetWalletConnectTransactionResponse> =>
 {
 	const unsignedRawTransactionHex = transaction.build();
 
@@ -180,28 +233,18 @@ export const getWalletConnectTransaction = async ({
 	return wcTransactionObj;
 };
 
+
 /**
  * Signs a transaction using a provided private key.
- * @param transaction - The transaction to be signed.
- * @param address - The address associated with the transaction.
- * @param privateKey - The private key used for signing.
+ * @param params - The parameters for signing the transaction.
  * @returns A promise that resolves to an object containing the signed transaction, its hex representation, and its hash.
  * @throws Will throw an error if the transaction cannot be decoded.
  */
-export const getSignedTransaction = async ({
-	transaction,
-	address,
-	privateKey,
-}: {
-	transaction: any;
-	address: any;
-	privateKey: any;
-}): Promise<{
-	txn: any;
-	hex: string;
-	txHash: string;
-}> =>
+export const getSignedTransaction = async (
+	params: GetSignedTransactionParams,
+): Promise<GetSignedTransactionResponse> =>
 {
+	const { transaction, address, privateKey } = params;
 	const unsignedRawTransactionHex = transaction.build();
 
 	const decodedTransaction = decodeTransaction(hexToBin(unsignedRawTransactionHex));

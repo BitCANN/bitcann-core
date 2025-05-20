@@ -59,6 +59,12 @@ export {
 
 // Sign utilities
 export {
+	GetWalletConnectTransactionParams,
+	GetWalletConnectTransactionResponse,
+	GetSignedTransactionParams,
+	GetSignedTransactionResponse,
+	SignTransactionParams,
+	SignTransactionResponse,
 	getWalletConnectTransaction,
 	getSignedTransaction,
 	signTransaction,
