@@ -3,14 +3,14 @@ import { TransactionBuilder } from 'cashscript';
 
 import { InvalidBidAmountError, UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
-import type { BidParams, FetchBidUtxosParams, FetchBidUtxosReturnType } from '../interfaces/index.js';
+import type { CreateBidCoreParams, FetchBidUtxosParams, FetchBidUtxosResponse } from '../interfaces/index.js';
 import { convertAddressToPkh, toCashaddr } from '../util/address.js';
 
 /**
  * Fetches the necessary UTXOs for placing a bid in an auction.
  *
  * @param {FetchBidUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchBidUtxosReturnType>} A promise that resolves to the required UTXOs.
+ * @returns {Promise<FetchBidUtxosResponse>} A promise that resolves to the required UTXOs.
  * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
  */
 export const fetchBidUtxos = async ({
@@ -20,7 +20,7 @@ export const fetchBidUtxos = async ({
 	networkProvider,
 	contracts,
 	amount,
-}: FetchBidUtxosParams): Promise<FetchBidUtxosReturnType> =>
+}: FetchBidUtxosParams): Promise<FetchBidUtxosResponse> =>
 {
 	const [ registryUtxos, bidUtxos, userUtxos ] = await Promise.all([
 		networkProvider.getUtxos(contracts.Registry.address),
@@ -61,13 +61,13 @@ export const fetchBidUtxos = async ({
 /**
  * Creates a transaction for placing a bid in an auction.
  *
- * @param {BidParams} params - The parameters for the bid transaction.
+ * @param {CreateBidCoreParams} params - The parameters for the bid transaction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the bid transaction.
  * @throws {InvalidNameError} If the auction name is invalid.
  * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
  * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
  */
-export const createBidTransaction = async ({
+export const createBidTransactionCore = async ({
 	name,
 	amount,
 	address,
@@ -75,7 +75,7 @@ export const createBidTransaction = async ({
 	contracts,
 	minBidIncreasePercentage,
 	utxos,
-}: BidParams): Promise<TransactionBuilder> =>
+}: CreateBidCoreParams): Promise<TransactionBuilder> =>
 {
 	validateName(name);
 

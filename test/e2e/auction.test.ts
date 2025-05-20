@@ -3,9 +3,9 @@ import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import * as config	from '../config.js';
 import {
 	BitCANNManager,
-	fetchCreateAuctionUtxos,
+	fetchAuctionUtxos,
 	intToBytesToHex,
-	type FetchCreateAuctionUtxosResponse,
+	type FetchAuctionUtxosResponse,
 } from '../../lib/index.js';
 
 
@@ -55,7 +55,7 @@ describe('create-auction', () =>
 
 	it('should fetch utxos necessary for an auction', async () =>
 	{
-		const utxos: FetchCreateAuctionUtxosResponse = await fetchCreateAuctionUtxos({
+		const utxos: FetchAuctionUtxosResponse = await fetchAuctionUtxos({
 			amount: 1000,
 			address: config.aliceAddress,
 			networkProvider,

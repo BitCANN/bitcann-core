@@ -1,4 +1,4 @@
-import type { GetAuctionsParams, GetAuctionsReturnType } from '../interfaces/index.js';
+import type { GetAuctionsParams, GetAuctionsResponse } from '../interfaces/index.js';
 import { fetchTransaction, fetchTransactionBlockHeight } from '@electrum-cash/protocol';
 import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 
@@ -12,7 +12,7 @@ export const getAuctions = async ({
 	networkProvider,
 	contracts,
 	electrumClient,
-}: GetAuctionsParams): Promise<GetAuctionsReturnType[]> =>
+}: GetAuctionsParams): Promise<GetAuctionsResponse[]> =>
 {
 	const registryUtxos = await networkProvider.getUtxos(contracts.Registry.address);
 	const filteredUtxos = registryUtxos.filter((utxo) => utxo.token?.category === category && utxo.token?.nft?.capability === 'mutable');
@@ -83,5 +83,5 @@ export const getAuctions = async ({
 	}));
 
 
-	return auctionDetails.filter(detail => detail !== null) as GetAuctionsReturnType[];
+	return auctionDetails.filter(detail => detail !== null) as GetAuctionsResponse[];
 };

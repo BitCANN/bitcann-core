@@ -5,21 +5,21 @@ import { adjustLastOutputForFee } from '../util/transaction.js';
 import { convertAddressToPkh } from '../util/address.js';
 import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
 import { createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from '../util/index.js';
-import type { CreateAuctionParams, FetchCreateAuctionUtxosParams, FetchCreateAuctionUtxosResponse } from '../interfaces/index.js';
+import type { CreateAuctionCoreParams, FetchAuctionUtxosParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 
 /**
  * Fetches the necessary UTXOs for creating an auction.
  *
- * @param {FetchCreateAuctionUtxosParams} params - The parameters required to fetch UTXOs.
+ * @param {FetchAuctionUtxosParams} params - The parameters required to fetch UTXOs.
  * @param {number} params.amount - The amount for the auction.
  * @param {string} params.address - The address of the user initiating the auction.
  * @param {NetworkProvider} params.networkProvider - The network provider to fetch UTXOs.
  * @param {Record<string, Contract>} params.contracts - The contracts involved in the auction.
  * @param {string} params.category - The category of the auction.
- * @returns {Promise<FetchCreateAuctionUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
+ * @returns {Promise<FetchAuctionUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
  * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the auction.
  */
-export const fetchCreateAuctionUtxos = async ({ amount, address, networkProvider, contracts, category }: FetchCreateAuctionUtxosParams): Promise<FetchCreateAuctionUtxosResponse> =>
+export const fetchAuctionUtxos = async ({ amount, address, networkProvider, contracts, category }: FetchAuctionUtxosParams): Promise<FetchAuctionUtxosResponse> =>
 {
 	const [ registryUtxos, auctionUtxos, userUtxos ] = await Promise.all([
 		networkProvider.getUtxos(contracts.Registry.address),
@@ -56,7 +56,7 @@ export const fetchCreateAuctionUtxos = async ({ amount, address, networkProvider
  *
  * This function constructs a transaction to start an auction by utilizing various UTXOs and contracts.
  *
- * @param {CreateAuctionParams} params - The parameters for the auction transaction.
+ * @param {CreateAuctionCoreParams} params - The parameters for the auction transaction.
  * @param {string} params.name - The name of the auction.
  * @param {number} params.amount - The amount for the auction.
  * @param {string} params.address - The address of the auction initiator.
@@ -71,14 +71,14 @@ export const fetchCreateAuctionUtxos = async ({ amount, address, networkProvider
  * @throws {InvalidNameError} If the auction name is invalid.
  * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the auction.
  */
-export const createAuctionTransaction = async ({
+export const createAuctionTransactionCore = async ({
 	name,
 	amount,
 	address,
 	networkProvider,
 	contracts,
 	utxos,
-}: CreateAuctionParams): Promise<TransactionBuilder> =>
+}: CreateAuctionCoreParams): Promise<TransactionBuilder> =>
 {
 	// Validate the auction name
 	validateName(name);

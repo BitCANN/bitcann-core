@@ -1,23 +1,49 @@
-import type { NetworkProvider, AddressType } from 'cashscript';
-import { Contract, ElectrumNetworkProvider, TransactionBuilder } from 'cashscript';
+import type {
+	AddressType,
+	NetworkProvider,
+} from 'cashscript';
+import {
+	Contract,
+	ElectrumNetworkProvider,
+	TransactionBuilder,
+} from 'cashscript';
+import {
+	accumulate,
+	createAuctionTransactionCore,
+	createBidTransactionCore,
+	createClaimDomainTransaction,
+	createRecordsTransaction,
+	fetchAccumulationUtxos,
+	fetchAuctionUtxos,
+	fetchBidUtxos,
+	fetchDuplicateAuctionGuardUtxos,
+	fetchIllegalAuctionGuardUtxos,
+	fetchInvalidNameGuardUtxos,
+	fetchRecords,
+	fetchRecordsUtxos,
+	getAuctions,
+	getDomain,
+	getPastAuctions,
+	penalizeDuplicateAuction,
+	penalizeIllegalAuction,
+	penalizeInvalidAuctionName,
+} from './functions/index.js';
+import {
+	constructContracts,
+	constructDomainContract,
+} from './util/index.js';
+import type {
+	CreateAuctionParams,
+	CreateBidParams,
+	CreateClaimDomainTransactionParams,
+	DomainInfo,
+	GetAuctionsResponse,
+	ManagerConfig,
+	PastAuctionResult,
+} from './interfaces/index.js';
 
-import type { ManagerConfig, DomainInfo, PastAuctionResult, CreateAuctionTransactionParams, GetAuctionsReturnType } from './interfaces/index.js';
-import { constructContracts, constructDomainContract } from './util/index.js';
-import { createClaimDomainTransaction } from './functions/claim-domain.js';
-import { fetchRecords } from './functions/fetch-records.js';
-import { getDomain } from './functions/get-domain.js';
-import { createRecordsTransaction, fetchRecordsUtxos } from './functions/create-records.js';
-import { getPastAuctions } from './functions/get-past-auctions.js';
-import { getAuctions } from './functions/get-auctions.js';
-import { createAuctionTransaction, fetchCreateAuctionUtxos } from './functions/create-auction.js';
-import { createBidTransaction, fetchBidUtxos } from './functions/place-bid.js';
-import { fetchInvalidNameGuardUtxos, penalizeInvalidAuctionName } from './functions/penalise-invalid-name.js';
-import { fetchDuplicateAuctionGuardUtxos, penalizeDuplicateAuction } from './functions/penalise-duplicate-auction.js';
-import { fetchIllegalAuctionGuardUtxos, penalizeIllegalAuction } from './functions/penalise-illegal-auction.js';
-import { accumulate, fetchAccumulationUtxos } from './functions/accumulation.js';
 
-
-export class BitCANNManager
+export class BitcannManager
 {
 	// Config to build the contracts in the BitCANN system.
 	public category: string;
@@ -95,7 +121,7 @@ export class BitCANNManager
 	 *
 	 * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
-	public async getAuctions(): Promise<GetAuctionsReturnType[]>
+	public async getAuctions(): Promise<GetAuctionsResponse[]>
 	{
 		return getAuctions({
 			category: this.category,
@@ -153,24 +179,25 @@ export class BitCANNManager
 	/**
 	 * Initiates the creation of an auction transaction for a specified domain.
 	 *
-	 * @param {Object} params - The parameters required for the auction transaction.
+	 * @param {CreateAuctionParams} params - The parameters required for the auction transaction.
 	 * @param {string} params.name - The domain name to be auctioned.
-	 * @param {number} params.amount - The bid amount for the auction.
+	 * @param {number} params.amount - The initial amount for the auction.
 	 * @param {string} params.address - The address associated with the auction.
-	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the auction.
+	 * @param {FetchCreateAuctionUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the auction transaction.
 	 * @throws {InvalidNameError} If the provided domain name is invalid.
-	 * @throws {UserUTXONotFoundError} If no user UTXO is found for the transaction.
+	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
 	public async createAuctionTransaction({
 		name,
 		amount,
 		address,
 		utxos,
-	}: CreateAuctionTransactionParams): Promise<TransactionBuilder>
+	}: CreateAuctionParams): Promise<TransactionBuilder>
 	{
 		if(!utxos)
 		{
-			utxos = await fetchCreateAuctionUtxos({
+			utxos = await fetchAuctionUtxos({
 				amount,
 				address,
 				networkProvider: this.networkProvider,
@@ -179,32 +206,36 @@ export class BitCANNManager
 			});
 		}
 
-		console.log(utxos);
-
-		return createAuctionTransaction({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
+		return createAuctionTransactionCore({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
 	}
 
 	/**
-	 * Creates a bid transaction for a specified domain auction.
+	 * Initiates the creation of a bid transaction for a specified domain auction.
 	 *
-	 * @param {Object} params - The parameters for the bid transaction.
-	 * @param {string} params.name - The domain name being bid on.
-	 * @param {number} params.amount - The bid amount.
-	 * @param {string} params.address - The address placing the bid.
-	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the bid.
+	 * @param {CreateBidParams} params - The parameters required for the bid transaction.
+	 * @param {string} params.name - The domain name on which the bid is being placed.
+	 * @param {number} params.amount - The amount of the bid.
+	 * @param {string} params.address - The address of the bidder.
+	 * @param {FetchBidUtxosReturnType} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the bid transaction.
+	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
+	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
 	 */
-	public async createBidTransaction({ name, amount, address }: { name: string; amount: number; address: string }): Promise<TransactionBuilder>
+	public async createBidTransaction({ name, amount, address, utxos }: CreateBidParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchBidUtxos({
-			name,
-			category: this.category,
-			address,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			amount,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchBidUtxos({
+				name,
+				category: this.category,
+				address,
+				networkProvider: this.networkProvider,
+				contracts: this.contracts,
+				amount,
+			});
+		}
 
-		return createBidTransaction({
+		return createBidTransactionCore({
 			name,
 			amount,
 			address,
@@ -218,11 +249,11 @@ export class BitCANNManager
 	/**
 	 * Creates a transaction to claim a domain.
 	 *
-	 * @param {Object} params - The parameters for claiming the domain.
+	 * @param {CreateClaimDomainTransactionParams} params - The parameters for claiming the domain.
 	 * @param {string} params.name - The domain name to claim.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the domain.
 	 */
-	public async createClaimDomainTransaction({ name }: { name: string }): Promise<TransactionBuilder>
+	public async createClaimDomainTransaction({ name }: CreateClaimDomainTransactionParams): Promise<TransactionBuilder>
 	{
 		return createClaimDomainTransaction({
 			category: this.category,

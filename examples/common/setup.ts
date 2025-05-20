@@ -1,5 +1,5 @@
 import { ElectrumNetworkProvider } from "cashscript";
-import { BitCANNManager } from "../../lib/index.js";
+import { BitcannManager } from "../../lib/index.js";
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -21,7 +21,7 @@ export const platformFeeAddress = process.env.FEE_COLLECTION_ADDRESS;
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
-const bitcannManager = new BitCANNManager({
+const bitcannManager = new BitcannManager({
 	category: domainTokenCategory,
 	minStartingBid: minStartingBid,
 	minBidIncreasePercentage: minBidIncreasePercentage,

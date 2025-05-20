@@ -4,14 +4,14 @@ import {
 } from './common/setup.js';
 import { aliceAddress, alicePriv } from './common/wallet.js';
 import { getSignedTransaction } from './common/sign.js';
-
+import { CreateClaimDomainTransactionParams } from '../lib/interfaces/index.js';
 
 (async () =>
 {
 	const name = 'satoshi';
 	const address = aliceAddress;
 
-	const claimDomainTransaction = await bitcannManager.createClaimDomainTransaction({ name });
+	const claimDomainTransaction = await bitcannManager.createClaimDomainTransaction({ name } as CreateClaimDomainTransactionParams);
 
   const preparedTransaction = await getSignedTransaction({
     transaction: claimDomainTransaction,
