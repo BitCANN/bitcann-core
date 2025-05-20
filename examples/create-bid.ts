@@ -7,7 +7,7 @@ import { getSignedTransaction } from './common/sign.js';
 
 (async () =>
 {
-	const name = 'cypherpunk';
+	const name = 'test';
 	const address = aliceAddress;
 
 	const amount = 10000*1.05;

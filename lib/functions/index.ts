@@ -10,3 +10,4 @@ export { getAuctions } from './get-auctions.js';
 export { getDomain } from './get-domain.js';
 export { getPastAuctions } from './get-past-auctions.js';
 export { accumulate, fetchAccumulationUtxos } from './accumulation.js';
+export { lookupAddressCore } from './resolver.js';

@@ -6,17 +6,16 @@ import { ElectrumNetworkProvider } from "cashscript";
 import dotenv from 'dotenv';
 dotenv.config();
 
-// STEP 1: Create the genesis category using the `createGenesisCategory` function
-const domainTokenCategory = 'cd9312b30fbf5bca4cf90a6167c5be7961603447879ed9851e01d7b2cdc0e451';
-
-// STEP 2: Figure out the following parameters
-const minStartingBid = 10000;
-const minBidIncreasePercentage = 5;
-const inactivityExpiryTime = 1;
-const minWaitTime = 4194306;
-const maxPlatformFeePercentage = 50;
-const platformFeeAddress = process.env.FEE_COLLECTION_ADDRESS;
-const genesisTokenAmount = BigInt('9223372036854775807');
+import {
+  domainTokenCategory,
+  minStartingBid,
+  minBidIncreasePercentage,
+  inactivityExpiryTime,
+  minWaitTime,
+  maxPlatformFeePercentage,
+  platformFeeAddress,
+  genesisTokenAmount,
+} from './common/config.js';
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
@@ -91,8 +90,22 @@ const createMintingSetup = async () => {
   )
 
   for (const contract of Object.values(bitcannManager.contracts)) {
+    console.log('contract', contract.name)
+    console.log('contract', contract.address)
     // @ts-ignore
     const lockingBytecode = binToHex(cashAddressToLockingBytecode(contract.address).bytecode)
+    console.log('lockingBytecode', lockingBytecode)
+    console.log('--------------------------------')
+  }
+
+  for (const contract of Object.values(bitcannManager.contracts)) {
+    // @ts-ignore
+    const lockingBytecode = binToHex(cashAddressToLockingBytecode(contract.address).bytecode)
+
+    if(contract.name === 'Registry') {
+      continue;
+    }
+
     mintingSetup.push(
       new TokenMintRequest({
         cashaddr: registryContract.address,
@@ -108,41 +121,41 @@ const createMintingSetup = async () => {
     )
   }
 
-  const tx = await wallet.tokenMint(
-    domainTokenCategory,
-    mintingSetup
-  )
+  // const tx = await wallet.tokenMint(
+  //   domainTokenCategory,
+  //   mintingSetup
+  // )
 
-  console.log(mintingSetup)
-  console.log(tx)
-  console.log('INFO: Minting setup complete')
+  // console.log(mintingSetup)
+  // console.log(tx)
+  // console.log('INFO: Minting setup complete')
 
-  const utxos = await wallet.getTokenUtxos(domainTokenCategory);
-  const mintingUtxo = utxos.find(utxo => utxo.token?.capability === NFTCapability.minting);
-  if (!mintingUtxo) {
-    console.log('No minting NFT found');
-    return;
-  }
+  // const utxos = await wallet.getTokenUtxos(domainTokenCategory);
+  // const mintingUtxo = utxos.find(utxo => utxo.token?.capability === NFTCapability.minting);
+  // if (!mintingUtxo) {
+  //   console.log('No minting NFT found');
+  //   return;
+  // }
   
-  const tokenId = mintingUtxo.token?.tokenId;
-  const amount = mintingUtxo.token?.amount;
-  const capability = mintingUtxo.token?.capability;
-  const commitment = mintingUtxo.token?.commitment;
+  // const tokenId = mintingUtxo.token?.tokenId;
+  // const amount = mintingUtxo.token?.amount;
+  // const capability = mintingUtxo.token?.capability;
+  // const commitment = mintingUtxo.token?.commitment;
 
-  const transferTx = await wallet.send([
-    new TokenSendRequest({
-      cashaddr: registryContract.address,
-      amount,
-      // @ts-ignore
-      tokenId,
-      capability,
-      commitment
-    })
-  ])
+  // const transferTx = await wallet.send([
+  //   new TokenSendRequest({
+  //     cashaddr: registryContract.address,
+  //     amount,
+  //     // @ts-ignore
+  //     tokenId,
+  //     capability,
+  //     commitment
+  //   })
+  // ])
 
-  console.log(transferTx)
+  // console.log(transferTx)
 
-  console.log('INFO: Minting with token amount transferred')
+  // console.log('INFO: Minting with token amount transferred')
 }
 
 (async () =>

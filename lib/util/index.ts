@@ -33,7 +33,6 @@ export {
 	getAuctionUtxo,
 	getAuthorizedContractUtxo,
 	generateSourceOutputs,
-	findPureUTXO,
 } from './utxo.js';
 
 // Transaction utilities

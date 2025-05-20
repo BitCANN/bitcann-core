@@ -75,7 +75,7 @@ export const createPlaceholderUnlocker = (address: string): Unlocker =>
 export const adjustLastOutputForFee = (transaction: TransactionBuilder, fundingUTXO: Utxo, deductable: bigint = BigInt(0)): TransactionBuilder =>
 {
 	const transactionSize = transaction.build().length;
-	transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(transactionSize) + deductable);
+	transaction.outputs[transaction.outputs.length - 1].amount = fundingUTXO.satoshis - (BigInt(transactionSize * 2) + deductable);
 
 	return transaction;
 };

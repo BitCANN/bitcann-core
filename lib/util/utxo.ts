@@ -238,24 +238,6 @@ export const generateSourceOutputs = (inputs: UnlockableUtxo[]): LibauthOutput[]
 };
 
 /**
- * Finds a pure UTXO (without a token) with the highest satoshis from a list of UTXOs.
- *
- * @param {any[]} utxos - The list of UTXOs to search through.
- * @returns {any} The pure UTXO with the highest satoshis.
- * @throws {Error} If no pure UTXO is found.
- */
-export const findPureUTXO = (utxos: any[]): any =>
-{
-	const utxo = utxos.reduce((max, val) =>
-		(!val.token && val.satoshis > (max?.satoshis || 0)) ? val : max,
-	null);
-
-	if(!utxo) throw new Error('Could not find user UTXO without token');
-
-	return utxo;
-};
-
-/**
  * Creates a placeholder unlocker for a given address.
  *
  * @param {string} address - The address for which to create the unlocker.

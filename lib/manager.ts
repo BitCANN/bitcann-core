@@ -25,6 +25,7 @@ import {
 	getAuctions,
 	getDomain,
 	getPastAuctions,
+	lookupAddressCore,
 	penalizeDuplicateAuction,
 	penalizeIllegalAuction,
 	penalizeInvalidAuctionName,
@@ -49,6 +50,7 @@ import type {
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
 } from './interfaces/index.js';
+import { LookupAddressCoreResponse } from './interfaces/resolver.js';
 
 
 export class BitcannManager
@@ -102,7 +104,9 @@ export class BitcannManager
 		});
 	}
 
+	// *********************************************************************************
 	// Read Methods
+	// *********************************************************************************
 
 	/**
 	 * Fetches the domain records for a given domain name.
@@ -176,7 +180,26 @@ export class BitcannManager
 		});
 	}
 
+	// public async resolveName(name: string): Promise<string>
+	// {
+	// 	return resolveName({
+	// 		name,
+	// 		category: this.category,
+	// 	});
+	// }
+
+	public async lookupAddress(address: string): Promise<LookupAddressCoreResponse>
+	{
+		return lookupAddressCore({
+			address,
+			category: this.category,
+			networkProvider: this.networkProvider,
+		});
+	}
+
+	// *********************************************************************************
 	// Write Methods
+	// *********************************************************************************
 
 	/**
 	 * Initiates the creation of an auction transaction for a specified domain.
