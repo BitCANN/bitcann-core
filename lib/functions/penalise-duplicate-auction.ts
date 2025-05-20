@@ -1,25 +1,25 @@
 import { getAuthorizedContractUtxo, getThreadUtxo, getAllRunningAuctionUtxos } from '../util/index.js';
 import { TransactionBuilder } from 'cashscript';
-import { FetchDuplicateAuctionGuardUtxosParams, FetchDuplicateAuctionGuardUtxosReturn, PenaliseDuplicateAuctionParams } from '../interfaces/index.js';
+import { FetchDuplicateAuctionGuardUtxosParams, FetchDuplicateAuctionGuardUtxosResponse, PenaliseDuplicateAuctionCoreParams } from '../interfaces/index.js';
 import { DuplicateAuctionsDoNotExistError } from '../errors.js';
 
 /**
  * Fetches UTXOs required for penalizing a duplicate auction.
  *
  * @param {FetchDuplicateAuctionGuardUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchDuplicateAuctionGuardUtxosReturn>} A promise that resolves to the required UTXOs.
+ * @returns {Promise<FetchDuplicateAuctionGuardUtxosResponse>} A promise that resolves to the required UTXOs.
  * @throws {DuplicateAuctionsDoNotExistError} If less than two duplicate auctions exist.
  */
 export const fetchDuplicateAuctionGuardUtxos = async ({
 	name,
 	category,
-	networkProvider,
 	contracts,
-}: FetchDuplicateAuctionGuardUtxosParams): Promise<FetchDuplicateAuctionGuardUtxosReturn> =>
+	options,
+}: FetchDuplicateAuctionGuardUtxosParams): Promise<FetchDuplicateAuctionGuardUtxosResponse> =>
 {
 	const [ registryUtxos, guardUtxos ] = await Promise.all([
-		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.AuctionConflictResolver.address),
+		options.provider.getUtxos(contracts.Registry.address),
+		options.provider.getUtxos(contracts.AuctionConflictResolver.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
@@ -54,7 +54,7 @@ export const fetchDuplicateAuctionGuardUtxos = async ({
 /**
  * Constructs a transaction to penalize a duplicate auction.
  *
- * @param {PenaliseDuplicateAuctionParams} params - The parameters required to penalize a duplicate auction.
+ * @param {PenaliseDuplicateAuctionCoreParams} params - The parameters required to penalize a duplicate auction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
  */
 export const penalizeDuplicateAuction = async ({
@@ -62,7 +62,7 @@ export const penalizeDuplicateAuction = async ({
 	networkProvider,
 	contracts,
 	utxos,
-}: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder> =>
+}: PenaliseDuplicateAuctionCoreParams): Promise<TransactionBuilder> =>
 {
 	const { threadNFTUTXO, authorizedContractUTXO, runningValidAuctionUTXO, runningInValidAuctionUTXO } = utxos;
 

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals';
 import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import * as config	from '../config.js';
 import {
-	BitCANNManager,
+	BitcannManager,
 	fetchAuctionUtxos,
 	intToBytesToHex,
 	type FetchAuctionUtxosResponse,
@@ -13,7 +13,7 @@ describe('create-auction', () =>
 {
 	const networkProvider = new MockNetworkProvider();
 	config.mockOptions.networkProvider = networkProvider;
-	const manager = new BitCANNManager(config.mockOptions);
+	const manager = new BitcannManager(config.mockOptions);
 
 	beforeAll( async () =>
 	{

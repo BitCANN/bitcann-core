@@ -1,4 +1,4 @@
-export { fetchClaimDomainUtxos, createClaimDomainTransaction } from './claim-domain.js';
+export { fetchClaimDomainUtxos, createClaimDomainTransactionCore } from './claim-domain.js';
 export { fetchAuctionUtxos, createAuctionTransactionCore } from './create-auction.js';
 export { fetchBidUtxos, createBidTransactionCore } from './create-bid.js';
 export { fetchDuplicateAuctionGuardUtxos, penalizeDuplicateAuction } from './penalise-duplicate-auction.js';

@@ -8,14 +8,24 @@ import {
 	findInternalAuthNFTUTXO,
 	findOwnershipNFTUTXO,
 } from '../util/index.js';
-import { CreateRecordsParams, FetchRecordsUtxosParams, FetchRecordsUtxosReturnType } from '../interfaces/index.js';
+import { CreateRecordsCoreParams, FetchRecordsUtxosParams, FetchRecordsUtxosResponse } from '../interfaces/index.js';
 
-
-export const fetchRecordsUtxos = async ({ name,
+/**
+ * Fetches the UTXOs required for creating records.
+ *
+ * @param {FetchRecordsUtxosParams} params - The parameters for fetching UTXOs.
+ * @returns {Promise<FetchRecordsUtxosResponse>} A promise that resolves to the fetched UTXOs.
+ * @throws {InternalAuthNFTUTXONotFoundError} If the internal authorization NFT UTXO is not found.
+ * @throws {UserOwnershipNFTUTXONotFoundError} If the user ownership NFT UTXO is not found.
+ * @throws {UserFundingUTXONotFoundError} If the user funding UTXO is not found.
+ */
+export const fetchRecordsUtxos = async ({
+	name,
 	category,
 	domainContract,
 	address,
-	networkProvider }: FetchRecordsUtxosParams): Promise<FetchRecordsUtxosReturnType> =>
+	networkProvider,
+}: FetchRecordsUtxosParams): Promise<FetchRecordsUtxosResponse> =>
 {
 	const [ domainUTXOs, userUtxos ] = await Promise.all([
 		networkProvider.getUtxos(domainContract.address),
@@ -50,7 +60,7 @@ export const fetchRecordsUtxos = async ({ name,
 /**
  * Creates a transaction for adding a record to a domain.
  *
- * @param {CreateRecordsParams} params - The parameters for creating the record transaction.
+ * @param {CreateRecordsCoreParams} params - The parameters for creating the record transaction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
  */
 export const createRecordsTransaction = async ({
@@ -59,7 +69,7 @@ export const createRecordsTransaction = async ({
 	networkProvider,
 	records,
 	utxos,
-}: CreateRecordsParams): Promise<TransactionBuilder> =>
+}: CreateRecordsCoreParams): Promise<TransactionBuilder> =>
 {
 	const { internalAuthNFTUTXO, ownershipNFTUTXO, fundingUTXO } = utxos;
 

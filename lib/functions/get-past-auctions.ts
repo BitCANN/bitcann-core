@@ -1,18 +1,18 @@
 import { binToHex, hexToBin, decodeTransaction } from '@bitauth/libauth';
 import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
-import type { GetPastAuctionsParams, PastAuctionResult } from '../interfaces/index.js';
+import type { GetPastAuctionsParams, PastAuctionResponse } from '../interfaces/index.js';
 
 /**
-	 * Retrieves the transaction history of auctions.
-	 *
-	 * @returns {Promise<PastAuctionResult[]>} A promise that resolves to an array of transaction history objects,
-   * each containing a transaction hex and an auction name.
-	 */
+ * Retrieves the transaction history of auctions.
+ *
+ * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
+ * each containing a transaction hex and an auction name.
+ */
 export const getPastAuctions = async ({
 	category,
 	electrumClient,
 	domainContract,
-}: GetPastAuctionsParams): Promise<PastAuctionResult[]> =>
+}: GetPastAuctionsParams): Promise<PastAuctionResponse[]> =>
 {
 	// @ts-ignore
 	const history = await fetchHistory(electrumClient, domainContract.address);
@@ -75,5 +75,5 @@ export const getPastAuctions = async ({
 		};
 	}));
 
-	return validTransactions.filter(tx => tx !== null) as PastAuctionResult[];
+	return validTransactions.filter(tx => tx !== null) as PastAuctionResponse[];
 };

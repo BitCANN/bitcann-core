@@ -209,3 +209,16 @@ export class ThreadWithTokenUTXONotFoundError extends Error
 		super(message);
 	}
 }
+
+/**
+ * Error thrown when a previous bidder address is invalid.
+ */
+export class InvalidPrevBidderAddressError extends Error
+{
+	constructor()
+	{
+		const message = 'The previous bidder address is invalid';
+
+		super(message);
+	}
+}

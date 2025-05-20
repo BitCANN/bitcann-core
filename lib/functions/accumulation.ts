@@ -2,7 +2,7 @@ import { TransactionBuilder } from 'cashscript';
 import { adjustLastOutputForFee, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from '../util/index.js';
 import { UserUTXONotFoundError } from '../errors.js';
 import { createPlaceholderUnlocker, getThreadWithTokenUtxo } from '../util/utxo.js';
-import { FetchAccumulationUtxosResponse, FetchAccumulationUtxosParams, AccumulateParams } from '../interfaces/index.js';
+import { FetchAccumulationUtxosResponse, FetchAccumulationUtxosParams, AccumulateCoreParams } from '../interfaces/index.js';
 
 
 /**
@@ -77,7 +77,7 @@ export const accumulate = async ({
 	accumulatorContract,
 	utxos,
 	address,
-}: AccumulateParams): Promise<TransactionBuilder> =>
+}: AccumulateCoreParams): Promise<TransactionBuilder> =>
 {
 	const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, threadWithTokenUTXO, userUTXO } = utxos;
 

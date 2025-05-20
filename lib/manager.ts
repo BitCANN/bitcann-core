@@ -11,11 +11,12 @@ import {
 	accumulate,
 	createAuctionTransactionCore,
 	createBidTransactionCore,
-	createClaimDomainTransaction,
+	createClaimDomainTransactionCore,
 	createRecordsTransaction,
 	fetchAccumulationUtxos,
 	fetchAuctionUtxos,
 	fetchBidUtxos,
+	fetchClaimDomainUtxos,
 	fetchDuplicateAuctionGuardUtxos,
 	fetchIllegalAuctionGuardUtxos,
 	fetchInvalidNameGuardUtxos,
@@ -33,13 +34,18 @@ import {
 	constructDomainContract,
 } from './util/index.js';
 import type {
+	AccumulateParams,
 	CreateAuctionParams,
 	CreateBidParams,
-	CreateClaimDomainTransactionParams,
+	CreateClaimDomainCoreParams,
+	CreateRecordsParams,
 	DomainInfo,
 	GetAuctionsResponse,
 	ManagerConfig,
-	PastAuctionResult,
+	PastAuctionResponse,
+	PenaliseDuplicateAuctionParams,
+	PenaliseIllegalAuctionParams,
+	PenalizeInvalidNameParams,
 } from './interfaces/index.js';
 
 
@@ -135,10 +141,10 @@ export class BitcannManager
 	/**
 	 * Retrieves the transaction history.
 	 *
-	 * @returns {Promise<PastAuctionResult[]>} A promise that resolves to an array of transaction history objects,
+	 * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
 	 * each containing a transaction hex and a domain name.
 	 */
-	public async getHistory(): Promise<PastAuctionResult[]>
+	public async getHistory(): Promise<PastAuctionResponse[]>
 	{
 		return getPastAuctions({
 			category: this.category,
@@ -167,23 +173,13 @@ export class BitcannManager
 	// Write Methods
 
 	/**
-	 * Accumulates internal tokens. Currently a placeholder method.
-	 *
-	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
-	 */
-	public async accumulateInternalTokens(): Promise<void>
-	{
-		return;
-	}
-
-	/**
 	 * Initiates the creation of an auction transaction for a specified domain.
 	 *
 	 * @param {CreateAuctionParams} params - The parameters required for the auction transaction.
 	 * @param {string} params.name - The domain name to be auctioned.
 	 * @param {number} params.amount - The initial amount for the auction.
 	 * @param {string} params.address - The address associated with the auction.
-	 * @param {FetchCreateAuctionUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @param {FetchAuctionUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the auction transaction.
 	 * @throws {InvalidNameError} If the provided domain name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
@@ -216,7 +212,7 @@ export class BitcannManager
 	 * @param {string} params.name - The domain name on which the bid is being placed.
 	 * @param {number} params.amount - The amount of the bid.
 	 * @param {string} params.address - The address of the bidder.
-	 * @param {FetchBidUtxosReturnType} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @param {FetchBidUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the bid transaction.
 	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
@@ -249,13 +245,27 @@ export class BitcannManager
 	/**
 	 * Creates a transaction to claim a domain.
 	 *
-	 * @param {CreateClaimDomainTransactionParams} params - The parameters for claiming the domain.
+	 * @param {CreateClaimDomainCoreParams} params - The parameters for claiming the domain.
 	 * @param {string} params.name - The domain name to claim.
+	 * @param {FetchClaimDomainUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the domain.
+	 * @throws {DomainMintingUTXONotFoundError} If no suitable UTXO is found for minting the domain.
+	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
-	public async createClaimDomainTransaction({ name }: CreateClaimDomainTransactionParams): Promise<TransactionBuilder>
+	public async createClaimDomainTransaction({ name, utxos }: CreateClaimDomainCoreParams): Promise<TransactionBuilder>
 	{
-		return createClaimDomainTransaction({
+		if(!utxos)
+		{
+			utxos = await fetchClaimDomainUtxos({
+				category: this.category,
+				registryContract: this.contracts.Registry,
+				domainFactoryContract: this.contracts.DomainFactory,
+				name,
+				networkProvider: this.networkProvider,
+			});
+		}
+
+		return createClaimDomainTransactionCore({
 			category: this.category,
 			registryContract: this.contracts.Registry,
 			domainFactoryContract: this.contracts.DomainFactory,
@@ -263,26 +273,32 @@ export class BitcannManager
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			minWaitTime: this.minWaitTime,
 			name,
-			networkProvider: this.networkProvider,
 			options: this.options,
 			platformFeeAddress: this.platformFeeAddress,
+			utxos,
 		});
 	}
 
 	/**
-	 * Proves that an auction name is invalid. Currently logs the name.
+	 * Initiates a transaction to penalize an auction with an invalid name.
 	 *
-	 * @param {string} name - The auction name to validate.
-	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
+	 * @param {PenalizeInvalidNameParams} params - The parameters required to penalize an invalid auction name.
+	 * @param {string} params.name - The auction name to validate.
+	 * @param {string} params.rewardTo - The address to reward for identifying the invalid name.
+	 * @param {FetchInvalidNameGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async penalizeInvalidAuctionName({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
+	public async penalizeInvalidAuctionName({ name, rewardTo, utxos }: PenalizeInvalidNameParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchInvalidNameGuardUtxos({
-			name,
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchInvalidNameGuardUtxos({
+				name,
+				category: this.category,
+				networkProvider: this.networkProvider,
+				contracts: this.contracts,
+			});
+		}
 
 		return penalizeInvalidAuctionName({
 			name,
@@ -294,20 +310,25 @@ export class BitcannManager
 	}
 
 	/**
-	 * Proves that an auction is a duplicate. Currently logs the name.
+	 * Initiates a transaction to penalize a duplicate auction.
 	 *
-	 * @param {string} name - The auction name to check for duplication.
-	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
+	 * @param {PenaliseDuplicateAuctionParams} params - The parameters required to penalize a duplicate auction.
+	 * @param {string} params.name - The auction name to check for duplication.
+	 * @param {string} params.rewardTo - The address to reward for identifying the duplicate auction.
+	 * @param {FetchDuplicateAuctionGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async penalizeDuplicateAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
+	public async penalizeDuplicateAuction({ name, rewardTo, utxos }: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchDuplicateAuctionGuardUtxos({
-			name,
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			options: this.options,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchDuplicateAuctionGuardUtxos({
+				name,
+				category: this.category,
+				contracts: this.contracts,
+				options: this.options,
+			});
+		}
 
 		return penalizeDuplicateAuction({
 			rewardTo,
@@ -323,16 +344,18 @@ export class BitcannManager
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeIllegalAuction({ name, rewardTo }: { name: string; rewardTo: string }): Promise<TransactionBuilder>
+	public async penalizeIllegalAuction({ name, rewardTo, utxos }: PenaliseIllegalAuctionParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchIllegalAuctionGuardUtxos({
-			name,
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			inactivityExpiryTime: this.inactivityExpiryTime,
-			options: this.options,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchIllegalAuctionGuardUtxos({
+				name,
+				category: this.category,
+				contracts: this.contracts,
+				inactivityExpiryTime: this.inactivityExpiryTime,
+				options: this.options,
+			});
+		}
 
 		return penalizeIllegalAuction({
 			name,
@@ -347,15 +370,16 @@ export class BitcannManager
 	}
 
 	/**
-	 * Creates a transaction to add a record to a domain.
+	 * Initiates the creation of a transaction to add records to a specified domain.
 	 *
-	 * @param {Object} params - The parameters for the record transaction.
-	 * @param {string} params.name - The domain name to which the record will be added.
-	 * @param {string} params.record - The record data to add.
-	 * @param {string} params.address - The address associated with the record.
-	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the record transaction.
+	 * @param {CreateRecordsParams} params - The parameters required for the record transaction.
+	 * @param {string} params.name - The name of the domain where the records will be added.
+	 * @param {string[]} params.records - An array of record data to be added to the domain.
+	 * @param {string} params.address - The blockchain address associated with the records.
+	 * @param {FetchRecordsUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction. If not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder instance for the record transaction.
 	 */
-	public async createRecordsTransaction({ name, records, address }: { name: string; records: string[]; address: string }): Promise<TransactionBuilder>
+	public async createRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
 	{
 		const domainContract = constructDomainContract({
 			name: name,
@@ -364,13 +388,16 @@ export class BitcannManager
 			options: this.options,
 		});
 
-		const utxos = await fetchRecordsUtxos({
-			name,
-			category: this.category,
-			domainContract,
-			address,
-			networkProvider: this.networkProvider,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchRecordsUtxos({
+				name,
+				category: this.category,
+				domainContract,
+				address,
+				networkProvider: this.networkProvider,
+			});
+		}
 
 		return createRecordsTransaction({
 			records,
@@ -382,18 +409,32 @@ export class BitcannManager
 	}
 
 	/**
-	 * Accumulates tokens from thread to the minting utxo.
+	 * Initiates the accumulation of tokens from a thread to the minting UTXO.
 	 *
-	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the accumulation.
+	 * This method facilitates the transfer of tokens from a specified thread to a minting UTXO
+	 * by constructing a transaction using the provided or fetched UTXOs. If the UTXOs are not
+	 * provided, they will be fetched using the network provider and contracts associated with
+	 * the current instance.
+	 *
+	 * @param {AccumulateParams} params - The parameters required for the accumulation process.
+	 * @param {string} params.address - The blockchain address associated with the accumulation.
+	 * @param {FetchAccumulationUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction.
+	 * If not provided, they will be fetched automatically.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object
+	 * representing the constructed transaction for the accumulation process.
+	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
-	public async accumulateTokens({ address }: { address: string }): Promise<TransactionBuilder>
+	public async accumulateTokens({ address, utxos }: AccumulateParams): Promise<TransactionBuilder>
 	{
-		const utxos = await fetchAccumulationUtxos({
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			category: this.category,
-			address,
-		});
+		if(!utxos)
+		{
+			utxos = await fetchAccumulationUtxos({
+				networkProvider: this.networkProvider,
+				contracts: this.contracts,
+				category: this.category,
+				address,
+			});
+		}
 
 		return accumulate({
 			networkProvider: this.networkProvider,

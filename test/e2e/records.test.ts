@@ -31,7 +31,10 @@ describe('records', () =>
 			name: domain,
 			category: config.mockOptions.category,
 			inactivityExpiryTime: config.mockOptions.inactivityExpiryTime,
-			options: config.mockOptions,
+			options: {
+				provider: networkProvider,
+				addressType: 'p2sh32',
+			},
 			// @ts-ignore
 			electrumClient: electrumClient,
 		});

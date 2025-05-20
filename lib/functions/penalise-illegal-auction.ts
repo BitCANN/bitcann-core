@@ -1,23 +1,22 @@
 import { TransactionBuilder } from 'cashscript';
 import { constructDomainContract, getRunningAuctionUtxo, getThreadUtxo, getAuthorizedContractUtxo } from '../util/index.js';
 import { ExternalAuthNFTUTXONotFoundError } from '../errors.js';
-import { FetchIllegalAuctionGuardUtxosParams, FetchIllegalAuctionGuardUtxosReturn, PenaliseIllegalAuctionParams } from '../interfaces/index.js';
+import { FetchIllegalAuctionGuardUtxosParams, FetchIllegalAuctionGuardUtxosResponse, PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
 
 /**
  * Fetches UTXOs required for penalizing an illegal auction.
  *
  * @param {FetchIllegalAuctionGuardUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchIllegalAuctionGuardUtxosReturn>} A promise that resolves to the required UTXOs.
+ * @returns {Promise<FetchIllegalAuctionGuardUtxosResponse>} A promise that resolves to the required UTXOs.
  * @throws {ExternalAuthNFTUTXONotFoundError} If the external authorization NFT UTXO is not found.
  */
 export const fetchIllegalAuctionGuardUtxos = async ({
 	name,
 	category,
-	networkProvider,
 	contracts,
 	inactivityExpiryTime,
 	options,
-}: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosReturn> =>
+}: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosResponse> =>
 {
 	const domainContract = constructDomainContract({
 		name,
@@ -27,9 +26,9 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 	});
 
 	const [ registryUtxos, guardUtxos, domainUtxos ] = await Promise.all([
-		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.DomainOwnershipGuard.address),
-		networkProvider.getUtxos(domainContract.address),
+		options.provider.getUtxos(contracts.Registry.address),
+		options.provider.getUtxos(contracts.DomainOwnershipGuard.address),
+		options.provider.getUtxos(domainContract.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
@@ -71,7 +70,7 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 /**
  * Constructs a transaction to penalize an illegal auction.
  *
- * @param {PenaliseIllegalAuctionParams} params - The parameters required to penalize an illegal auction.
+ * @param {PenaliseIllegalAuctionCoreParams} params - The parameters required to penalize an illegal auction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
  */
 export const penalizeIllegalAuction = async ({
@@ -83,7 +82,7 @@ export const penalizeIllegalAuction = async ({
 	networkProvider,
 	contracts,
 	utxos,
-}: PenaliseIllegalAuctionParams): Promise<TransactionBuilder> =>
+}: PenaliseIllegalAuctionCoreParams): Promise<TransactionBuilder> =>
 {
 	const domainContract = constructDomainContract({
 		name,

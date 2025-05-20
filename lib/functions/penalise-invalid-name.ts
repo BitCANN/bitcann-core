@@ -1,20 +1,20 @@
 import { TransactionBuilder } from 'cashscript';
 import { getThreadUtxo, getAuthorizedContractUtxo, getRunningAuctionUtxo, findFirstInvalidCharacterIndex, adjustLastOutputForFee } from '../util/index.js';
-import { FetchInvalidNameGuardUtxosParams, FetchInvalidNameGuardUtxosReturn, PenalizeInvalidNameParams } from '../interfaces/index.js';
+import { FetchInvalidNameGuardUtxosParams, FetchInvalidNameGuardUtxosResponse, PenalizeInvalidNameCoreParams } from '../interfaces/index.js';
 import { AuctionNameDoesNotContainInvalidCharacterError } from '../errors.js';
 
 /**
  * Fetches UTXOs required for penalizing an invalid auction name.
  *
  * @param {FetchInvalidNameGuardUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchInvalidNameGuardUtxosReturn>} A promise that resolves to the required UTXOs.
+ * @returns {Promise<FetchInvalidNameGuardUtxosResponse>} A promise that resolves to the required UTXOs.
  */
 export const fetchInvalidNameGuardUtxos = async ({
 	name,
 	category,
 	networkProvider,
 	contracts,
-}: FetchInvalidNameGuardUtxosParams): Promise<FetchInvalidNameGuardUtxosReturn> =>
+}: FetchInvalidNameGuardUtxosParams): Promise<FetchInvalidNameGuardUtxosResponse> =>
 {
 	const [ registryUtxos, guardUtxos ] = await Promise.all([
 		networkProvider.getUtxos(contracts.Registry.address),
@@ -47,7 +47,7 @@ export const fetchInvalidNameGuardUtxos = async ({
 /**
  * Constructs a transaction to penalize an invalid auction name.
  *
- * @param {PenalizeInvalidNameParams} params - The parameters required to penalize an invalid auction name.
+ * @param {PenalizeInvalidNameCoreParams} params - The parameters required to penalize an invalid auction name.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
  * @throws {AuctionNameDoesNotContainInvalidCharacterError} If the auction name does not contain an invalid character.
  */
@@ -57,7 +57,7 @@ export const penalizeInvalidAuctionName = async ({
 	networkProvider,
 	contracts,
 	utxos,
-}: PenalizeInvalidNameParams): Promise<TransactionBuilder> =>
+}: PenalizeInvalidNameCoreParams): Promise<TransactionBuilder> =>
 {
 	const invalidCharacterIndex = findFirstInvalidCharacterIndex(name);
 

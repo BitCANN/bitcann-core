@@ -1,7 +1,7 @@
 import { cashAddressToLockingBytecode, binToHex } from '@bitauth/libauth';
 import { describe, it, expect } from '@jest/globals';
 import { MockNetworkProvider } from 'cashscript';
-import { BitCANNManager } from '../../lib/manager.js';
+import { BitcannManager } from '../../lib/manager.js';
 import * as config	from '../config.js';
 
 describe('manager', () =>
@@ -9,13 +9,13 @@ describe('manager', () =>
 	const networkProvider = new MockNetworkProvider();
 	config.mockOptions.networkProvider = networkProvider;
 
-	const manager = new BitCANNManager(config.mockOptions);
+	const manager = new BitcannManager(config.mockOptions);
 
 	describe('constructor should set parameters correctly', () =>
 	{
 		it('should create a manager instance with correct configuration', () =>
 		{
-			expect(manager).toBeInstanceOf(BitCANNManager);
+			expect(manager).toBeInstanceOf(BitcannManager);
 			expect(manager.category).toBe(config.mockOptions.category);
 			expect(manager.minStartingBid).toBe(config.mockOptions.minStartingBid);
 			expect(manager.minBidIncreasePercentage).toBe(config.mockOptions.minBidIncreasePercentage);

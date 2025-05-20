@@ -1,82 +1,185 @@
 import type { AddressType, NetworkProvider, Utxo } from 'cashscript';
 
-// Segregated and sorted interfaces for fetching UTXOs
+/**
+ * Parameters for fetching UTXOs related to duplicate auction guards.
+ */
 export interface FetchDuplicateAuctionGuardUtxosParams
 {
+	/** The name of the auction. */
 	name: string;
+	/** The category of the auction. */
 	category: string;
-	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
 	contracts: Record<string, any>;
+	/** Additional options including provider and address type. */
 	options: { provider: NetworkProvider; addressType: AddressType };
 }
 
-export interface FetchDuplicateAuctionGuardUtxosReturn
+/**
+ * Response structure for UTXOs related to duplicate auction guards.
+ */
+export interface FetchDuplicateAuctionGuardUtxosResponse
 {
+	/** The UTXO for the thread NFT. */
 	threadNFTUTXO: Utxo;
+	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
+	/** The UTXO for a valid running auction. */
 	runningValidAuctionUTXO: Utxo;
+	/** The UTXO for an invalid running auction. */
 	runningInValidAuctionUTXO: Utxo;
 }
 
+/**
+ * Parameters for fetching UTXOs related to illegal auction guards.
+ */
 export interface FetchIllegalAuctionGuardUtxosParams
 {
+	/** The name of the auction. */
 	name: string;
+	/** The category of the auction. */
 	category: string;
-	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
 	contracts: Record<string, any>;
+	/** The inactivity expiry time for the auction. */
 	inactivityExpiryTime: number;
+	/** Additional options including provider and address type. */
 	options: { provider: NetworkProvider; addressType: AddressType };
 }
 
-export interface FetchIllegalAuctionGuardUtxosReturn
+/**
+ * Response structure for UTXOs related to illegal auction guards.
+ */
+export interface FetchIllegalAuctionGuardUtxosResponse
 {
+	/** The UTXO for the thread NFT. */
 	threadNFTUTXO: Utxo;
+	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
+	/** The UTXO for the running auction. */
 	runningAuctionUTXO: Utxo;
+	/** The UTXO for external authorization. */
 	externalAuthUTXO: Utxo;
 }
 
+/**
+ * Parameters for fetching UTXOs related to invalid name auction guards.
+ */
 export interface FetchInvalidNameGuardUtxosParams
 {
+	/** The name of the auction. */
 	name: string;
+	/** The category of the auction. */
 	category: string;
+	/** The network provider for blockchain interactions. */
 	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
 	contracts: Record<string, any>;
 }
 
-export interface FetchInvalidNameGuardUtxosReturn
+/**
+ * Response structure for UTXOs related to invalid name auction guards.
+ */
+export interface FetchInvalidNameGuardUtxosResponse
 {
+	/** The UTXO for the thread NFT. */
 	threadNFTUTXO: Utxo;
+	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
+	/** The UTXO for the running auction. */
 	runningAuctionUTXO: Utxo;
 }
 
-// Segregated and sorted interfaces for penalizing actions
+/**
+ * Parameters for penalizing a duplicate auction.
+ */
 export interface PenaliseDuplicateAuctionParams
 {
+	/** The name of the auction. */
+	name: string;
+	/** The address to reward for identifying the duplicate auction. */
 	rewardTo: string;
-	networkProvider: NetworkProvider;
-	contracts: Record<string, any>;
-	utxos: FetchDuplicateAuctionGuardUtxosReturn;
+	/** The UTXOs required for the transaction. */
+	utxos: FetchDuplicateAuctionGuardUtxosResponse;
 }
 
+/**
+ * Core parameters for penalizing a duplicate auction.
+ */
+export interface PenaliseDuplicateAuctionCoreParams
+{
+	/** The address to reward for identifying the duplicate auction. */
+	rewardTo: string;
+	/** The network provider for blockchain interactions. */
+	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
+	contracts: Record<string, any>;
+	/** The UTXOs required for the transaction. */
+	utxos: FetchDuplicateAuctionGuardUtxosResponse;
+}
+
+/**
+ * Parameters for penalizing an illegal auction.
+ */
 export interface PenaliseIllegalAuctionParams
 {
+	/** The name of the auction. */
 	name: string;
+	/** The address to reward for identifying the illegal auction. */
 	rewardTo: string;
-	category: string;
-	inactivityExpiryTime: number;
-	options: { provider: NetworkProvider; addressType: AddressType };
-	networkProvider: NetworkProvider;
-	contracts: Record<string, any>;
-	utxos: FetchIllegalAuctionGuardUtxosReturn;
+	/** The UTXOs required for the transaction. */
+	utxos: FetchIllegalAuctionGuardUtxosResponse;
 }
 
+/**
+ * Core parameters for penalizing an illegal auction.
+ */
+export interface PenaliseIllegalAuctionCoreParams
+{
+	/** The name of the auction. */
+	name: string;
+	/** The address to reward for identifying the illegal auction. */
+	rewardTo: string;
+	/** The category of the auction. */
+	category: string;
+	/** The inactivity expiry time for the auction. */
+	inactivityExpiryTime: number;
+	/** Additional options including provider and address type. */
+	options: { provider: NetworkProvider; addressType: AddressType };
+	/** The network provider for blockchain interactions. */
+	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
+	contracts: Record<string, any>;
+	/** The UTXOs required for the transaction. */
+	utxos: FetchIllegalAuctionGuardUtxosResponse;
+}
+
+/**
+ * Parameters for penalizing an auction with an invalid name.
+ */
 export interface PenalizeInvalidNameParams
 {
+	/** The name of the auction. */
 	name: string;
+	/** The address to reward for identifying the invalid name. */
 	rewardTo: string;
+	/** Optional UTXOs for the transaction; if not provided, they will be fetched. */
+	utxos?: FetchInvalidNameGuardUtxosResponse;
+}
+
+/**
+ * Core parameters for penalizing an auction with an invalid name.
+ */
+export interface PenalizeInvalidNameCoreParams
+{
+	/** The name of the auction. */
+	name: string;
+	/** The address to reward for identifying the invalid name. */
+	rewardTo: string;
+	/** The network provider for blockchain interactions. */
 	networkProvider: NetworkProvider;
+	/** The contracts involved in the auction. */
 	contracts: Record<string, any>;
-	utxos: FetchInvalidNameGuardUtxosReturn;
+	/** The UTXOs required for the transaction. */
+	utxos: FetchInvalidNameGuardUtxosResponse;
 }

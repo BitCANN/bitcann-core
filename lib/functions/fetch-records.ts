@@ -3,18 +3,25 @@ import { constructDomainContract, extractRecordsFromTransaction, getValidCandida
 import type { FetchRecordsParams } from '../interfaces/index.js';
 
 /**
- * Retrieves the records for a given domain.
+ * Fetches domain records based on the provided parameters.
  *
- * @param {string} name - The domain name to retrieve records for.
- * @returns {Promise<string[]>} A promise that resolves to the domain records.
+ * @param {FetchRecordsParams} params - The parameters for fetching domain records.
+ * @param {string} params.name - The domain name to retrieve records for.
+ * @param {boolean} [params.keepDuplicates=true] - Whether to keep duplicate records.
+ * @param {string} params.category - The category of the domain.
+ * @param {number} params.inactivityExpiryTime - The expiry time for domain inactivity.
+ * @param {object} params.options - Additional options for domain contract construction.
+ * @param {object} params.electrumClient - The Electrum client for blockchain interactions.
+ * @returns {Promise<string[]>} A promise that resolves to an array of domain records.
  */
-export const fetchRecords = async (
-	{ name,
-		keepDuplicates = true,
-		category,
-		inactivityExpiryTime,
-		options,
-		electrumClient }: FetchRecordsParams): Promise<string[]> =>
+export const fetchRecords = async ({
+	name,
+	keepDuplicates = true,
+	category,
+	inactivityExpiryTime,
+	options,
+	electrumClient,
+}: FetchRecordsParams): Promise<string[]> =>
 {
 	const domainContract = constructDomainContract({
 		name,

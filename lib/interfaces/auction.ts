@@ -188,9 +188,9 @@ export interface GetPastAuctionsParams
 }
 
 /**
- * Result type for past auctions.
+ * Response type for past auctions.
  */
-export interface PastAuctionResult
+export interface PastAuctionResponse
 {
 	/**
    * The domain name of the past auction.
