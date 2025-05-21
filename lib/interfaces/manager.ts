@@ -5,7 +5,7 @@ export type ManagerConfig =
 	/** category of the auction. */
 	category: string;
 
-	/** inactivity expiry time for the auction. */
+	/** inactivity expiry time before the domain can be considered expired. */
 	inactivityExpiryTime: number;
 
 	/** maximum platform fee percentage for the auction. */
@@ -25,4 +25,7 @@ export type ManagerConfig =
 
 	/** platform fee address for the auction. */
 	platformFeeAddress?: string;
+
+	/** chaingraph url. */
+	chaingraphUrl?: string;
 };

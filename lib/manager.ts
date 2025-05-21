@@ -44,13 +44,17 @@ import type {
 	GetAuctionsResponse,
 	GetRecordsParams,
 	GetRecordsResponse,
+	LookupAddressParams,
 	ManagerConfig,
 	PastAuctionResponse,
 	PenaliseDuplicateAuctionParams,
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
+	ResolveNameParams,
 } from './interfaces/index.js';
 import { LookupAddressCoreResponse } from './interfaces/resolver.js';
+import { resolveNameCore } from './functions/resolver.js';
+import { chaingraphURL } from './config.js';
 
 
 export class BitcannManager
@@ -67,6 +71,7 @@ export class BitcannManager
 
 	// Network provider to use for BCH network operations.
 	public networkProvider: NetworkProvider;
+	public chaingraphUrl: string;
 
 	// Contracts in the BitCANN system.
 	public contracts: Record<string, Contract>;
@@ -80,6 +85,7 @@ export class BitcannManager
 		this.minWaitTime = config.minWaitTime;
 		this.maxPlatformFeePercentage = config.maxPlatformFeePercentage;
 		this.platformFeeAddress = config.platformFeeAddress;
+		this.chaingraphUrl = config.chaingraphUrl || chaingraphURL;
 		if(config.networkProvider)
 		{
 			// Use the provided network provider for BCH network operations if one is provided.
@@ -158,7 +164,7 @@ export class BitcannManager
 	{
 		return getPastAuctions({
 			category: this.category,
-			domainContract: this.contracts.DomainFactory,
+			domainFactory: this.contracts.DomainFactory,
 			// @ts-ignore
 			electrumClient: this.networkProvider.electrum,
 		});
@@ -180,15 +186,43 @@ export class BitcannManager
 		});
 	}
 
-	// public async resolveName(name: string): Promise<string>
-	// {
-	// 	return resolveName({
-	// 		name,
-	// 		category: this.category,
-	// 	});
-	// }
+	/**
+	 * Resolves a domain name to its associated address.
+	 *
+	 * This function uses either the Electrum or Chaingraph method to resolve the domain name
+	 * based on the provided parameters.
+	 *
+	 * @param {ResolveNameParams} params - The parameters for resolving the domain name.
+	 * @param {string} params.name - The domain name to resolve.
+	 * @param {boolean} [params.useElectrum] - Whether to use the Electrum method for resolution.
+	 * @param {boolean} [params.useChaingraph] - Whether to use the Chaingraph method for resolution.
+	 * @returns {Promise<string>} A promise that resolves to the address associated with the domain name.
+	 */
+	public async resolveName({ name, useElectrum, useChaingraph }: ResolveNameParams): Promise<string>
+	{
+		return resolveNameCore({
+			name,
+			category: this.category,
+			inactivityExpiryTime: this.inactivityExpiryTime,
+			options: this.options,
+			// @ts-ignore
+			electrumClient: this.networkProvider.electrum,
+			useElectrum,
+			useChaingraph,
+		});
+	}
 
-	public async lookupAddress(address: string): Promise<LookupAddressCoreResponse>
+	/**
+	 * Looks up all domain names associated with a given address.
+	 *
+	 * This function queries the blockchain to find all UTXOs linked to the specified address
+	 * and filters them to extract the domain names owned by the address.
+	 *
+	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
+	 * @param {string} params.address - The address to look up domain names for.
+	 * @returns {Promise<LookupAddressCoreResponse>} A promise that resolves to an object containing an array of domain names owned by the address.
+	 */
+	public async lookupAddress({ address }: LookupAddressParams): Promise<LookupAddressCoreResponse>
 	{
 		return lookupAddressCore({
 			address,

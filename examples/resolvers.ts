@@ -6,7 +6,10 @@ import { aliceAddress } from './common/wallet.js';
 (async () =>
 {
 	const address = aliceAddress;
-	const lookupAddress = await bitcannManager.lookupAddress(address);
+	const lookupAddress = await bitcannManager.lookupAddress({ address });
   console.log(lookupAddress);
+
+  const resolveName = await bitcannManager.resolveName({ name: 'test', useChaingraph: false, useElectrum: true });
+  console.log(resolveName);
 
 })();

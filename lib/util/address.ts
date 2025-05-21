@@ -7,6 +7,7 @@ import {
 	binToHex,
 	decodeCashAddress,
 	addressContentsToLockingBytecode,
+	instantiateSha256,
 } from '@bitauth/libauth';
 
 /**
@@ -39,6 +40,20 @@ export const convertAddressToPkh = (userAddress: string): string =>
 	const userPkh = decodeAddressObj.payload;
 
 	return binToHex(userPkh);
+};
+
+/**
+ * Converts a locking bytecode to an scripthash.
+ * @param {Uint8Array} lockingBytecode - The locking bytecode to convert.
+ * @returns {Promise<string>} The scripthash as a hexadecimal string.
+ */
+export const scriptToScripthash = async (lockingBytecode: Uint8Array): Promise<string> =>
+{
+	const sha256 = await instantiateSha256();
+	const hash = sha256.hash(lockingBytecode);
+	const reversed = hash.reverse();
+
+	return binToHex(reversed);
 };
 
 /**

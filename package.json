@@ -43,6 +43,7 @@
     "@electrum-cash/network": "^4.1.1",
     "@electrum-cash/protocol": "^2.2.1-r8564577559",
     "cashscript": "^0.11.0-next.4",
+    "chaingraph-ts": "^0.2.3",
     "electrum-cash": "^3.2.0"
   },
   "devDependencies": {
