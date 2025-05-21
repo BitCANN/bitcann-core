@@ -37,10 +37,10 @@ export interface AccumulateCoreParams
  */
 export interface AccumulateParams
 {
-	/** UTXOs required for the accumulation process. */
-	utxos: FetchAccumulationUtxosResponse;
 	/** The address associated with the accumulation. */
 	address: string;
+	/** UTXOs required for the accumulation process. */
+	utxos?: FetchAccumulationUtxosResponse;
 }
 
 /**

@@ -34,7 +34,7 @@ export interface CreateRecordsParams
 	/** List of records to be created. */
 	records: string[];
 	/** UTXOs required for the records creation process. */
-	utxos: FetchRecordsUtxosResponse;
+	utxos?: FetchRecordsUtxosResponse;
 }
 
 /**

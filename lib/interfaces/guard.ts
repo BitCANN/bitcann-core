@@ -100,7 +100,7 @@ export interface PenaliseDuplicateAuctionParams
 	/** The address to reward for identifying the duplicate auction. */
 	rewardTo: string;
 	/** The UTXOs required for the transaction. */
-	utxos: FetchDuplicateAuctionGuardUtxosResponse;
+	utxos?: FetchDuplicateAuctionGuardUtxosResponse;
 }
 
 /**
@@ -128,7 +128,7 @@ export interface PenaliseIllegalAuctionParams
 	/** The address to reward for identifying the illegal auction. */
 	rewardTo: string;
 	/** The UTXOs required for the transaction. */
-	utxos: FetchIllegalAuctionGuardUtxosResponse;
+	utxos?: FetchIllegalAuctionGuardUtxosResponse;
 }
 
 /**

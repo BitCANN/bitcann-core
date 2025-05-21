@@ -1,6 +1,6 @@
 {
   "name": "@bitcann/core",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "BitCANN - Bitcoin Cash for Assigned Names and Numbers is a decentralized domain name and identity system built on the Bitcoin Cash Blockchain.",
   "type": "module",
   "exports": {
