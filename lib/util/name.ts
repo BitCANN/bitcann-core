@@ -2,6 +2,21 @@ import { hexToBin } from '@bitauth/libauth';
 import { InvalidNameError } from '../errors.js';
 
 /**
+ * Checks if a given name is valid.
+ *
+ * A valid name consists only of alphanumeric characters and hyphens.
+ *
+ * @param {string} name - The name to validate.
+ * @returns {boolean} True if the name is valid, false otherwise.
+ */
+export const isNameValid = (name: string): boolean =>
+{
+	const regex = /^[a-zA-Z0-9-]+$/;
+
+	return regex.test(name);
+};
+
+/**
  * Validates the given name.
  * A valid name contains only alphanumeric characters and hyphens.
  *
@@ -10,14 +25,11 @@ import { InvalidNameError } from '../errors.js';
  */
 export const validateName = (name: string): void =>
 {
-	const regex = /^[a-zA-Z0-9-]+$/;
-
-	if(!regex.test(name))
+	if(!isNameValid(name))
 	{
 		throw new InvalidNameError();
 	}
 };
-
 
 /**
  * Finds the first index of an invalid character in the given name.

@@ -1,7 +1,8 @@
 import { constructDomainContract, getDomainPartialBytecode } from '../util/contract.js';
 import { hexToBin, binToHex } from '@bitauth/libauth';
-import { DomainInfo, GetDomainParams } from '../interfaces/index.js';
-import { buildLockScriptP2SH32, lockScriptToAddress, pushDataHex, validateName } from '../util/index.js';
+import { DomainInfo, GetDomainParams, DomainStatus } from '../interfaces/index.js';
+import { buildLockScriptP2SH32, getRunningAuctionUtxo, lockScriptToAddress, pushDataHex } from '../util/index.js';
+import { isNameValid } from '../util/name.js';
 
 
 /**
@@ -12,13 +13,11 @@ import { buildLockScriptP2SH32, lockScriptToAddress, pushDataHex, validateName }
  * @param {string} params.category - The category of the domain.
  * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the domain.
  * @param {object} params.options - Additional options for the domain contract.
+ * @param {Contract} params.registryContract - The contract instance for the registry.
  * @returns {Promise<DomainInfo>} A promise that resolves to an object containing the domain address and contract.
  */
-export const getDomain = async ({ name, category, inactivityExpiryTime, options }: GetDomainParams): Promise<DomainInfo> =>
+export const getDomain = async ({ name, category, inactivityExpiryTime, options, registryContract }: GetDomainParams): Promise<DomainInfo> =>
 {
-	// Validate the domain name.
-	validateName(name);
-
 	// Reverse the category bytes for use in contract parameters.
 	const domainCategoryReversed = binToHex(hexToBin(category).reverse());
 
@@ -39,9 +38,41 @@ export const getDomain = async ({ name, category, inactivityExpiryTime, options 
 	// Convert the lock script hash to an address.
 	const address = lockScriptToAddress(scriptHash);
 
-	// Return the domain address and contract.
-	return {
+	// Retrieve UTXOs for registry and domain contracts.
+	const [ registryUtxos, domainUtxos ] = await Promise.all([
+		options.provider.getUtxos(registryContract.address),
+		options.provider.getUtxos(domainContract.address),
+	]);
+
+	// Initialize the response object with basic domain information.
+	const response: any = {
 		address,
 		contract: domainContract,
 	};
+
+	// Filter domain UTXOs by category to check registration status.
+	const registeredUtxos = domainUtxos.filter(utxo => utxo.token?.category === category);
+	if(registeredUtxos.length > 0)
+	{
+		return { ...response, status: DomainStatus.REGISTERED, utxos: registeredUtxos };
+	}
+
+	// Check for any running auction for the domain.
+	try
+	{
+		const runningAuctionUTXO = getRunningAuctionUtxo({
+			name,
+			utxos: registryUtxos,
+			category,
+		});
+		if(runningAuctionUTXO)
+		{
+			return { ...response, status: DomainStatus.AUCTIONING, utxos: [ runningAuctionUTXO ] };
+		}
+	}
+	catch(error)
+	{}
+
+	// If no registration or auction is found, mark the domain as available.
+	return { ...response, status: isNameValid(name) ? DomainStatus.AVAILABLE : DomainStatus.INVALID };
 };

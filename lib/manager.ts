@@ -183,6 +183,7 @@ export class BitcannManager
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,
 			options: this.options,
+			registryContract: this.contracts.Registry,
 		});
 	}
 

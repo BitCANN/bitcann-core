@@ -1,6 +1,21 @@
 import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
+ * Enum representing the various statuses a domain can have.
+ */
+export enum DomainStatus
+{
+	/** The domain is currently registered. */
+	REGISTERED = 'REGISTERED',
+	/** The domain is available for auction. */
+	AUCTIONING = 'AUCTIONING',
+	/** The domain is available for registration. */
+	AVAILABLE = 'AVAILABLE',
+	/** The domain status is invalid or unrecognized. */
+	INVALID = 'INVALID',
+}
+
+/**
  * Parameters required to create a claim domain transaction.
  */
 export interface CreateClaimDomainCoreParams
@@ -52,6 +67,10 @@ export interface DomainInfo
 	address: string;
 	/** The contract associated with the domain. */
 	contract: Contract;
+	/** The status of the domain. */
+	status: DomainStatus;
+	/** The UTXOs associated with the domain. */
+	utxos?: Utxo[];
 }
 
 /**
@@ -89,6 +108,8 @@ export interface GetDomainParams
 		/** The network provider for blockchain interactions. */
 		provider: NetworkProvider;
 	};
+	/** The contract instance for the registry. */
+	registryContract: Contract;
 }
 
 /**
