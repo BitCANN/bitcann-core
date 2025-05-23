@@ -3,8 +3,9 @@ import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
 /**
  * Enum representing the various statuses a domain can have.
  */
+// eslint-disable-next-line no-shadow
 export enum DomainStatus
-{
+	{
 	/** The domain is currently registered. */
 	REGISTERED = 'REGISTERED',
 	/** The domain is available for auction. */
@@ -119,6 +120,8 @@ export interface FetchClaimDomainUtxosResponse
 {
 	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
+	/** The pure UTXO from the bidder. */
+	biddingReadUTXO: Utxo;
 	/** The UTXO for domain minting. */
 	domainMintingUTXO: Utxo;
 	/** The UTXO for the running auction. */

@@ -6,6 +6,7 @@ import {
 	convertCashAddressToTokenAddress,
 	convertNameToBinaryAndHex,
 	convertPkhToLockingBytecode,
+	createPlaceholderUnlocker,
 	createRegistrationId,
 	getAuthorizedContractUtxo,
 	getDomainMintingUtxo,
@@ -14,8 +15,34 @@ import {
 	validateName,
 } from '../util/index.js';
 import type { FetchClaimDomainUtxosParams, CreateClaimDomainParams, FetchClaimDomainUtxosResponse } from '../interfaces/index.js';
-import { InvalidPrevBidderAddressError } from '../errors.js';
+import { InvalidPrevBidderAddressError, UserUTXONotFoundError } from '../errors.js';
 
+
+/**
+ * Derives a CashAddress from a public key hash (PKH) stored in a commitment.
+ *
+ * @param {string} commitment - The commitment string containing the PKH in the first 40 characters.
+ * @returns {string} The derived CashAddress.
+ * @throws {InvalidPrevBidderAddressError} If the PKH cannot be extracted or converted to a valid address.
+ */
+const deriveAddressFromPKHInCommitment = (commitment: string): string =>
+{
+	const pkh = commitment.slice(0, 40);
+	if(!pkh)
+	{
+		throw new InvalidPrevBidderAddressError();
+	}
+	const pkhLockingBytecode = convertPkhToLockingBytecode(pkh);
+	const pkhAddressResult = lockingBytecodeToCashAddress({ bytecode: pkhLockingBytecode });
+
+	if(typeof pkhAddressResult !== 'object' || !pkhAddressResult.address)
+	{
+		throw new InvalidPrevBidderAddressError();
+	}
+
+	return pkhAddressResult.address;
+
+};
 
 /**
  * Fetches UTXOs required for claiming a domain.
@@ -41,6 +68,7 @@ export const fetchClaimDomainUtxos = async ({
 		networkProvider.getUtxos(domainFactoryContract.address),
 	]);
 
+
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,
 		category: category,
@@ -62,11 +90,21 @@ export const fetchClaimDomainUtxos = async ({
 		category,
 	});
 
+	const bidderAddress = deriveAddressFromPKHInCommitment(runningAuctionUTXO.token!.nft!.commitment);
+	const userUtxos = await networkProvider.getUtxos(bidderAddress);
+
+	const biddingReadUTXO = userUtxos.sort((a, b) => Number(a.satoshis - b.satoshis)).find((utxo) => !utxo.token);
+	if(!biddingReadUTXO)
+	{
+		throw new UserUTXONotFoundError();
+	}
+
 	return {
-		threadNFTUTXO,
 		authorizedContractUTXO,
+		biddingReadUTXO,
 		domainMintingUTXO,
 		runningAuctionUTXO,
+		threadNFTUTXO,
 	};
 };
 
@@ -108,7 +146,7 @@ export const createClaimDomainTransactionCore = async ({
 	validateName(name);
 	const { nameBin } = convertNameToBinaryAndHex(name);
 
-	const { threadNFTUTXO, authorizedContractUTXO, domainMintingUTXO, runningAuctionUTXO } = utxos;
+	const { threadNFTUTXO, authorizedContractUTXO, domainMintingUTXO, runningAuctionUTXO, biddingReadUTXO } = utxos;
 
 	const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
 	if(!bidderPKH)
@@ -133,12 +171,14 @@ export const createClaimDomainTransactionCore = async ({
 	});
 
 	const registrationId = createRegistrationId(runningAuctionUTXO);
+	const placeholderUnlocker = createPlaceholderUnlocker(bidderAddress);
 
 	const transaction = await new TransactionBuilder({ provider: options.provider })
 		.addInput(threadNFTUTXO, registryContract.unlock.call())
 		.addInput(authorizedContractUTXO, domainFactoryContract.unlock.call())
 		.addInput(domainMintingUTXO, registryContract.unlock.call())
 		.addInput(runningAuctionUTXO, registryContract.unlock.call(), { sequence: minWaitTime })
+		.addInput(biddingReadUTXO, placeholderUnlocker)
 		.addOutput({
 			to: registryContract.tokenAddress,
 			amount: threadNFTUTXO.satoshis,
@@ -202,6 +242,10 @@ export const createClaimDomainTransactionCore = async ({
 					commitment: registrationId + binToHex(nameBin),
 				},
 			},
+		})
+		.addOutput({
+			to: bidderAddress,
+			amount: biddingReadUTXO.satoshis,
 		});
 
 	const feeRecipient = platformFeeAddress ? platformFeeAddress : bidderAddress;
