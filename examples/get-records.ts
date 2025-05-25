@@ -2,7 +2,6 @@ import {
 	bitcannManager,
 } from './common/setup.js';
 
-
 (async () =>
 {
 	const name = 'test';

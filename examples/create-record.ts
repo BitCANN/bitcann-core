@@ -8,7 +8,7 @@ import { getSignedTransaction } from './common/sign.js';
 {
 	const name = 'test';
 	const address = aliceAddress;
-	const record = 'com.github kiok46';
+	const record = 'social.github=kiok46';
 
 	const recordTransaction = await bitcannManager.createRecordsTransaction({ name, records: [ record ], address });
 

@@ -121,41 +121,41 @@ const createMintingSetup = async () => {
     )
   }
 
-  // const tx = await wallet.tokenMint(
-  //   domainTokenCategory,
-  //   mintingSetup
-  // )
+  const tx = await wallet.tokenMint(
+    domainTokenCategory,
+    mintingSetup
+  )
 
-  // console.log(mintingSetup)
-  // console.log(tx)
-  // console.log('INFO: Minting setup complete')
+  console.log(mintingSetup)
+  console.log(tx)
+  console.log('INFO: Minting setup complete')
 
-  // const utxos = await wallet.getTokenUtxos(domainTokenCategory);
-  // const mintingUtxo = utxos.find(utxo => utxo.token?.capability === NFTCapability.minting);
-  // if (!mintingUtxo) {
-  //   console.log('No minting NFT found');
-  //   return;
-  // }
+  const utxos = await wallet.getTokenUtxos(domainTokenCategory);
+  const mintingUtxo = utxos.find(utxo => utxo.token?.capability === NFTCapability.minting);
+  if (!mintingUtxo) {
+    console.log('No minting NFT found');
+    return;
+  }
   
-  // const tokenId = mintingUtxo.token?.tokenId;
-  // const amount = mintingUtxo.token?.amount;
-  // const capability = mintingUtxo.token?.capability;
-  // const commitment = mintingUtxo.token?.commitment;
+  const tokenId = mintingUtxo.token?.tokenId;
+  const amount = mintingUtxo.token?.amount;
+  const capability = mintingUtxo.token?.capability;
+  const commitment = mintingUtxo.token?.commitment;
 
-  // const transferTx = await wallet.send([
-  //   new TokenSendRequest({
-  //     cashaddr: registryContract.address,
-  //     amount,
-  //     // @ts-ignore
-  //     tokenId,
-  //     capability,
-  //     commitment
-  //   })
-  // ])
+  const transferTx = await wallet.send([
+    new TokenSendRequest({
+      cashaddr: registryContract.address,
+      amount,
+      // @ts-ignore
+      tokenId,
+      capability,
+      commitment
+    })
+  ])
 
-  // console.log(transferTx)
+  console.log(transferTx)
 
-  // console.log('INFO: Minting with token amount transferred')
+  console.log('INFO: Minting with token amount transferred')
 }
 
 (async () =>
@@ -169,7 +169,7 @@ const createMintingSetup = async () => {
     // await createGenesisCategory();
 
     // Do this as Step 3 and once done, comment out the line below
-    await createMintingSetup();
+    // await createMintingSetup();
 
     // Once this is done, you are ready to go!
   })();

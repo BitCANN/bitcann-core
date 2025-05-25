@@ -1,5 +1,5 @@
 // STEP 1: Create the genesis category using the `createGenesisCategory` function
-const domainTokenCategory = 'cd9312b30fbf5bca4cf90a6167c5be7961603447879ed9851e01d7b2cdc0e451';
+const domainTokenCategory = 'b260f4bff9899f4a33ac066520e0a7902537df73d125f0ade130253f1de8bcbe';
 
 // STEP 2: Figure out the following parameters
 const minStartingBid = 10000;
