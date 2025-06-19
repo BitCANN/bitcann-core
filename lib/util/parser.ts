@@ -1,4 +1,5 @@
-import { createHash } from 'crypto';
+
+import { binToHex, hexToBin, instantiateSha256 } from '@bitauth/libauth';
 
 export interface ParsedRecordsInterface
 {
@@ -7,8 +8,10 @@ export interface ParsedRecordsInterface
 	};
 }
 
-export const parseRecords = (records: string[]): ParsedRecordsInterface =>
+export const parseRecords = async (records: string[]): Promise<ParsedRecordsInterface> =>
 {
+	const sha256 = await instantiateSha256();
+
 	const result: ParsedRecordsInterface = {};
 	const revocations = new Set<string>();
 	const metaRecords: { [key: string]: { type: string } } = {};
@@ -44,8 +47,7 @@ export const parseRecords = (records: string[]): ParsedRecordsInterface =>
 			continue;
 		}
 
-		const hash = createHash('sha256').update(record)
-			.digest('hex');
+		const hash = binToHex(sha256.hash(hexToBin(record)));
 		if(revocations.has(hash))
 		{
 			continue;
@@ -60,8 +62,7 @@ export const parseRecords = (records: string[]): ParsedRecordsInterface =>
 		const metaType = metaRecords[`${namespace}.${baseSubKey}`]?.type;
 		if(metaType)
 		{
-			const metaHash = createHash('sha256').update(`${metaKey}=type:${metaType}`)
-				.digest('hex');
+			const metaHash = binToHex(sha256.hash(hexToBin(`${metaKey}=type:${metaType}`)));
 			if(revocations.has(metaHash))
 			{
 				continue;
