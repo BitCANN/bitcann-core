@@ -9,17 +9,6 @@ export interface GetRecordsParams
 {
 	/** The domain name for which to retrieve records. */
 	name: string;
-	/** Optional flag to indicate if duplicate records should be retained. */
-	keepDuplicates?: boolean;
-}
-
-/**
- * Response structure for retrieved domain records.
- */
-export interface GetRecordsResponse
-{
-	/** An array of domain records. */
-	records: string[];
 }
 
 /**
@@ -65,8 +54,6 @@ export interface FetchRecordsParams
 	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
 	/** Time after which inactivity leads to expiry. */
 	inactivityExpiryTime: number;
-	/** Flag to determine if duplicates should be kept. */
-	keepDuplicates?: boolean;
 	/** The name associated with the records. */
 	name: string;
 	options: {

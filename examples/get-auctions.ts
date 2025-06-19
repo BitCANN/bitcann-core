@@ -6,6 +6,7 @@ import {
 (async () =>
 {
 	const auctions = await bitcannManager.getAuctions();
+
   for(const auction of auctions)
   {
     console.log(auction);

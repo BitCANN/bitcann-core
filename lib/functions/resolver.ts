@@ -227,6 +227,11 @@ export const resolveNameCore = async (
 	// @ts-ignore
 		.filter((utxo) => utxo.token_data.category === category && utxo.token_data.nft?.commitment !== '');
 
+	if(filteredUtxos.length === 0)
+	{
+		throw new Error('No UTXOs found for the domain');
+	}
+
 	const validUtxo = filteredUtxos.reduce((prev, current) =>
 	{
 		// @ts-ignore

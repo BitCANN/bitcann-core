@@ -1,6 +1,6 @@
 import type { Utxo, Unlocker, Contract } from 'cashscript';
 import { TransactionBuilder } from 'cashscript';
-import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode, hash256 } from '@bitauth/libauth';
+import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { fetchTransaction } from '@electrum-cash/protocol';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 import { extractOpReturnPayload } from './binary.js';
@@ -187,26 +187,4 @@ export const extractRecordsFromTransaction = (tx: any): string[] =>
 	}
 
 	return records;
-};
-
-/**
- * Filters valid records from a list of records.
- *
- * @param {string[]} records - The list of records to filter.
- * @returns {string[]} An array of valid records.
- */
-export const filterValidRecords = (records: string[]): string[] =>
-{
-	return records.filter(record =>
-	{
-		if(record.startsWith('RMV '))
-		{
-			return false;
-		}
-
-		return !records.some(rmvRecord =>
-			rmvRecord.startsWith('RMV ')
-        && binToHex(hash256(hexToBin(record))) === rmvRecord.split(' ')[1],
-		);
-	});
 };

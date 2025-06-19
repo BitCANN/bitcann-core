@@ -1,13 +1,13 @@
 import { fetchHistory } from '@electrum-cash/protocol';
-import { constructDomainContract, extractRecordsFromTransaction, getValidCandidateTransactions, filterValidRecords } from '../util/index.js';
-import type { FetchRecordsParams, GetRecordsResponse } from '../interfaces/index.js';
+import { constructDomainContract, extractRecordsFromTransaction, getValidCandidateTransactions } from '../util/index.js';
+import type { FetchRecordsParams } from '../interfaces/index.js';
+import { parseRecords, type ParsedRecordsInterface } from '../util/parser.js';
 
 /**
  * Fetches domain records based on the provided parameters.
  *
  * @param {FetchRecordsParams} params - The parameters for fetching domain records.
  * @param {string} params.name - The domain name to retrieve records for.
- * @param {boolean} [params.keepDuplicates=true] - Whether to keep duplicate records.
  * @param {string} params.category - The category of the domain.
  * @param {number} params.inactivityExpiryTime - The expiry time for domain inactivity.
  * @param {object} params.options - Additional options for domain contract construction.
@@ -16,12 +16,11 @@ import type { FetchRecordsParams, GetRecordsResponse } from '../interfaces/index
  */
 export const fetchRecords = async ({
 	name,
-	keepDuplicates = true,
 	category,
 	inactivityExpiryTime,
 	options,
 	electrumClient,
-}: FetchRecordsParams): Promise<GetRecordsResponse> =>
+}: FetchRecordsParams): Promise<ParsedRecordsInterface> =>
 {
 	const domainContract = constructDomainContract({
 		name,
@@ -39,12 +38,7 @@ export const fetchRecords = async ({
 	});
 	let records = validCandidateTransactions.flatMap(tx => extractRecordsFromTransaction(tx));
 
-	if(keepDuplicates)
-	{
-		records = [ ...new Set(records) ];
-	}
+	records = [ ...new Set(records) ];
 
-	return {
-		records: filterValidRecords(records),
-	};
+	return parseRecords(records);
 };

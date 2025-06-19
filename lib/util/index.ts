@@ -45,7 +45,6 @@ export {
 	isValidTransaction,
 	getValidCandidateTransactions,
 	extractRecordsFromTransaction,
-	filterValidRecords,
 	createRegistrationId,
 } from './transaction.js';
 

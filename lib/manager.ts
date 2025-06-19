@@ -43,7 +43,6 @@ import type {
 	DomainInfo,
 	GetAuctionsResponse,
 	GetRecordsParams,
-	GetRecordsResponse,
 	LookupAddressParams,
 	ManagerConfig,
 	PastAuctionResponse,
@@ -55,6 +54,7 @@ import type {
 import { LookupAddressCoreResponse } from './interfaces/resolver.js';
 import { resolveNameCore } from './functions/resolver.js';
 import { chaingraphURL } from './config.js';
+import type { ParsedRecordsInterface } from './util/parser.js';
 
 
 export class BitcannManager
@@ -122,14 +122,12 @@ export class BitcannManager
 	 *
 	 * @param {GetRecordsParams} params - The parameters for fetching domain records.
 	 * @param {string} params.name - The domain name for which records are to be fetched.
-	 * @param {boolean} [params.keepDuplicates=true] - Optional flag to determine if duplicate records should be retained.
 	 * @returns {Promise<GetRecordsResponse>} A promise that resolves to an object containing an array of domain records.
 	 */
-	public async getRecords({ name, keepDuplicates = true }: GetRecordsParams): Promise<GetRecordsResponse>
+	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
 	{
 		return fetchRecords({
 			name,
-			keepDuplicates,
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,
 			options: this.options,
