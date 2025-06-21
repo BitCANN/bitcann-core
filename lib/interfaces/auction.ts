@@ -143,13 +143,13 @@ export interface GetAuctionsResponse
    */
 	name: string;
 	/**
-   * Transaction hash when the auction was created.
+   * Transaction hash when the auction/bid was last made.
    */
-	createdAtTxHash: string;
+	previousTxHash: string;
 	/**
-   * Block height when the auction was created.
+   * Block height when the auction/bid was last made.
    */
-	createdAtHeight: number;
+	previousHeight: number;
 	/**
    * Initial amount for the auction.
    */
@@ -157,11 +157,11 @@ export interface GetAuctionsResponse
 	/**
    * Current amount of the auction.
    */
-	amount: number;
+	currentAmount: number;
 	/**
-   * Hexadecimal representation of the auction transaction.
+   * Previous bidder address.
    */
-	hex: string;
+	previousBidder: string;
 	/**
    * UTXO representing the auction.
    */

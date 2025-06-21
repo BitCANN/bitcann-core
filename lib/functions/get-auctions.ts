@@ -1,6 +1,7 @@
 import type { GetAuctionsParams, GetAuctionsResponse } from '../interfaces/index.js';
 import { fetchTransaction, fetchTransactionBlockHeight } from '@electrum-cash/protocol';
 import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
+import { convertPkhToLockingBytecode, lockScriptToAddress } from '../util/address.js';
 
 /**
  * Retrieves all active auctions.
@@ -30,15 +31,15 @@ export const getAuctions = async ({
 			return null;
 		}
 
-		let initialAmount, createdAtTxHash, createdAtHeight, currentAmount;
+		let initialAmount, previousTxHash, previousHeight, currentAmount;
 		// if output 4 has op_return then the previous transaction was auction transaction, else it was a bid transaction
 		if(decodedTx.outputs[4].valueSatoshis == BigInt(0))
 		{
 			// auction transaction, this means
 			initialAmount = Number(decodedTx.outputs[3].valueSatoshis);
 			currentAmount = initialAmount;
-			createdAtTxHash = utxo.txid;
-			createdAtHeight = auctionHeight;
+			previousTxHash = utxo.txid;
+			previousHeight = auctionHeight;
 		}
 		else
 		{
@@ -60,24 +61,28 @@ export const getAuctions = async ({
 				{
 					initialAmount = Number(previousDecodedTx.outputs[3].valueSatoshis);
 					const height = await fetchTransactionBlockHeight(electrumClient, previousHash);
-					createdAtTxHash = previousHash;
-					createdAtHeight = height;
+					previousTxHash = previousHash;
+					previousHeight = height;
 
 					previousDecodedTx = null;
 				}
 			}
 		}
 
+		const previousBidderHex = utxo.token!.nft!.commitment.slice(0, 40);
+		const previousBidder = convertPkhToLockingBytecode(previousBidderHex);
+		const previousBidderAddress = lockScriptToAddress(binToHex(previousBidder));
+
 		const nameHex = utxo.token!.nft!.commitment.slice(40);
 		const name = Buffer.from(nameHex, 'hex').toString('utf8');
 
 		return {
 			name,
-			createdAtTxHash,
-			createdAtHeight,
+			previousTxHash,
+			previousHeight,
 			initialAmount,
-			amount: currentAmount,
-			hex: auctionHex,
+			currentAmount,
+			previousBidder: previousBidderAddress,
 			utxo,
 		};
 	}));
