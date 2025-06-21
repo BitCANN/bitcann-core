@@ -258,8 +258,8 @@ export const resolveNameCore = async (
 			continue;
 		}
 
-		if(decodedTx.inputs.length !== 4
-				|| decodedTx.outputs.length !== 7
+		if(decodedTx.inputs.length !== 5
+				|| decodedTx.outputs.length !== 8
 				|| !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== category
 				|| !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== category
 				|| !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== category

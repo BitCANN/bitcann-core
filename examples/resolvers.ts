@@ -9,7 +9,7 @@ import { aliceAddress } from './common/wallet.js';
 	const lookupAddress = await bitcannManager.lookupAddress({ address });
   console.log(lookupAddress);
 
-  const resolveName = await bitcannManager.resolveName({ name: 'test', useChaingraph: false, useElectrum: true });
+  const resolveName = await bitcannManager.resolveName({ name: 'satoshi', useChaingraph: false, useElectrum: true });
   console.log(resolveName);
 
 })();
