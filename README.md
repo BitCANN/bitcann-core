@@ -7,7 +7,7 @@ BitCANN - **Bitcoin Cash for Assigned Names and Numbers** – is a decentralized
 <a href="https://codecov.io/github/BitCANN/bitcann-core" > 
  <img src="https://codecov.io/github/BitCANN/bitcann-core/graph/badge.svg?token=RJB8LUO1NY"/> 
  </a><br>
-  <a href="https://t.me/bitcann_discussion"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN-0088CC?logo=telegram"></a>
+  <a href="https://t.me/bitcann_protocol"><img alt="Join Chat on Telegram" src="https://img.shields.io/badge/chat-BitCANN-0088CC?logo=telegram"></a>
   <a href="https://www.npmjs.com/package/@bitcann/core"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@bitcann/core"></a>
 </p>
 
