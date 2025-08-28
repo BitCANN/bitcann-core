@@ -1,4 +1,4 @@
-export { fetchClaimDomainUtxos, createClaimDomainTransactionCore } from './claim-domain.js';
+export { fetchClaimNameUtxos, createClaimNameTransactionCore } from './claim-name.js';
 export { fetchAuctionUtxos, createAuctionTransactionCore } from './create-auction.js';
 export { fetchBidUtxos, createBidTransactionCore } from './create-bid.js';
 export { fetchDuplicateAuctionGuardUtxos, penalizeDuplicateAuction } from './penalise-duplicate-auction.js';
@@ -7,7 +7,7 @@ export { fetchInvalidNameGuardUtxos, penalizeInvalidAuctionName } from './penali
 export { fetchRecordsUtxos, createRecordsTransaction } from './create-records.js';
 export { fetchRecords } from './fetch-records.js';
 export { getAuctions } from './get-auctions.js';
-export { getDomain } from './get-domain.js';
+export { getName } from './get-name.js';
 export { getPastAuctions } from './get-past-auctions.js';
 export { accumulate, fetchAccumulationUtxos } from './accumulation.js';
 export { lookupAddressCore } from './resolver.js';

@@ -22,17 +22,17 @@ import { CreateRecordsCoreParams, FetchRecordsUtxosParams, FetchRecordsUtxosResp
 export const fetchRecordsUtxos = async ({
 	name,
 	category,
-	domainContract,
+	nameContract,
 	address,
 	networkProvider,
 }: FetchRecordsUtxosParams): Promise<FetchRecordsUtxosResponse> =>
 {
-	const [ domainUTXOs, userUtxos ] = await Promise.all([
-		networkProvider.getUtxos(domainContract.address),
+	const [ nameUTXOs, userUtxos ] = await Promise.all([
+		networkProvider.getUtxos(nameContract.address),
 		networkProvider.getUtxos(address),
 	]);
 
-	const internalAuthNFTUTXO = findInternalAuthNFTUTXO(domainUTXOs, category);
+	const internalAuthNFTUTXO = findInternalAuthNFTUTXO(nameUTXOs, category);
 	if(!internalAuthNFTUTXO)
 	{
 		throw new InternalAuthNFTUTXONotFoundError();
@@ -58,14 +58,14 @@ export const fetchRecordsUtxos = async ({
 };
 
 /**
- * Creates a transaction for adding a record to a domain.
+ * Creates a transaction for adding a record to a name.
  *
  * @param {CreateRecordsCoreParams} params - The parameters for creating the record transaction.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
  */
 export const createRecordsTransaction = async ({
 	address,
-	domainContract,
+	nameContract,
 	networkProvider,
 	records,
 	utxos,
@@ -76,11 +76,11 @@ export const createRecordsTransaction = async ({
 	const placeholderUnlocker = createPlaceholderUnlocker(address);
 
 	const transaction = await new TransactionBuilder({ provider: networkProvider })
-		.addInput(internalAuthNFTUTXO, domainContract.unlock.useAuth(BigInt(1)))
+		.addInput(internalAuthNFTUTXO, nameContract.unlock.useAuth(BigInt(1)))
 		.addInput(ownershipNFTUTXO, placeholderUnlocker)
 		.addInput(fundingUTXO, placeholderUnlocker)
 		.addOutput({
-			to: domainContract.tokenAddress,
+			to: nameContract.tokenAddress,
 			amount: internalAuthNFTUTXO.satoshis,
 			token: {
 				category: internalAuthNFTUTXO.token!.category,

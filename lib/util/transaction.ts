@@ -81,14 +81,14 @@ export const adjustLastOutputForFee = (transaction: TransactionBuilder, fundingU
 };
 
 /**
- * Validates if a transaction is valid for a domain contract.
+ * Validates if a transaction is valid for a name contract.
  *
  * @param {any} tx - The transaction to validate.
- * @param {Contract} domainContract - The domain contract to validate against.
+ * @param {Contract} nameContract - The name contract to validate against.
  * @param {string} category - The category to match against the transaction's outputs.
  * @returns {boolean} True if the transaction is valid, false otherwise.
  */
-export const isValidTransaction = (tx: any, domainContract: Contract, category: string): boolean =>
+export const isValidTransaction = (tx: any, nameContract: Contract, category: string): boolean =>
 {
 	let hasOpReturn = false;
 	let hasCategoryFromContract = false;
@@ -106,7 +106,7 @@ export const isValidTransaction = (tx: any, domainContract: Contract, category: 
 			continue;
 		}
 
-		const lockingBytecodeResult = cashAddressToLockingBytecode(domainContract.address);
+		const lockingBytecodeResult = cashAddressToLockingBytecode(nameContract.address);
 		if(typeof lockingBytecodeResult === 'string')
 		{
 			continue;
@@ -129,7 +129,7 @@ export const isValidTransaction = (tx: any, domainContract: Contract, category: 
  */
 export const getValidCandidateTransactions = async ({
 	history,
-	domainContract,
+	nameContract,
 	category,
 	electrumClient,
 }: GetValidCandidateTransactionsParams): Promise<any[]> =>
@@ -141,7 +141,7 @@ export const getValidCandidateTransactions = async ({
 		const tx = await fetchTransaction(electrumClient, txn.tx_hash);
 		const decodedTx = decodeTransaction(hexToBin(tx));
 
-		if(isValidTransaction(decodedTx, domainContract, category))
+		if(isValidTransaction(decodedTx, nameContract, category))
 		{
 			validCandidateTransactions.push(decodedTx);
 		}

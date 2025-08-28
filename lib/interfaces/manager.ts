@@ -5,7 +5,7 @@ export type ManagerConfig =
 	/** category of the auction. */
 	category: string;
 
-	/** inactivity expiry time before the domain can be considered expired. */
+	/** inactivity expiry time before the name can be considered expired. */
 	inactivityExpiryTime: number;
 
 	/** maximum platform fee percentage for the auction. */

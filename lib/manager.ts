@@ -11,19 +11,19 @@ import {
 	accumulate,
 	createAuctionTransactionCore,
 	createBidTransactionCore,
-	createClaimDomainTransactionCore,
+	createClaimNameTransactionCore,
 	createRecordsTransaction,
 	fetchAccumulationUtxos,
 	fetchAuctionUtxos,
 	fetchBidUtxos,
-	fetchClaimDomainUtxos,
+	fetchClaimNameUtxos,
 	fetchDuplicateAuctionGuardUtxos,
 	fetchIllegalAuctionGuardUtxos,
 	fetchInvalidNameGuardUtxos,
 	fetchRecords,
 	fetchRecordsUtxos,
 	getAuctions,
-	getDomain,
+	getName,
 	getPastAuctions,
 	lookupAddressCore,
 	penalizeDuplicateAuction,
@@ -38,9 +38,9 @@ import type {
 	AccumulateParams,
 	CreateAuctionParams,
 	CreateBidParams,
-	CreateClaimDomainCoreParams,
+	CreateClaimNameCoreParams,
 	CreateRecordsParams,
-	DomainInfo,
+	NameInfo,
 	GetAuctionsResponse,
 	GetRecordsParams,
 	LookupAddressParams,
@@ -115,14 +115,14 @@ export class BitcannManager
 	// *********************************************************************************
 
 	/**
-	 * Fetches the domain records for a given domain name.
+	 * Fetches the name records for a given name.
 	 *
-	 * This method interacts with the blockchain to retrieve records associated with the specified domain.
+	 * This method interacts with the blockchain to retrieve records associated with the specified name.
 	 * It allows the option to retain duplicate records if desired.
 	 *
-	 * @param {GetRecordsParams} params - The parameters for fetching domain records.
-	 * @param {string} params.name - The domain name for which records are to be fetched.
-	 * @returns {Promise<GetRecordsResponse>} A promise that resolves to an object containing an array of domain records.
+	 * @param {GetRecordsParams} params - The parameters for fetching name records.
+	 * @param {string} params.name - The name for which records are to be fetched.
+	 * @returns {Promise<GetRecordsResponse>} A promise that resolves to an object containing an array of name records.
 	 */
 	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
 	{
@@ -156,7 +156,7 @@ export class BitcannManager
 	 * Retrieves the transaction history.
 	 *
 	 * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
-	 * each containing a transaction hex and a domain name.
+	 * each containing a transaction hex and a name.
 	 */
 	public async getHistory(): Promise<PastAuctionResponse[]>
 	{
@@ -169,14 +169,14 @@ export class BitcannManager
 	}
 
 	/**
-	 * Retrieves detailed information about a specific domain.
+	 * Retrieves detailed information about a specific name.
 	 *
-	 * @param {string} name - The domain name to retrieve information for.
-	 * @returns {Promise<DomainInfo>} A promise that resolves to an object containing the domain's address and contract.
+	 * @param {string} name - The name to retrieve information for.
+	 * @returns {Promise<NameInfo>} A promise that resolves to an object containing the name's address and contract.
 	 */
-	public async getDomain(name: string): Promise<DomainInfo>
+	public async getName(name: string): Promise<NameInfo>
 	{
-		return getDomain({
+		return getName({
 			name,
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,
@@ -186,16 +186,16 @@ export class BitcannManager
 	}
 
 	/**
-	 * Resolves a domain name to its associated address.
+	 * Resolves a name to its associated address.
 	 *
-	 * This function uses either the Electrum or Chaingraph method to resolve the domain name
+	 * This function uses either the Electrum or Chaingraph method to resolve the name
 	 * based on the provided parameters.
 	 *
-	 * @param {ResolveNameParams} params - The parameters for resolving the domain name.
-	 * @param {string} params.name - The domain name to resolve.
+	 * @param {ResolveNameParams} params - The parameters for resolving the name.
+	 * @param {string} params.name - The name to resolve.
 	 * @param {boolean} [params.useElectrum] - Whether to use the Electrum method for resolution.
 	 * @param {boolean} [params.useChaingraph] - Whether to use the Chaingraph method for resolution.
-	 * @returns {Promise<string>} A promise that resolves to the address associated with the domain name.
+	 * @returns {Promise<string>} A promise that resolves to the address associated with the name.
 	 */
 	public async resolveName({ name, useElectrum, useChaingraph }: ResolveNameParams): Promise<string>
 	{
@@ -212,14 +212,14 @@ export class BitcannManager
 	}
 
 	/**
-	 * Looks up all domain names associated with a given address.
+	 * Looks up all names associated with a given address.
 	 *
 	 * This function queries the blockchain to find all UTXOs linked to the specified address
-	 * and filters them to extract the domain names owned by the address.
+	 * and filters them to extract the names owned by the address. 
 	 *
 	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
-	 * @param {string} params.address - The address to look up domain names for.
-	 * @returns {Promise<LookupAddressCoreResponse>} A promise that resolves to an object containing an array of domain names owned by the address.
+	 * @param {string} params.address - The address to look up names for.
+	 * @returns {Promise<LookupAddressCoreResponse>} A promise that resolves to an object containing an array of names owned by the address.
 	 */
 	public async lookupAddress({ address }: LookupAddressParams): Promise<LookupAddressCoreResponse>
 	{
@@ -235,15 +235,15 @@ export class BitcannManager
 	// *********************************************************************************
 
 	/**
-	 * Initiates the creation of an auction transaction for a specified domain.
+	 * Initiates the creation of an auction transaction for a specified name.
 	 *
 	 * @param {CreateAuctionParams} params - The parameters required for the auction transaction.
-	 * @param {string} params.name - The domain name to be auctioned.
+	 * @param {string} params.name - The name to be auctioned.
 	 * @param {number} params.amount - The initial amount for the auction.
 	 * @param {string} params.address - The address associated with the auction.
 	 * @param {FetchAuctionUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the auction transaction.
-	 * @throws {InvalidNameError} If the provided domain name is invalid.
+	 * @throws {InvalidNameError} If the provided name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
 	public async createAuctionTransaction({
@@ -268,10 +268,10 @@ export class BitcannManager
 	}
 
 	/**
-	 * Initiates the creation of a bid transaction for a specified domain auction.
+	 * Initiates the creation of a bid transaction for a specified name auction.
 	 *
 	 * @param {CreateBidParams} params - The parameters required for the bid transaction.
-	 * @param {string} params.name - The domain name on which the bid is being placed.
+	 * @param {string} params.name - The name on which the bid is being placed.
 	 * @param {number} params.amount - The amount of the bid.
 	 * @param {string} params.address - The address of the bidder.
 	 * @param {FetchBidUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
@@ -305,20 +305,20 @@ export class BitcannManager
 	}
 
 	/**
-	 * Creates a transaction to claim a domain.
+	 * Creates a transaction to claim a name.
 	 *
-	 * @param {CreateClaimDomainCoreParams} params - The parameters for claiming the domain.
-	 * @param {string} params.name - The domain name to claim.
-	 * @param {FetchClaimDomainUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
-	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the domain.
-	 * @throws {DomainMintingUTXONotFoundError} If no suitable UTXO is found for minting the domain.
+	 * @param {CreateClaimNameCoreParams} params - The parameters for claiming the name.
+	 * @param {string} params.name - The name to claim.
+	 * @param {fetchClaimNameUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the name.
+	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
 	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
-	public async createClaimDomainTransaction({ name, utxos }: CreateClaimDomainCoreParams): Promise<TransactionBuilder>
+	public async createClaimNameTransaction({ name, utxos }: CreateClaimNameCoreParams): Promise<TransactionBuilder>
 	{
 		if(!utxos)
 		{
-			utxos = await fetchClaimDomainUtxos({
+			utxos = await fetchClaimNameUtxos({
 				category: this.category,
 				registryContract: this.contracts.Registry,
 				FactoryContract: this.contracts.Factory,
@@ -327,7 +327,7 @@ export class BitcannManager
 			});
 		}
 
-		return createClaimDomainTransactionCore({
+		return createClaimNameTransactionCore({
 			category: this.category,
 			registryContract: this.contracts.Registry,
 			FactoryContract: this.contracts.Factory,
@@ -432,18 +432,18 @@ export class BitcannManager
 	}
 
 	/**
-	 * Initiates the creation of a transaction to add records to a specified domain.
+	 * Initiates the creation of a transaction to add records to a specified name.
 	 *
 	 * @param {CreateRecordsParams} params - The parameters required for the record transaction.
-	 * @param {string} params.name - The name of the domain where the records will be added.
-	 * @param {string[]} params.records - An array of record data to be added to the domain.
+	 * @param {string} params.name - The name of the name where the records will be added.
+	 * @param {string[]} params.records - An array of record data to be added to the name.
 	 * @param {string} params.address - The blockchain address associated with the records.
 	 * @param {FetchRecordsUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction. If not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder instance for the record transaction.
 	 */
 	public async createRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
 	{
-		const domainContract = constructNameContract({
+		const nameContract = constructNameContract({
 			name: name,
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,
@@ -455,7 +455,7 @@ export class BitcannManager
 			utxos = await fetchRecordsUtxos({
 				name,
 				category: this.category,
-				domainContract,
+				nameContract,
 				address,
 				networkProvider: this.networkProvider,
 			});
@@ -464,7 +464,7 @@ export class BitcannManager
 		return createRecordsTransaction({
 			records,
 			address,
-			domainContract,
+			nameContract,
 			networkProvider: this.networkProvider,
 			utxos,
 		});

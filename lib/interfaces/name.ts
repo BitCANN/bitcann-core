@@ -1,50 +1,50 @@
 import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
- * Enum representing the various statuses a domain can have.
+ * Enum representing the various statuses a name can have.
  */
 // eslint-disable-next-line no-shadow
-export enum DomainStatus
+export enum NameStatus
 	{
-	/** The domain is currently registered. */
+	/** The name is currently registered. */
 	REGISTERED = 'REGISTERED',
-	/** The domain is available for auction. */
+	/** The name is available for auction. */
 	AUCTIONING = 'AUCTIONING',
-	/** The domain is available for registration. */
+	/** The name is available for registration. */
 	AVAILABLE = 'AVAILABLE',
-	/** The domain status is invalid or unrecognized. */
+	/** The name status is invalid or unrecognized. */
 	INVALID = 'INVALID',
 }
 
 /**
- * Parameters required to create a claim domain transaction.
+ * Parameters required to create a claim name transaction.
  */
-export interface CreateClaimDomainCoreParams
+export interface CreateClaimNameCoreParams
 {
-	/** The name of the domain. */
+	/** The name. */
 	name: string;
 	/** The UTXOs to be used in the transaction, if already available. */
 	utxos?: any;
 }
 
 /**
- * Parameters required to create a claim domain transaction.
+ * Parameters required to create a claim name transaction.
  */
-export interface CreateClaimDomainParams
+export interface CreateClaimNameParams
 {
 	/** The token category. */
 	category: string;
-	/** The contract instance for the domain factory. */
+	/** The contract instance for the name factory. */
 	FactoryContract: Contract;
-	/** The inactivity expiry time for the domain. */
+	/** The inactivity expiry time for the name. */
 	inactivityExpiryTime: number;
 	/** The maximum platform fee percentage allowed. */
 	maxPlatformFeePercentage: number;
 	/** The minimum wait time for the transaction. */
 	minWaitTime: number;
-	/** The name of the domain. */
+	/** The name of the name. */
 	name: string;
-	/** Additional options for the domain contract. */
+	/** Additional options for the name contract. */
 	options: {
 		/** The type of address used. */
 		addressType: AddressType;
@@ -56,34 +56,34 @@ export interface CreateClaimDomainParams
 	/** The contract instance for the registry. */
 	registryContract: Contract;
 	/** The UTXOs to be used in the transaction, if already available. */
-	utxos: FetchClaimDomainUtxosResponse;
+	utxos: fetchClaimNameUtxosResponse;
 }
 
 /**
- * Information about a domain.
+ * Information about a name.
  */
-export interface DomainInfo
+export interface NameInfo
 {
-	/** The address of the domain. */
+	/** The address of the name. */
 	address: string;
-	/** The contract associated with the domain. */
+	/** The contract associated with the name. */
 	contract: Contract;
-	/** The status of the domain. */
-	status: DomainStatus;
-	/** The UTXOs associated with the domain. */
+	/** The status of the name. */
+	status: NameStatus;
+	/** The UTXOs associated with the name. */
 	utxos?: Utxo[];
 }
 
 /**
- * Parameters required to fetch UTXOs for claiming a domain.
+ * Parameters required to fetch UTXOs for claiming a name.
  */
-export interface FetchClaimDomainUtxosParams
+export interface fetchClaimNameUtxosParams
 {
-	/** The category of the domain. */
+	/** The category of the name. */
 	category: string;
-	/** The contract instance for the domain factory. */
+	/** The contract instance for the name factory. */
 	FactoryContract: Contract;
-	/** The name of the domain. */
+	/** The name of the name. */
 	name: string;
 	/** The network provider for blockchain interactions. */
 	networkProvider: NetworkProvider;
@@ -92,17 +92,17 @@ export interface FetchClaimDomainUtxosParams
 }
 
 /**
- * Parameters required to get domain details.
+ * Parameters required to get name details.
  */
-export interface GetDomainParams
+export interface getNameParams
 {
-	/** The category of the domain. */
+	/** The category of the name. */
 	category: string;
-	/** The inactivity expiry time for the domain. */
+	/** The inactivity expiry time for the name. */
 	inactivityExpiryTime: number;
-	/** The name of the domain. */
+	/** The name of the name. */
 	name: string;
-	/** Additional options for the domain contract. */
+	/** Additional options for the name contract. */
 	options: {
 		/** The type of address used. */
 		addressType: AddressType;
@@ -114,16 +114,16 @@ export interface GetDomainParams
 }
 
 /**
- * Response containing UTXOs required for claiming a domain.
+ * Response containing UTXOs required for claiming a name.
  */
-export interface FetchClaimDomainUtxosResponse
+export interface fetchClaimNameUtxosResponse
 {
 	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
 	/** The pure UTXO from the bidder. */
 	biddingReadUTXO: Utxo;
-	/** The UTXO for domain minting. */
-	domainMintingUTXO: Utxo;
+	/** The UTXO for name minting. */
+	nameMintingUTXO: Utxo;
 	/** The UTXO for the running auction. */
 	runningAuctionUTXO: Utxo;
 	/** The UTXO for the thread NFT. */

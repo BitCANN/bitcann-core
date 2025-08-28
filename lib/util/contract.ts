@@ -10,7 +10,7 @@ import { BitCANNArtifacts } from '@bitcann/contracts';
  * @param {Object} params - The parameters for constructing the Name contract.
  * @param {string} params.name - The name.
  * @param {string} params.category - The category identifier for the name.
- * @param {number} params.inactivityExpiryTime - The time period after which the domain is considered inactive.
+ * @param {number} params.inactivityExpiryTime - The time period after which the name is considered inactive.
  * @returns {Contract} The constructed Name contract.
  */
 export const constructNameContract = (params: {
@@ -23,10 +23,10 @@ export const constructNameContract = (params: {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(params.category).reverse());
 
-	// Convert the domain name to a hex string.
+	// Convert the name to a hex string.
 	const nameHex = Buffer.from(params.name).toString('hex');
 
-	// Construct the Domain contract with the provided parameters.
+	// Construct the Name contract with the provided parameters.
 	return new Contract(
 		BitCANNArtifacts.Name,
 		[ BigInt(params.inactivityExpiryTime), nameHex, reversedCategory ],
@@ -48,7 +48,7 @@ export const getNamePartialBytecode = (category: string, options: { provider: Ne
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(category).reverse());
 
-	// Placeholder name used for constructing a partial domain contract bytecode.
+	// Placeholder name used for constructing a partial name contract bytecode.
 	const placeholderName = 'test';
 	const placeholderNameHex = Array.from(placeholderName).map(char => char.charCodeAt(0).toString(16)
 		.padStart(2, '0'))

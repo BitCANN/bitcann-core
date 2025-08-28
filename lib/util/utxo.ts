@@ -1,6 +1,6 @@
 import { binToHex, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
-import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, DomainMintingUTXONotFoundError, ThreadWithTokenUTXONotFoundError } from '../errors.js';
+import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, NameMintingUTXONotFoundError, ThreadWithTokenUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 
@@ -31,15 +31,15 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
 };
 
 /**
- * Retrieves the domain minting UTXO from a list of UTXOs.
+ * Retrieves the name minting UTXO from a list of UTXOs.
  *
  * @param {Object} params - The parameters for the function.
  * @param {any[]} params.utxos - The list of UTXOs to search through.
  * @param {string} params.category - The category to match against.
- * @returns {any} The domain minting UTXO.
- * @throws {DomainMintingUTXONotFoundError} If no domain minting UTXO is found.
+ * @returns {any} The name minting UTXO.
+ * @throws {NameMintingUTXONotFoundError} If no name minting UTXO is found.
  */
-export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+export const getNameMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
@@ -49,7 +49,7 @@ export const getDomainMintingUtxo = ({ utxos, category }: { utxos: any[]; catego
 
 	if(!utxo)
 	{
-		throw new DomainMintingUTXONotFoundError();
+		throw new NameMintingUTXONotFoundError();
 	}
 
 	return utxo;

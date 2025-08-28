@@ -54,7 +54,7 @@ const manager = new BitCANNManager({
 const records = await manager.getRecords('satoshi');
 
 // Get domain information
-const domain = await manager.getDomain('satoshi');
+const domain = await manager.getName('satoshi');
 
 // Create record
 const recordTx = await manager.createRecordTransaction({
@@ -84,7 +84,7 @@ const bidTx = await manager.createBidTransaction({
 });
 
 // Claim domain
-const claimTx = await manager.createClaimDomainTransaction({
+const claimTx = await manager.createClaimNameTransaction({
   name: 'satoshi'
 });
 ```

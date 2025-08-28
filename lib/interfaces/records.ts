@@ -3,11 +3,11 @@ import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
- * Parameters required to retrieve domain records.
+ * Parameters required to retrieve name records.
  */
 export interface GetRecordsParams
 {
-	/** The domain name for which to retrieve records. */
+	/** The name for which to retrieve records. */
 	name: string;
 }
 
@@ -33,8 +33,8 @@ export interface CreateRecordsCoreParams
 {
 	/** The address associated with the records. */
 	address: string;
-	/** The contract related to the domain. */
-	domainContract: Contract;
+	/** The contract related to the name. */
+	nameContract: Contract;
 	/** Network provider for BCH network operations. */
 	networkProvider: NetworkProvider;
 	/** List of records to be created. */
@@ -73,8 +73,8 @@ export interface FetchRecordsUtxosParams
 	address: string;
 	/** The category of the records. */
 	category: string;
-	/** The contract related to the domain. */
-	domainContract: Contract;
+	/** The contract related to the name. */
+	nameContract: Contract;
 	/** The name associated with the records. */
 	name: string;
 	/** Network provider for BCH network operations. */

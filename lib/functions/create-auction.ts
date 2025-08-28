@@ -58,7 +58,7 @@ export const fetchAuctionUtxos = async ({ amount, address, networkProvider, cont
  * This function creates a transaction to start an auction using various UTXOs and contracts.
  *
  * @param {CreateAuctionCoreParams} params - The parameters for constructing the auction transaction.
- * @param {string} params.name - The domain name to be auctioned.
+ * @param {string} params.name - The name to be auctioned.
  * @param {number} params.amount - The initial bid amount for the auction.
  * @param {string} params.address - The address of the auction creator.
  * @param {NetworkProvider} params.networkProvider - The network provider for blockchain operations.

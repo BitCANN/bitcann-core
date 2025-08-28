@@ -9,12 +9,12 @@ import {
 	createPlaceholderUnlocker,
 	createRegistrationId,
 	getAuthorizedContractUtxo,
-	getDomainMintingUtxo,
+	getNameMintingUtxo,
 	getRunningAuctionUtxo,
 	getThreadUtxo,
 	validateName,
 } from '../util/index.js';
-import type { FetchClaimDomainUtxosParams, CreateClaimDomainParams, FetchClaimDomainUtxosResponse } from '../interfaces/index.js';
+import type { fetchClaimNameUtxosParams, CreateClaimNameParams, fetchClaimNameUtxosResponse } from '../interfaces/index.js';
 import { InvalidPrevBidderAddressError, UserUTXONotFoundError } from '../errors.js';
 
 
@@ -45,23 +45,23 @@ const deriveAddressFromPKHInCommitment = (commitment: string): string =>
 };
 
 /**
- * Fetches UTXOs required for claiming a domain.
+ * Fetches UTXOs required for claiming a name.
  *
- * @param {FetchClaimDomainUtxosParams} params - The parameters for fetching UTXOs.
- * @param {string} params.category - The category of the domain.
+ * @param {fetchClaimNameUtxosParams} params - The parameters for fetching UTXOs.
+ * @param {string} params.category - The category of the name.
  * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.FactoryContract - The domain factory contract instance.
- * @param {string} params.name - The name of the domain.
+ * @param {Contract} params.FactoryContract - The name factory contract instance.
+ * @param {string} params.name - The name of the name.
  * @param {NetworkProvider} params.networkProvider - The network provider for blockchain interactions.
- * @returns {Promise<FetchClaimDomainUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
+ * @returns {Promise<fetchClaimNameUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
  */
-export const fetchClaimDomainUtxos = async ({
+export const fetchClaimNameUtxos = async ({
 	category,
 	registryContract,
 	FactoryContract,
 	name,
 	networkProvider,
-}: FetchClaimDomainUtxosParams): Promise<FetchClaimDomainUtxosResponse> =>
+}: fetchClaimNameUtxosParams): Promise<fetchClaimNameUtxosResponse> =>
 {
 	const [ registryUtxos, FactoryUtxos ] = await Promise.all([
 		networkProvider.getUtxos(registryContract.address),
@@ -79,7 +79,7 @@ export const fetchClaimDomainUtxos = async ({
 		utxos: FactoryUtxos,
 	});
 
-	const domainMintingUTXO = getDomainMintingUtxo({
+	const nameMintingUTXO = getNameMintingUtxo({
 		utxos: registryUtxos,
 		category,
 	});
@@ -102,35 +102,35 @@ export const fetchClaimDomainUtxos = async ({
 	return {
 		authorizedContractUTXO,
 		biddingReadUTXO,
-		domainMintingUTXO,
+		nameMintingUTXO,
 		runningAuctionUTXO,
 		threadNFTUTXO,
 	};
 };
 
 /**
- * Creates a transaction for claiming a domain.
+ * Creates a transaction for claiming a name.
  *
- * This function constructs a transaction to claim a domain by utilizing various UTXOs
- * and contracts. It ensures the domain name is valid, fetches necessary UTXOs if not provided,
- * and builds a transaction with multiple inputs and outputs to facilitate the domain claim process.
+ * This function constructs a transaction to claim a name by utilizing various UTXOs
+ * and contracts. It ensures the name is valid, fetches necessary UTXOs if not provided,
+ * and builds a transaction with multiple inputs and outputs to facilitate the name claim process.
  *
- * @param {CreateClaimDomainParams} params - The parameters required to create the claim domain transaction.
- * @param {string} params.category - The category of the domain.
+ * @param {CreateClaimNameParams} params - The parameters required to create the claim name transaction.
+ * @param {string} params.category - The category of the name.
  * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.FactoryContract - The domain factory contract instance.
- * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the domain.
+ * @param {Contract} params.FactoryContract - The name factory contract instance.
+ * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the name.
  * @param {number} params.maxPlatformFeePercentage - The maximum platform fee percentage.
  * @param {number} params.minWaitTime - The minimum wait time for the transaction.
- * @param {string} params.name - The name of the domain.
- * @param {object} params.options - Additional options for the domain contract.
+ * @param {string} params.name - The name.
+ * @param {object} params.options - Additional options for the name contract.
  * @param {string} [params.platformFeeAddress] - The address to receive the platform fee, if specified.
- * @param {FetchClaimDomainUtxosResponse} [params.utxos] - The UTXOs to be used in the transaction, if already available.
+ * @param {fetchClaimNameUtxosResponse} [params.utxos] - The UTXOs to be used in the transaction, if already available.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
- * @throws {InvalidNameError} If the domain name is invalid.
+ * @throws {InvalidNameError} If the name is invalid.
  * @throws {InvalidPrevBidderAddressError} If the previous bidder address is invalid.
  */
-export const createClaimDomainTransactionCore = async ({
+export const createClaimNameTransactionCore = async ({
 	category,
 	registryContract,
 	FactoryContract,
@@ -141,12 +141,12 @@ export const createClaimDomainTransactionCore = async ({
 	options,
 	platformFeeAddress,
 	utxos,
-}: CreateClaimDomainParams): Promise<TransactionBuilder> =>
+}: CreateClaimNameParams): Promise<TransactionBuilder> =>
 {
 	validateName(name);
 	const { nameBin } = convertNameToBinaryAndHex(name);
 
-	const { threadNFTUTXO, authorizedContractUTXO, domainMintingUTXO, runningAuctionUTXO, biddingReadUTXO } = utxos;
+	const { threadNFTUTXO, authorizedContractUTXO, nameMintingUTXO, runningAuctionUTXO, biddingReadUTXO } = utxos;
 
 	const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
 	if(!bidderPKH)
@@ -163,7 +163,7 @@ export const createClaimDomainTransactionCore = async ({
 
 	const bidderAddress = bidderAddressResult.address;
 
-	const domainContract = constructNameContract({
+	const nameContract = constructNameContract({
 		name: name,
 		category,
 		inactivityExpiryTime,
@@ -176,7 +176,7 @@ export const createClaimDomainTransactionCore = async ({
 	const transaction = await new TransactionBuilder({ provider: options.provider })
 		.addInput(threadNFTUTXO, registryContract.unlock.call())
 		.addInput(authorizedContractUTXO, FactoryContract.unlock.call())
-		.addInput(domainMintingUTXO, registryContract.unlock.call())
+		.addInput(nameMintingUTXO, registryContract.unlock.call())
 		.addInput(runningAuctionUTXO, registryContract.unlock.call(), { sequence: minWaitTime })
 		.addInput(biddingReadUTXO, placeholderUnlocker)
 		.addOutput({
@@ -197,21 +197,21 @@ export const createClaimDomainTransactionCore = async ({
 		})
 		.addOutput({
 			to: registryContract.tokenAddress,
-			amount: domainMintingUTXO.satoshis,
+			amount: nameMintingUTXO.satoshis,
 			token: {
-				category: domainMintingUTXO.token!.category,
-				amount: domainMintingUTXO.token!.amount,
+				category: nameMintingUTXO.token!.category,
+				amount: nameMintingUTXO.token!.amount,
 				nft: {
-					capability: domainMintingUTXO.token!.nft!.capability,
-					commitment: domainMintingUTXO.token!.nft!.commitment,
+					capability: nameMintingUTXO.token!.nft!.capability,
+					commitment: nameMintingUTXO.token!.nft!.commitment,
 				},
 			},
 		})
 		.addOutput({
-			to: domainContract.tokenAddress,
+			to: nameContract.tokenAddress,
 			amount: BigInt(1000),
 			token: {
-				category: domainMintingUTXO.token!.category,
+				category: nameMintingUTXO.token!.category,
 				amount: BigInt(0),
 				nft: {
 					capability: 'none',
@@ -220,10 +220,10 @@ export const createClaimDomainTransactionCore = async ({
 			},
 		})
 		.addOutput({
-			to: domainContract.tokenAddress,
+			to: nameContract.tokenAddress,
 			amount: BigInt(1000),
 			token: {
-				category: domainMintingUTXO.token!.category,
+				category: nameMintingUTXO.token!.category,
 				amount: BigInt(0),
 				nft: {
 					capability: 'none',
@@ -235,7 +235,7 @@ export const createClaimDomainTransactionCore = async ({
 			to: convertCashAddressToTokenAddress(bidderAddress),
 			amount: BigInt(1000),
 			token: {
-				category: domainMintingUTXO.token!.category,
+				category: nameMintingUTXO.token!.category,
 				amount: BigInt(0),
 				nft: {
 					capability: 'none',

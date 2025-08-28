@@ -5,7 +5,7 @@ import {
 
 (async () =>
 {
-	const domain = await bitcannManager.getDomain('test');
+	const name = await bitcannManager.getName('test');
 
-	console.log(domain);
+	console.log(name);
 })();

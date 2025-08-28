@@ -211,7 +211,7 @@ export const resolveNameCore = async (
 		throw new Error('Either useElectrum or useChaingraph must be true');
 	}
 
-	const domainContract = constructNameContract({
+	const nameContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
@@ -219,8 +219,8 @@ export const resolveNameCore = async (
 	});
 
 	const [ history, utxos ] = await Promise.all([
-		fetchHistory(electrumClient, domainContract.address),
-		fetchUnspentTransactionOutputs(electrumClient, domainContract.address, false, true),
+		fetchHistory(electrumClient, nameContract.address),
+		fetchUnspentTransactionOutputs(electrumClient, nameContract.address, false, true),
 	]);
 
 	const filteredUtxos = utxos
@@ -229,7 +229,7 @@ export const resolveNameCore = async (
 
 	if(filteredUtxos.length === 0)
 	{
-		throw new Error('No UTXOs found for the domain');
+		throw new Error('No UTXOs found for the name');
 	}
 
 	const validUtxo = filteredUtxos.reduce((prev, current) =>
@@ -298,13 +298,13 @@ export const resolveNameCore = async (
 
 
 /**
- * Retrieves all domain names associated with a given Bitcoin Cash address.
+ * Retrieves all names associated with a given Bitcoin Cash address.
  *
  * This function queries the blockchain to find all UTXOs linked to the specified address
- * and filters them to extract the domain names owned by the address.
+ * and filters them to extract the names owned by the address.
  *
  * @param {LookupAddressRequest} params - The parameters for the lookup operation.
- * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of domain names owned by the address.
+ * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
  */
 export const lookupAddressCore = async ({
 	address,

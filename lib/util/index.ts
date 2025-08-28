@@ -33,7 +33,7 @@ export {
 // UTXO utilities
 export {
 	getRegistrationUtxo,
-	getDomainMintingUtxo,
+	getNameMintingUtxo,
 	getAllRunningAuctionUtxos,
 	getRunningAuctionUtxo,
 	getThreadUtxo,

@@ -18,17 +18,17 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 	options,
 }: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosResponse> =>
 {
-	const domainContract = constructNameContract({
+	const nameContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
 		options,
 	});
 
-	const [ registryUtxos, guardUtxos, domainUtxos ] = await Promise.all([
+	const [ registryUtxos, guardUtxos, nameUtxos ] = await Promise.all([
 		options.provider.getUtxos(contracts.Registry.address),
 		options.provider.getUtxos(contracts.OwnershipGuard.address),
-		options.provider.getUtxos(domainContract.address),
+		options.provider.getUtxos(nameContract.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
@@ -48,7 +48,7 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 	});
 
 	// Find the internal authorization NFT UTXO.
-	const externalAuthUTXO = domainUtxos.find(utxo =>
+	const externalAuthUTXO = nameUtxos.find(utxo =>
 		utxo.token?.nft?.capability === 'none'
     && utxo.token?.category === category
     && utxo.token?.nft?.commitment.length === 0,
@@ -84,7 +84,7 @@ export const penalizeIllegalAuction = async ({
 	utxos,
 }: PenaliseIllegalAuctionCoreParams): Promise<TransactionBuilder> =>
 {
-	const domainContract = constructNameContract({
+	const nameContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
@@ -96,7 +96,7 @@ export const penalizeIllegalAuction = async ({
 	const transaction = await new TransactionBuilder({ provider: networkProvider })
 		.addInput(threadNFTUTXO, contracts.Registry.unlock.call())
 		.addInput(authorizedContractUTXO, contracts.OwnershipGuard.unlock.call())
-		.addInput(externalAuthUTXO, domainContract.unlock.useAuth(BigInt(0)))
+		.addInput(externalAuthUTXO, nameContract.unlock.useAuth(BigInt(0)))
 		.addInput(runningAuctionUTXO, contracts.Registry.unlock.call())
 		.addOutput({
 			to: contracts.Registry.tokenAddress,
@@ -115,7 +115,7 @@ export const penalizeIllegalAuction = async ({
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({
-			to: domainContract.tokenAddress,
+			to: nameContract.tokenAddress,
 			amount: externalAuthUTXO.satoshis,
 			token: {
 				category: externalAuthUTXO.token!.category,

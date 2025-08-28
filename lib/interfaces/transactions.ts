@@ -10,8 +10,8 @@ export interface GetValidCandidateTransactionsParams
 	/** The token category. */
 	category: string;
 
-	/** The contract associated with the domain. */
-	domainContract: Contract;
+	/** The contract associated with the name. */
+	nameContract: Contract;
 
 	/** The Electrum client for blockchain interactions. */
 	electrumClient: ElectrumClient<ElectrumProtocolEvents>;

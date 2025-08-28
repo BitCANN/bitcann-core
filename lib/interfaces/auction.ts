@@ -8,7 +8,7 @@ import type { Contract, NetworkProvider, Utxo } from 'cashscript';
 export interface CreateAuctionParams
 {
 	/**
-   * The domain name to be auctioned.
+   * The name to be auctioned.
    */
 	name: string;
 	/**
@@ -139,7 +139,7 @@ export interface GetAuctionsParams
 export interface GetAuctionsResponse
 {
 	/**
-   * The domain name of the auction.
+   * The name of the auction.
    */
 	name: string;
 	/**
@@ -178,7 +178,7 @@ export interface GetPastAuctionsParams
    */
 	category: string;
 	/**
-   * Contract for the domain.
+   * Contract for the name.
    */
 	Factory: Contract;
 	/**
@@ -193,7 +193,7 @@ export interface GetPastAuctionsParams
 export interface PastAuctionResponse
 {
 	/**
-   * The domain name of the past auction.
+   * The name of the past auction.
    */
 	name: string;
 	/**

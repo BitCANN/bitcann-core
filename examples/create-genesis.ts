@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  domainTokenCategory,
+  nameTokenCategory,
   minStartingBid,
   minBidIncreasePercentage,
   inactivityExpiryTime,
@@ -20,7 +20,7 @@ import {
 const networkProvider = new ElectrumNetworkProvider('mainnet');
 
 const bitcannManager = new BitcannManager({
-	category: domainTokenCategory,
+	category: nameTokenCategory,
 	minStartingBid: minStartingBid,
 	minBidIncreasePercentage: minBidIncreasePercentage,
 	inactivityExpiryTime: inactivityExpiryTime,
@@ -122,7 +122,7 @@ const createMintingSetup = async () => {
   }
 
   const tx = await wallet.tokenMint(
-    domainTokenCategory,
+    nameTokenCategory,
     mintingSetup
   )
 
@@ -130,7 +130,7 @@ const createMintingSetup = async () => {
   console.log(tx)
   console.log('INFO: Minting setup complete')
 
-  const utxos = await wallet.getTokenUtxos(domainTokenCategory);
+  const utxos = await wallet.getTokenUtxos(nameTokenCategory);
   const mintingUtxo = utxos.find(utxo => utxo.token?.capability === NFTCapability.minting);
   if (!mintingUtxo) {
     console.log('No minting NFT found');
@@ -166,7 +166,7 @@ const createMintingSetup = async () => {
     // Do this as Step 2
     // await createGenesisCategory();
 
-    // Do this as step 3, copy the tokenID from the terminal and paste it above in the `const domainTokenCategory` variable
+    // Do this as step 3, copy the tokenID from the terminal and paste it above in the `const nameTokenCategory` variable
     // and once done, comment out the line below
     await createMintingSetup();
 

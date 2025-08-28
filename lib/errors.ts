@@ -159,13 +159,13 @@ export class InvalidBidAmountError extends Error
 }
 
 /**
- * Error thrown when a Domain Minting UTXO is not found.
+ * Error thrown when a Name Minting UTXO is not found.
  */
-export class DomainMintingUTXONotFoundError extends Error
+export class NameMintingUTXONotFoundError extends Error
 {
 	constructor()
 	{
-		const message = 'Domain Minting UTXO not found';
+		const message = 'Name Minting UTXO not found';
 
 		super(message);
 	}
