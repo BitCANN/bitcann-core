@@ -14,7 +14,14 @@ export {
 	hexToInt,
 	pushDataHex,
 	extractOpReturnPayload,
+	padVmNumber,
 } from './binary.js';
+
+// Price utilities
+export {
+	getCreatorIncentive,
+	getAuctionPrice,
+} from './price.js';
 
 // Name utilities
 export {
@@ -50,8 +57,8 @@ export {
 
 // Contract utilities
 export {
-	constructDomainContract,
-	getDomainPartialBytecode,
+	constructNameContract,
+	getNamePartialBytecode,
 	constructContracts,
 } from './contract.js';
 

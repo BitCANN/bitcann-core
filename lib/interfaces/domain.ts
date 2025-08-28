@@ -35,7 +35,7 @@ export interface CreateClaimDomainParams
 	/** The token category. */
 	category: string;
 	/** The contract instance for the domain factory. */
-	domainFactoryContract: Contract;
+	FactoryContract: Contract;
 	/** The inactivity expiry time for the domain. */
 	inactivityExpiryTime: number;
 	/** The maximum platform fee percentage allowed. */
@@ -82,7 +82,7 @@ export interface FetchClaimDomainUtxosParams
 	/** The category of the domain. */
 	category: string;
 	/** The contract instance for the domain factory. */
-	domainFactoryContract: Contract;
+	FactoryContract: Contract;
 	/** The name of the domain. */
 	name: string;
 	/** The network provider for blockchain interactions. */

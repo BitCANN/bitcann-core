@@ -1,5 +1,5 @@
 import { TransactionBuilder } from 'cashscript';
-import { constructDomainContract, getRunningAuctionUtxo, getThreadUtxo, getAuthorizedContractUtxo } from '../util/index.js';
+import { constructNameContract, getRunningAuctionUtxo, getThreadUtxo, getAuthorizedContractUtxo } from '../util/index.js';
 import { ExternalAuthNFTUTXONotFoundError } from '../errors.js';
 import { FetchIllegalAuctionGuardUtxosParams, FetchIllegalAuctionGuardUtxosResponse, PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
 
@@ -18,7 +18,7 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 	options,
 }: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosResponse> =>
 {
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
@@ -27,14 +27,14 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 
 	const [ registryUtxos, guardUtxos, domainUtxos ] = await Promise.all([
 		options.provider.getUtxos(contracts.Registry.address),
-		options.provider.getUtxos(contracts.DomainOwnershipGuard.address),
+		options.provider.getUtxos(contracts.OwnershipGuard.address),
 		options.provider.getUtxos(domainContract.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,
 		category,
-		threadContractAddress: contracts.DomainOwnershipGuard.address,
+		threadContractAddress: contracts.OwnershipGuard.address,
 	});
 
 	const authorizedContractUTXO = getAuthorizedContractUtxo({
@@ -84,7 +84,7 @@ export const penalizeIllegalAuction = async ({
 	utxos,
 }: PenaliseIllegalAuctionCoreParams): Promise<TransactionBuilder> =>
 {
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
@@ -95,7 +95,7 @@ export const penalizeIllegalAuction = async ({
 
 	const transaction = await new TransactionBuilder({ provider: networkProvider })
 		.addInput(threadNFTUTXO, contracts.Registry.unlock.call())
-		.addInput(authorizedContractUTXO, contracts.DomainOwnershipGuard.unlock.call())
+		.addInput(authorizedContractUTXO, contracts.OwnershipGuard.unlock.call())
 		.addInput(externalAuthUTXO, domainContract.unlock.useAuth(BigInt(0)))
 		.addInput(runningAuctionUTXO, contracts.Registry.unlock.call())
 		.addOutput({
@@ -111,7 +111,7 @@ export const penalizeIllegalAuction = async ({
 			},
 		})
 		.addOutput({
-			to: contracts.DomainOwnershipGuard.tokenAddress,
+			to: contracts.OwnershipGuard.tokenAddress,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({

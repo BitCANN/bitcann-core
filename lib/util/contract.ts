@@ -5,15 +5,15 @@ import { BitCANNArtifacts } from '@bitcann/contracts';
 
 
 /**
- * Constructs a Domain contract for the BitCANN system.
+ * Constructs a Name contract for the BitCANN system.
  *
- * @param {Object} params - The parameters for constructing the Domain contract.
- * @param {string} params.name - The name of the domain.
- * @param {string} params.category - The category identifier for the domain.
+ * @param {Object} params - The parameters for constructing the Name contract.
+ * @param {string} params.name - The name.
+ * @param {string} params.category - The category identifier for the name.
  * @param {number} params.inactivityExpiryTime - The time period after which the domain is considered inactive.
- * @returns {Contract} The constructed Domain contract.
+ * @returns {Contract} The constructed Name contract.
  */
-export const constructDomainContract = (params: {
+export const constructNameContract = (params: {
 	name: string;
 	category: string;
 	inactivityExpiryTime: number;
@@ -28,22 +28,22 @@ export const constructDomainContract = (params: {
 
 	// Construct the Domain contract with the provided parameters.
 	return new Contract(
-		BitCANNArtifacts.Domain,
+		BitCANNArtifacts.Name,
 		[ BigInt(params.inactivityExpiryTime), nameHex, reversedCategory ],
 		params.options,
 	);
 };
 
 /**
- * Retrieves the partial bytecode of the Domain contract.
+ * Retrieves the partial bytecode of the Name contract.
  *
- * @param {string} category - The category identifier for the domain.
- * @param {Object} options - The options for constructing the Domain contract.
+ * @param {string} category - The category identifier for the name.
+ * @param {Object} options - The options for constructing the Name contract.
  * @param {NetworkProvider} options.provider - The network provider.
  * @param {AddressType} options.addressType - The address type.
- * @returns {string} The partial bytecode of the Domain contract.
+ * @returns {string} The partial bytecode of the Name contract.
  */
-export const getDomainPartialBytecode = (category: string, options: { provider: NetworkProvider; addressType: AddressType }): string =>
+export const getNamePartialBytecode = (category: string, options: { provider: NetworkProvider; addressType: AddressType }): string =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(category).reverse());
@@ -54,12 +54,17 @@ export const getDomainPartialBytecode = (category: string, options: { provider: 
 		.padStart(2, '0'))
 		.join('');
 
-	// Construct a placeholder domain contract to extract partial bytecode.
-	const PlaceholderDomainContract = new Contract(BitCANNArtifacts.Domain, [ BigInt(1), placeholderNameHex, reversedCategory ], options);
-	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2;
-	const domainPartialBytecode = PlaceholderDomainContract.bytecode.slice(sliceIndex, PlaceholderDomainContract.bytecode.length);
+	const placeTLD = '.bch';
+	const placeTLDHex = Array.from(placeTLD).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
 
-	return domainPartialBytecode;
+	// Construct a placeholder name contract to extract partial bytecode.
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], options);
+	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2 + 2 + placeTLD.length * 2;
+	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
+
+	return namePartialBytecode;
 };
 
 /**
@@ -84,17 +89,17 @@ export const constructContracts = (params: {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(params.category).reverse());
 
-	const domainPartialBytecode = getDomainPartialBytecode(params.category, params.options);
+	const namePartialBytecode = getNamePartialBytecode(params.category, params.options);
 
 	// Return an object containing all the constructed contracts.
 	return {
 		Accumulator: new Contract(BitCANNArtifacts.Accumulator, [], params.options),
-		Auction: new Contract(BitCANNArtifacts.Auction, [ BigInt(params.minStartingBid) ], params.options),
-		AuctionConflictResolver: new Contract(BitCANNArtifacts.AuctionConflictResolver, [], params.options),
-		AuctionNameEnforcer: new Contract(BitCANNArtifacts.AuctionNameEnforcer, [], params.options),
-		Bid: new Contract(BitCANNArtifacts.Bid, [ BigInt(params.minBidIncreasePercentage) ], params.options),
-		DomainFactory: new Contract(BitCANNArtifacts.DomainFactory, [ domainPartialBytecode, BigInt(params.minWaitTime), BigInt(params.maxPlatformFeePercentage) ], params.options),
-		DomainOwnershipGuard: new Contract(BitCANNArtifacts.DomainOwnershipGuard, [ domainPartialBytecode ], params.options),
+		Auction: new Contract(BitCANNArtifacts.Auction, [], params.options),
+		ConflictResolver: new Contract(BitCANNArtifacts.ConflictResolver, [], params.options),
+		NameEnforcer: new Contract(BitCANNArtifacts.NameEnforcer, [], params.options),
+		Bid: new Contract(BitCANNArtifacts.Bid, [], params.options),
+		Factory: new Contract(BitCANNArtifacts.Factory, [ namePartialBytecode, BigInt(params.minWaitTime), BigInt(params.maxPlatformFeePercentage) ], params.options),
+		OwnershipGuard: new Contract(BitCANNArtifacts.OwnershipGuard, [ namePartialBytecode ], params.options),
 		Registry: new Contract(BitCANNArtifacts.Registry, [ reversedCategory ], params.options),
 	};
 };

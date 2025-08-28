@@ -19,13 +19,13 @@ export const fetchDuplicateAuctionGuardUtxos = async ({
 {
 	const [ registryUtxos, guardUtxos ] = await Promise.all([
 		options.provider.getUtxos(contracts.Registry.address),
-		options.provider.getUtxos(contracts.AuctionConflictResolver.address),
+		options.provider.getUtxos(contracts.ConflictResolver.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,
 		category,
-		threadContractAddress: contracts.AuctionConflictResolver.address,
+		threadContractAddress: contracts.ConflictResolver.address,
 	});
 
 	const authorizedContractUTXO = getAuthorizedContractUtxo({
@@ -68,7 +68,7 @@ export const penalizeDuplicateAuction = async ({
 
 	const transaction = await new TransactionBuilder({ provider: networkProvider })
 		.addInput(threadNFTUTXO, contracts.Registry.unlock.call())
-		.addInput(authorizedContractUTXO, contracts.AuctionConflictResolver.unlock.call())
+		.addInput(authorizedContractUTXO, contracts.ConflictResolver.unlock.call())
 		.addInput(runningValidAuctionUTXO, contracts.Registry.unlock.call())
 		.addInput(runningInValidAuctionUTXO, contracts.Registry.unlock.call())
 		.addOutput({
@@ -84,7 +84,7 @@ export const penalizeDuplicateAuction = async ({
 			},
 		})
 		.addOutput({
-			to: contracts.AuctionConflictResolver.tokenAddress,
+			to: contracts.ConflictResolver.tokenAddress,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({

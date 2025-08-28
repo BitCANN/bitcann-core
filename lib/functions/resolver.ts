@@ -1,6 +1,6 @@
 import { fetchTransaction, fetchHistory, fetchUnspentTransactionOutputs } from '@electrum-cash/protocol';
 import type { LookupAddressCoreParams, LookupAddressCoreResponse, ResolveNameByChainGraphParams, ResolveNameByElectrumParams, ResolveNameCoreParams } from '../interfaces/resolver.js';
-import { constructDomainContract } from '../util/index.js';
+import { constructNameContract } from '../util/index.js';
 import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { ChaingraphClient, graphql } from 'chaingraph-ts';
 import { lockScriptToAddress, scriptToScripthash } from '../util/address.js';
@@ -211,7 +211,7 @@ export const resolveNameCore = async (
 		throw new Error('Either useElectrum or useChaingraph must be true');
 	}
 
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,

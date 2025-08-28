@@ -180,7 +180,7 @@ export interface GetPastAuctionsParams
 	/**
    * Contract for the domain.
    */
-	domainFactory: Contract;
+	Factory: Contract;
 	/**
    * Electrum client for protocol events.
    */

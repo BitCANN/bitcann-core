@@ -1,4 +1,4 @@
-import { constructDomainContract, getDomainPartialBytecode } from '../util/contract.js';
+import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
 import { hexToBin, binToHex } from '@bitauth/libauth';
 import { DomainInfo, GetDomainParams, DomainStatus } from '../interfaces/index.js';
 import { buildLockScriptP2SH32, getRunningAuctionUtxo, lockScriptToAddress, pushDataHex } from '../util/index.js';
@@ -22,10 +22,10 @@ export const getDomain = async ({ name, category, inactivityExpiryTime, options,
 	const domainCategoryReversed = binToHex(hexToBin(category).reverse());
 
 	// Retrieve the partial bytecode of the Domain contract.
-	const domainPartialBytecode = getDomainPartialBytecode(category, options);
+	const domainPartialBytecode = getNamePartialBytecode(category, options);
 
 	// Construct the Domain contract with the provided parameters.
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,

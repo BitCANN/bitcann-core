@@ -32,7 +32,7 @@ import {
 } from './functions/index.js';
 import {
 	constructContracts,
-	constructDomainContract,
+	constructNameContract,
 } from './util/index.js';
 import type {
 	AccumulateParams,
@@ -162,7 +162,7 @@ export class BitcannManager
 	{
 		return getPastAuctions({
 			category: this.category,
-			domainFactory: this.contracts.DomainFactory,
+			Factory: this.contracts.Factory,
 			// @ts-ignore
 			electrumClient: this.networkProvider.electrum,
 		});
@@ -321,7 +321,7 @@ export class BitcannManager
 			utxos = await fetchClaimDomainUtxos({
 				category: this.category,
 				registryContract: this.contracts.Registry,
-				domainFactoryContract: this.contracts.DomainFactory,
+				FactoryContract: this.contracts.Factory,
 				name,
 				networkProvider: this.networkProvider,
 			});
@@ -330,7 +330,7 @@ export class BitcannManager
 		return createClaimDomainTransactionCore({
 			category: this.category,
 			registryContract: this.contracts.Registry,
-			domainFactoryContract: this.contracts.DomainFactory,
+			FactoryContract: this.contracts.Factory,
 			inactivityExpiryTime: this.inactivityExpiryTime,
 			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			minWaitTime: this.minWaitTime,
@@ -443,7 +443,7 @@ export class BitcannManager
 	 */
 	public async createRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
 	{
-		const domainContract = constructDomainContract({
+		const domainContract = constructNameContract({
 			name: name,
 			category: this.category,
 			inactivityExpiryTime: this.inactivityExpiryTime,

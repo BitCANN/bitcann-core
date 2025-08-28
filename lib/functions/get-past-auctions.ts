@@ -11,11 +11,11 @@ import type { GetPastAuctionsParams, PastAuctionResponse } from '../interfaces/i
 export const getPastAuctions = async ({
 	category,
 	electrumClient,
-	domainFactory,
+	Factory,
 }: GetPastAuctionsParams): Promise<PastAuctionResponse[]> =>
 {
 	// @ts-ignore
-	const history = await fetchHistory(electrumClient, domainFactory.address);
+	const history = await fetchHistory(electrumClient, Factory.address);
 
 	const validTransactions = await Promise.all(history.map(async (txn) =>
 	{

@@ -2,7 +2,7 @@ import { binToHex, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
 import {
 	adjustLastOutputForFee,
-	constructDomainContract,
+	constructNameContract,
 	convertCashAddressToTokenAddress,
 	convertNameToBinaryAndHex,
 	convertPkhToLockingBytecode,
@@ -50,7 +50,7 @@ const deriveAddressFromPKHInCommitment = (commitment: string): string =>
  * @param {FetchClaimDomainUtxosParams} params - The parameters for fetching UTXOs.
  * @param {string} params.category - The category of the domain.
  * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.domainFactoryContract - The domain factory contract instance.
+ * @param {Contract} params.FactoryContract - The domain factory contract instance.
  * @param {string} params.name - The name of the domain.
  * @param {NetworkProvider} params.networkProvider - The network provider for blockchain interactions.
  * @returns {Promise<FetchClaimDomainUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
@@ -58,25 +58,25 @@ const deriveAddressFromPKHInCommitment = (commitment: string): string =>
 export const fetchClaimDomainUtxos = async ({
 	category,
 	registryContract,
-	domainFactoryContract,
+	FactoryContract,
 	name,
 	networkProvider,
 }: FetchClaimDomainUtxosParams): Promise<FetchClaimDomainUtxosResponse> =>
 {
-	const [ registryUtxos, domainFactoryUtxos ] = await Promise.all([
+	const [ registryUtxos, FactoryUtxos ] = await Promise.all([
 		networkProvider.getUtxos(registryContract.address),
-		networkProvider.getUtxos(domainFactoryContract.address),
+		networkProvider.getUtxos(FactoryContract.address),
 	]);
 
 
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,
 		category: category,
-		threadContractAddress: domainFactoryContract.address,
+		threadContractAddress: FactoryContract.address,
 	});
 
 	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: domainFactoryUtxos,
+		utxos: FactoryUtxos,
 	});
 
 	const domainMintingUTXO = getDomainMintingUtxo({
@@ -118,7 +118,7 @@ export const fetchClaimDomainUtxos = async ({
  * @param {CreateClaimDomainParams} params - The parameters required to create the claim domain transaction.
  * @param {string} params.category - The category of the domain.
  * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.domainFactoryContract - The domain factory contract instance.
+ * @param {Contract} params.FactoryContract - The domain factory contract instance.
  * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the domain.
  * @param {number} params.maxPlatformFeePercentage - The maximum platform fee percentage.
  * @param {number} params.minWaitTime - The minimum wait time for the transaction.
@@ -133,7 +133,7 @@ export const fetchClaimDomainUtxos = async ({
 export const createClaimDomainTransactionCore = async ({
 	category,
 	registryContract,
-	domainFactoryContract,
+	FactoryContract,
 	inactivityExpiryTime,
 	maxPlatformFeePercentage,
 	minWaitTime,
@@ -163,7 +163,7 @@ export const createClaimDomainTransactionCore = async ({
 
 	const bidderAddress = bidderAddressResult.address;
 
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name: name,
 		category,
 		inactivityExpiryTime,
@@ -175,7 +175,7 @@ export const createClaimDomainTransactionCore = async ({
 
 	const transaction = await new TransactionBuilder({ provider: options.provider })
 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-		.addInput(authorizedContractUTXO, domainFactoryContract.unlock.call())
+		.addInput(authorizedContractUTXO, FactoryContract.unlock.call())
 		.addInput(domainMintingUTXO, registryContract.unlock.call())
 		.addInput(runningAuctionUTXO, registryContract.unlock.call(), { sequence: minWaitTime })
 		.addInput(biddingReadUTXO, placeholderUnlocker)
@@ -192,7 +192,7 @@ export const createClaimDomainTransactionCore = async ({
 			},
 		})
 		.addOutput({
-			to: domainFactoryContract.tokenAddress,
+			to: FactoryContract.tokenAddress,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({

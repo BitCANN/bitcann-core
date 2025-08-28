@@ -34,21 +34,21 @@ describe('manager', () =>
 			expect(manager.contracts).toBeDefined();
 			expect(manager.contracts.Accumulator).toBeDefined();
 			expect(manager.contracts.Auction).toBeDefined();
-			expect(manager.contracts.AuctionConflictResolver).toBeDefined();
-			expect(manager.contracts.AuctionNameEnforcer).toBeDefined();
+			expect(manager.contracts.ConflictResolver).toBeDefined();
+			expect(manager.contracts.NameEnforcer).toBeDefined();
 			expect(manager.contracts.Bid).toBeDefined();
-			expect(manager.contracts.DomainFactory).toBeDefined();
-			expect(manager.contracts.DomainOwnershipGuard).toBeDefined();
+			expect(manager.contracts.Factory).toBeDefined();
+			expect(manager.contracts.OwnershipGuard).toBeDefined();
 			expect(manager.contracts.Registry).toBeDefined();
 
 			// Verify contract addresses from config
 			expect(manager.contracts.Registry.address).toBe(config.registryContractAddress);
 			expect(manager.contracts.Auction.address).toBe(config.auctionContractAddress);
 			expect(manager.contracts.Bid.address).toBe(config.bidContractAddress);
-			expect(manager.contracts.DomainFactory.address).toBe(config.domainFactoryContractAddress);
-			expect(manager.contracts.DomainOwnershipGuard.address).toBe(config.domainOwnershipGuardContractAddress);
-			expect(manager.contracts.AuctionConflictResolver.address).toBe(config.auctionConflictResolverContractAddress);
-			expect(manager.contracts.AuctionNameEnforcer.address).toBe(config.auctionNameEnforcerContractAddress);
+			expect(manager.contracts.Factory.address).toBe(config.FactoryContractAddress);
+			expect(manager.contracts.OwnershipGuard.address).toBe(config.OwnershipGuardContractAddress);
+			expect(manager.contracts.ConflictResolver.address).toBe(config.ConflictResolverContractAddress);
+			expect(manager.contracts.NameEnforcer.address).toBe(config.NameEnforcerContractAddress);
 			expect(manager.contracts.Accumulator.address).toBe(config.accumulatorContractAddress);
 
 			const registryLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Registry.address);
@@ -56,25 +56,25 @@ describe('manager', () =>
 			const derivedRegistryLockingBytecodeHex = binToHex(registryLockingBytecode.bytecode);
 			expect(derivedRegistryLockingBytecodeHex).toBe(config.registryLockingBytecodeHex);
 
-			const domainFactoryLockingBytecode = cashAddressToLockingBytecode(manager.contracts.DomainFactory.address);
+			const FactoryLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Factory.address);
 			// @ts-ignore
-			const derivedDomainFactoryLockingBytecodeHex = binToHex(domainFactoryLockingBytecode.bytecode);
-			expect(derivedDomainFactoryLockingBytecodeHex).toBe(config.domainFactoryLockingBytecodeHex);
+			const derivedFactoryLockingBytecodeHex = binToHex(FactoryLockingBytecode.bytecode);
+			expect(derivedFactoryLockingBytecodeHex).toBe(config.FactoryLockingBytecodeHex);
 
-			const domainOwnershipGuardLockingBytecode = cashAddressToLockingBytecode(manager.contracts.DomainOwnershipGuard.address);
+			const OwnershipGuardLockingBytecode = cashAddressToLockingBytecode(manager.contracts.OwnershipGuard.address);
 			// @ts-ignore
-			const derivedDomainOwnershipGuardLockingBytecodeHex = binToHex(domainOwnershipGuardLockingBytecode.bytecode);
-			expect(derivedDomainOwnershipGuardLockingBytecodeHex).toBe(config.domainOwnershipGuardLockingBytecodeHex);
+			const derivedOwnershipGuardLockingBytecodeHex = binToHex(OwnershipGuardLockingBytecode.bytecode);
+			expect(derivedOwnershipGuardLockingBytecodeHex).toBe(config.OwnershipGuardLockingBytecodeHex);
 
-			const auctionConflictResolverLockingBytecode = cashAddressToLockingBytecode(manager.contracts.AuctionConflictResolver.address);
+			const ConflictResolverLockingBytecode = cashAddressToLockingBytecode(manager.contracts.ConflictResolver.address);
 			// @ts-ignore
-			const derivedAuctionConflictResolverLockingBytecodeHex = binToHex(auctionConflictResolverLockingBytecode.bytecode);
-			expect(derivedAuctionConflictResolverLockingBytecodeHex).toBe(config.auctionConflictResolverLockingBytecodeHex);
+			const derivedConflictResolverLockingBytecodeHex = binToHex(ConflictResolverLockingBytecode.bytecode);
+			expect(derivedConflictResolverLockingBytecodeHex).toBe(config.ConflictResolverLockingBytecodeHex);
 
-			const auctionNameEnforcerLockingBytecode = cashAddressToLockingBytecode(manager.contracts.AuctionNameEnforcer.address);
+			const NameEnforcerLockingBytecode = cashAddressToLockingBytecode(manager.contracts.NameEnforcer.address);
 			// @ts-ignore
-			const derivedAuctionNameEnforcerLockingBytecodeHex = binToHex(auctionNameEnforcerLockingBytecode.bytecode);
-			expect(derivedAuctionNameEnforcerLockingBytecodeHex).toBe(config.auctionNameEnforcerLockingBytecodeHex);
+			const derivedNameEnforcerLockingBytecodeHex = binToHex(NameEnforcerLockingBytecode.bytecode);
+			expect(derivedNameEnforcerLockingBytecodeHex).toBe(config.NameEnforcerLockingBytecodeHex);
 
 			const bidLockingBytecode = cashAddressToLockingBytecode(manager.contracts.Bid.address);
 			// @ts-ignore

@@ -1,4 +1,4 @@
-import { numberToBinUint16BE, hexToBin, binToHex } from '@bitauth/libauth';
+import { numberToBinUint16BE, hexToBin, binToHex, padMinimallyEncodedVmNumber, bigIntToVmNumber } from '@bitauth/libauth';
 
 /**
  * Converts an integer to a hexadecimal string representation of a byte array with a specified length.
@@ -39,6 +39,18 @@ export const hexToInt = (hex: string): number =>
 	}
 
 	return intValue;
+};
+
+/**
+ * Pads a VM number to a specified length.
+ *
+ * @param {bigint} num - The number to pad.
+ * @param {number} length - The desired length of the padded number.
+ * @returns {string} The padded VM number as a hexadecimal string.
+ */
+export const padVmNumber = (num: bigint, length: number): string =>
+{
+	return binToHex(padMinimallyEncodedVmNumber(bigIntToVmNumber(num), length).slice(0, length));
 };
 
 /**

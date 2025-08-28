@@ -18,13 +18,13 @@ export const fetchInvalidNameGuardUtxos = async ({
 {
 	const [ registryUtxos, guardUtxos ] = await Promise.all([
 		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.AuctionNameEnforcer.address),
+		networkProvider.getUtxos(contracts.NameEnforcer.address),
 	]);
 
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,
 		category,
-		threadContractAddress: contracts.AuctionNameEnforcer.address,
+		threadContractAddress: contracts.NameEnforcer.address,
 	});
 
 	const authorizedContractUTXO = getAuthorizedContractUtxo({
@@ -70,7 +70,7 @@ export const penalizeInvalidAuctionName = async ({
 
 	const transaction = await new TransactionBuilder({ provider: networkProvider })
 		.addInput(threadNFTUTXO, contracts.Registry.unlock.call())
-		.addInput(authorizedContractUTXO, contracts.AuctionNameEnforcer.unlock.call(BigInt(invalidCharacterIndex)))
+		.addInput(authorizedContractUTXO, contracts.NameEnforcer.unlock.call(BigInt(invalidCharacterIndex)))
 		.addInput(runningAuctionUTXO, contracts.Registry.unlock.call())
 		.addOutput({
 			to: contracts.Registry.tokenAddress,
@@ -85,7 +85,7 @@ export const penalizeInvalidAuctionName = async ({
 			},
 		})
 		.addOutput({
-			to: contracts.AuctionNameEnforcer.tokenAddress,
+			to: contracts.NameEnforcer.tokenAddress,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({

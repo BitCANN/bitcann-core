@@ -1,5 +1,5 @@
 import { fetchHistory } from '@electrum-cash/protocol';
-import { constructDomainContract, extractRecordsFromTransaction, getValidCandidateTransactions } from '../util/index.js';
+import { constructNameContract, extractRecordsFromTransaction, getValidCandidateTransactions } from '../util/index.js';
 import type { FetchRecordsParams } from '../interfaces/index.js';
 import { parseRecords, type ParsedRecordsInterface } from '../util/parser.js';
 
@@ -22,7 +22,7 @@ export const fetchRecords = async ({
 	electrumClient,
 }: FetchRecordsParams): Promise<ParsedRecordsInterface> =>
 {
-	const domainContract = constructDomainContract({
+	const domainContract = constructNameContract({
 		name,
 		category,
 		inactivityExpiryTime,
