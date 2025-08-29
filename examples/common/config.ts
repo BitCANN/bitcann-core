@@ -6,8 +6,9 @@ const minStartingBid = 10000;
 const minBidIncreasePercentage = 5;
 const inactivityExpiryTime = 1;
 const minWaitTime = 4194306;
-const maxPlatformFeePercentage = 50;
-const platformFeeAddress = process.env.FEE_COLLECTION_ADDRESS;
+const creatorIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
+const tld = '.bch';
+
 const genesisTokenAmount = BigInt('9223372036854775807');
 
 export {
@@ -16,7 +17,7 @@ export {
   minBidIncreasePercentage,
   inactivityExpiryTime,
   minWaitTime,
-  maxPlatformFeePercentage,
-  platformFeeAddress,
+  creatorIncentiveAddress,
   genesisTokenAmount,
+  tld,
 }

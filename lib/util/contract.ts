@@ -2,6 +2,7 @@ import { binToHex, hexToBin } from '@bitauth/libauth';
 import type { AddressType, NetworkProvider } from 'cashscript';
 import { Contract } from 'cashscript';
 import { BitCANNArtifacts } from '@bitcann/contracts';
+import { convertAddressToPkh } from './address';
 
 
 /**
@@ -71,17 +72,11 @@ export const getNamePartialBytecode = (category: string, options: { provider: Ne
  * Constructs a set of contracts for the BitCANN system.
  *
  * @param {Object} params - The parameters for constructing the contracts.
- * @param {number} params.minStartingBid - The minimum starting bid for auctions.
- * @param {number} params.minBidIncreasePercentage - The minimum bid increase percentage.
- * @param {number} params.minWaitTime - The minimum wait time for auction finalization.
- * @param {number} params.maxPlatformFeePercentage - The maximum platform fee percentage.
+ * @param {string} params.creatorIncentiveAddress - The creator incentive address.
  * @returns {Object} An object containing the constructed contracts.
  */
 export const constructContracts = (params: {
-	minStartingBid: number;
-	minBidIncreasePercentage: number;
-	minWaitTime: number;
-	maxPlatformFeePercentage: number;
+	creatorIncentiveAddress: string;
 	category: string;
 	options: { provider: NetworkProvider; addressType: AddressType };
 }): { [key: string]: Contract } =>
@@ -98,7 +93,7 @@ export const constructContracts = (params: {
 		ConflictResolver: new Contract(BitCANNArtifacts.ConflictResolver, [], params.options),
 		NameEnforcer: new Contract(BitCANNArtifacts.NameEnforcer, [], params.options),
 		Bid: new Contract(BitCANNArtifacts.Bid, [], params.options),
-		Factory: new Contract(BitCANNArtifacts.Factory, [ namePartialBytecode, BigInt(params.minWaitTime), BigInt(params.maxPlatformFeePercentage) ], params.options),
+		Factory: new Contract(BitCANNArtifacts.Factory, [ namePartialBytecode, convertAddressToPkh(params.creatorIncentiveAddress) ], params.options),
 		OwnershipGuard: new Contract(BitCANNArtifacts.OwnershipGuard, [ namePartialBytecode ], params.options),
 		Registry: new Contract(BitCANNArtifacts.Registry, [ reversedCategory ], params.options),
 	};

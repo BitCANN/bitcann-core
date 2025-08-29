@@ -12,9 +12,9 @@ import {
   minBidIncreasePercentage,
   inactivityExpiryTime,
   minWaitTime,
-  maxPlatformFeePercentage,
-  platformFeeAddress,
+  creatorIncentiveAddress,
   genesisTokenAmount,
+  tld,
 } from './common/config.js';
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
@@ -25,9 +25,9 @@ const bitcannManager = new BitcannManager({
 	minBidIncreasePercentage: minBidIncreasePercentage,
 	inactivityExpiryTime: inactivityExpiryTime,
 	minWaitTime: minWaitTime,
-	maxPlatformFeePercentage: maxPlatformFeePercentage,
+	creatorIncentiveAddress: creatorIncentiveAddress,
+	tld: tld,
 	networkProvider: networkProvider,
-	platformFeeAddress: platformFeeAddress,
 });
 
 const getWallet = async () => {

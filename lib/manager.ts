@@ -65,8 +65,8 @@ export class BitcannManager
 	public minBidIncreasePercentage: number;
 	public inactivityExpiryTime: number;
 	public minWaitTime: number;
-	public maxPlatformFeePercentage: number;
-	public platformFeeAddress: string | undefined;
+	public tld: string;
+	public creatorIncentiveAddress: string;
 	public options: { provider: NetworkProvider; addressType: AddressType };
 
 	// Network provider to use for BCH network operations.
@@ -83,8 +83,8 @@ export class BitcannManager
 		this.minBidIncreasePercentage = config.minBidIncreasePercentage;
 		this.inactivityExpiryTime = config.inactivityExpiryTime;
 		this.minWaitTime = config.minWaitTime;
-		this.maxPlatformFeePercentage = config.maxPlatformFeePercentage;
-		this.platformFeeAddress = config.platformFeeAddress;
+		this.tld = config.tld;
+		this.creatorIncentiveAddress = config.creatorIncentiveAddress;
 		this.chaingraphUrl = config.chaingraphUrl || chaingraphURL;
 		if(config.networkProvider)
 		{
@@ -101,10 +101,7 @@ export class BitcannManager
 		this.options = { provider: this.networkProvider, addressType: 'p2sh32' as AddressType };
 
 		this.contracts = constructContracts({
-			minStartingBid: this.minStartingBid,
-			minBidIncreasePercentage: this.minBidIncreasePercentage,
-			minWaitTime: this.minWaitTime,
-			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
+			creatorIncentiveAddress: this.creatorIncentiveAddress,
 			category: this.category,
 			options: this.options,
 		});
@@ -332,11 +329,10 @@ export class BitcannManager
 			registryContract: this.contracts.Registry,
 			FactoryContract: this.contracts.Factory,
 			inactivityExpiryTime: this.inactivityExpiryTime,
-			maxPlatformFeePercentage: this.maxPlatformFeePercentage,
 			minWaitTime: this.minWaitTime,
 			name,
 			options: this.options,
-			platformFeeAddress: this.platformFeeAddress,
+			creatorIncentiveAddress: this.creatorIncentiveAddress,
 			utxos,
 		});
 	}

@@ -21,7 +21,7 @@ describe('manager', () =>
 			expect(manager.minBidIncreasePercentage).toBe(config.mockOptions.minBidIncreasePercentage);
 			expect(manager.inactivityExpiryTime).toBe(config.mockOptions.inactivityExpiryTime);
 			expect(manager.minWaitTime).toBe(config.mockOptions.minWaitTime);
-			expect(manager.maxPlatformFeePercentage).toBe(config.mockOptions.maxPlatformFeePercentage);
+			expect(manager.creatorIncentiveAddress).toBe(config.mockOptions.creatorIncentiveAddress);
 		});
 
 		it('should create default network provider if none provided', () =>

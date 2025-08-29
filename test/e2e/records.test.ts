@@ -23,12 +23,12 @@ describe('records', () =>
 		await disconnectElectrum();
 	});
 
-	it('should return empty object for a domain', async () =>
+	it('should return empty object for a name', async () =>
 	{
-		const domain = 'test';
+		const name = 'test';
 
 		const records = await fetchRecords({
-			name: domain,
+			name: name,
 			category: config.mockOptions.category,
 			inactivityExpiryTime: config.mockOptions.inactivityExpiryTime,
 			options: {

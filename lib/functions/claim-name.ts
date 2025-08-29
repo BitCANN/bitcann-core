@@ -9,6 +9,7 @@ import {
 	createPlaceholderUnlocker,
 	createRegistrationId,
 	getAuthorizedContractUtxo,
+	getCreatorIncentive,
 	getNameMintingUtxo,
 	getRunningAuctionUtxo,
 	getThreadUtxo,
@@ -120,11 +121,10 @@ export const fetchClaimNameUtxos = async ({
  * @param {Contract} params.registryContract - The registry contract instance.
  * @param {Contract} params.FactoryContract - The name factory contract instance.
  * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the name.
- * @param {number} params.maxPlatformFeePercentage - The maximum platform fee percentage.
+ * @param {number} params.creatorIncentiveAddress - The creator incentive address.
  * @param {number} params.minWaitTime - The minimum wait time for the transaction.
  * @param {string} params.name - The name.
  * @param {object} params.options - Additional options for the name contract.
- * @param {string} [params.platformFeeAddress] - The address to receive the platform fee, if specified.
  * @param {fetchClaimNameUtxosResponse} [params.utxos] - The UTXOs to be used in the transaction, if already available.
  * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
  * @throws {InvalidNameError} If the name is invalid.
@@ -135,11 +135,10 @@ export const createClaimNameTransactionCore = async ({
 	registryContract,
 	FactoryContract,
 	inactivityExpiryTime,
-	maxPlatformFeePercentage,
 	minWaitTime,
 	name,
 	options,
-	platformFeeAddress,
+	creatorIncentiveAddress,
 	utxos,
 }: CreateClaimNameParams): Promise<TransactionBuilder> =>
 {
@@ -164,7 +163,7 @@ export const createClaimNameTransactionCore = async ({
 	const bidderAddress = bidderAddressResult.address;
 
 	const nameContract = constructNameContract({
-		name: name,
+		name,
 		category,
 		inactivityExpiryTime,
 		options,
@@ -247,14 +246,16 @@ export const createClaimNameTransactionCore = async ({
 			to: bidderAddress,
 			amount: biddingReadUTXO.satoshis,
 		});
+	
+	const expectedCreatorIncentive = getCreatorIncentive(BigInt(runningAuctionUTXO.satoshis), BigInt(runningAuctionUTXO.token!.amount));
 
-	const feeRecipient = platformFeeAddress ? platformFeeAddress : bidderAddress;
-	const platformFee = runningAuctionUTXO.satoshis * BigInt(maxPlatformFeePercentage) / BigInt(100);
-
-	transaction.addOutput({
-		to: feeRecipient,
-		amount: platformFee,
-	});
+	if(expectedCreatorIncentive > 20_000n)
+	{
+		transaction.addOutput({
+			to: creatorIncentiveAddress,
+			amount: expectedCreatorIncentive,
+		});
+	}
 
 	return adjustLastOutputForFee(transaction, runningAuctionUTXO);
 };

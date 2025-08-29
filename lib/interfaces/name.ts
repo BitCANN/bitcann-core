@@ -38,8 +38,6 @@ export interface CreateClaimNameParams
 	FactoryContract: Contract;
 	/** The inactivity expiry time for the name. */
 	inactivityExpiryTime: number;
-	/** The maximum platform fee percentage allowed. */
-	maxPlatformFeePercentage: number;
 	/** The minimum wait time for the transaction. */
 	minWaitTime: number;
 	/** The name of the name. */
@@ -51,8 +49,8 @@ export interface CreateClaimNameParams
 		/** The network provider for blockchain interactions. */
 		provider: NetworkProvider;
 	};
-	/** The address to receive the platform fee, if specified. */
-	platformFeeAddress?: string;
+	/** The address to receive the creator incentive. */
+	creatorIncentiveAddress: string;
 	/** The contract instance for the registry. */
 	registryContract: Contract;
 	/** The UTXOs to be used in the transaction, if already available. */

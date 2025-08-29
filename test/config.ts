@@ -9,7 +9,7 @@ import {
 import type { ManagerConfig } from '../lib/interfaces';
 import { SignatureTemplate } from 'cashscript';
 
-export const domainTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
+export const nameTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
 
 export const accumulatorContractAddress = 'bchtest:p0g5cadr8l0apw6rnadsfhjjy9clv2havpm78mpvymtsfn7v4629vzvllagmc';
 export const ConflictResolverContractAddress = 'bchtest:pvew348de40388jtmz5rzynamptmatkwccmdf4awqmjra0cz2pn2y84uqjzhx';
@@ -33,16 +33,18 @@ export const minStartingBid = 10000;
 export const minBidIncreasePercentage = 5;
 export const inactivityExpiryTime = 1;
 export const minWaitTime = 1;
-export const maxPlatformFeePercentage = 50;
+export const creatorIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
+export const tld = '.bch';
 
 export const mockOptions: ManagerConfig =
 {
-	category: domainTokenCategory,
-	minStartingBid: minStartingBid,
-	minBidIncreasePercentage: minBidIncreasePercentage,
-	inactivityExpiryTime: inactivityExpiryTime,
-	minWaitTime: minWaitTime,
-	maxPlatformFeePercentage: maxPlatformFeePercentage,
+	category: nameTokenCategory,
+	tld,
+	minStartingBid,
+	minBidIncreasePercentage,
+	inactivityExpiryTime,
+	minWaitTime,
+	creatorIncentiveAddress,
 };
 
 const seed = deriveSeedFromBip39Mnemonic('');

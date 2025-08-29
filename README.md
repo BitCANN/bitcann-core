@@ -37,10 +37,10 @@ const manager = new BitCANNManager({
   inactivityExpiryTime: 1000000,
   // Minimum wait time in blocks/MTP
   minWaitTime: 1,
-  // Maximum platform fee percentage
-  maxPlatformFeePercentage: 50,
-  // Optional platform fee address
-  platformFeeAddress: 'bitcoincash:...',
+  // The TLD of the names
+  tld: '.bch',
+  // Creator Incentive Address
+  creatorIncentiveAddress: '',
   // Network provider (optional)
   networkProvider: new ElectrumNetworkProvider('mainnet'),
 });
@@ -48,13 +48,13 @@ const manager = new BitCANNManager({
 
 ### Handling
 
-#### Domain Operations
+#### Name Operations
 ```js
-// Get domain records
+// Get name records
 const records = await manager.getRecords('satoshi');
 
-// Get domain information
-const domain = await manager.getName('satoshi');
+// Get name information
+const name = await manager.getName('satoshi');
 
 // Create record
 const recordTx = await manager.createRecordTransaction({
@@ -83,7 +83,7 @@ const bidTx = await manager.createBidTransaction({
   address: 'bitcoincash:...'
 });
 
-// Claim domain
+// Claim name
 const claimTx = await manager.createClaimNameTransaction({
   name: 'satoshi'
 });
@@ -103,8 +103,7 @@ For support, please open an issue on our GitHub repository or create a PR, or jo
 | minBidIncreasePercentage | Minimum bid increase percentage | Required |
 | inactivityExpiryTime | Inactivity expiry time in blocks/MTP | Required |
 | minWaitTime | Minimum wait time in blocks/MTP | Required |
-| maxPlatformFeePercentage | Maximum platform fee percentage | Required |
-| platformFeeAddress | Platform fee address | Optional |
+| creatorIncentive | Creator Incentive | Optional |
 | networkProvider | Network provider | Optional |
 
 ## License

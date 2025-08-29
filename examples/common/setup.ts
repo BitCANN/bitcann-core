@@ -7,8 +7,8 @@ import {
   minBidIncreasePercentage,
   inactivityExpiryTime,
   minWaitTime,
-  maxPlatformFeePercentage,
-  platformFeeAddress,
+  creatorIncentiveAddress,
+  tld,
 } from './config.js';
 
 // Test with block-based relative timelock.
@@ -27,9 +27,9 @@ const bitcannManager = new BitcannManager({
 	minBidIncreasePercentage: minBidIncreasePercentage,
 	inactivityExpiryTime: inactivityExpiryTime,
 	minWaitTime: minWaitTime,
-	maxPlatformFeePercentage: maxPlatformFeePercentage,
+	creatorIncentiveAddress: creatorIncentiveAddress,
 	networkProvider: networkProvider,
-	platformFeeAddress: platformFeeAddress,
+	tld: tld,
 });
 
 export { bitcannManager };
