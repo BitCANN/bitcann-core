@@ -146,6 +146,19 @@ export class RunningAuctionUTXONotFoundError extends Error
 }
 
 /**
+ * Error thrown when an auction amount is invalid.
+ */
+export class InvalidAuctionAmountError extends Error
+{
+	constructor()
+	{
+		const message = 'The auction amount is invalid';
+
+		super(message);
+	}
+}
+
+/**
  * Error thrown when a bid amount is invalid.
  */
 export class InvalidBidAmountError extends Error

@@ -4,7 +4,7 @@ import { UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee } from '../util/transaction.js';
 import { convertAddressToPkh } from '../util/address.js';
 import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
-import { createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo } from '../util/index.js';
+import { createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, padVmNumber } from '../util/index.js';
 import type { CreateAuctionCoreParams, FetchAuctionUtxosParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 
 /**
@@ -42,7 +42,7 @@ export const fetchAuctionUtxos = async ({ amount, address, networkProvider, cont
 		utxos: auctionUtxos,
 	});
 
-	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000));
+	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 5000));
 	if(!userUTXO)
 	{
 		throw new UserUTXONotFoundError();
@@ -87,8 +87,8 @@ export const createAuctionTransactionCore = async ({
 	const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO }: FetchAuctionUtxosResponse = utxos;
 
 	// Calculate the new registration ID and its commitment
-	const newRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16) + 1;
-	const newRegistrationIdCommitment = newRegistrationId.toString(16).padStart(16, '0');
+	const currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
+	const nextRegistrationIdCommitment = padVmNumber(BigInt(currentRegistrationId + 1), 8);
 
 	// Convert the user's address to a public key hash
 	const userPkh = convertAddressToPkh(address);
@@ -123,10 +123,10 @@ export const createAuctionTransactionCore = async ({
 			amount: registrationCounterUTXO.satoshis,
 			token: {
 				category: registrationCounterUTXO.token!.category,
-				amount: registrationCounterUTXO.token!.amount - BigInt(newRegistrationId),
+				amount: registrationCounterUTXO.token!.amount - BigInt(currentRegistrationId),
 				nft: {
 					capability: registrationCounterUTXO.token!.nft!.capability,
-					commitment: newRegistrationIdCommitment,
+					commitment: nextRegistrationIdCommitment,
 				},
 			},
 		})
@@ -135,14 +135,13 @@ export const createAuctionTransactionCore = async ({
 			amount: BigInt(amount),
 			token: {
 				category: registrationCounterUTXO.token!.category,
-				amount: BigInt(newRegistrationId),
+				amount: BigInt(currentRegistrationId),
 				nft: {
 					capability: 'mutable',
 					commitment: userPkh + binToHex(nameBin),
 				},
 			},
 		})
-		.addOpReturnOutput([ name ])
 		.addOutput({
 			to: address,
 			amount: userUTXO.satoshis,

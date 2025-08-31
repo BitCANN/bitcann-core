@@ -161,14 +161,14 @@ const createMintingSetup = async () => {
 (async () =>
   {
     // Do this as Step 1 and once done, comment out the line below
-    // await createSuitableUTXO();
+    await createSuitableUTXO();
 
     // Do this as Step 2
     // await createGenesisCategory();
 
     // Do this as step 3, copy the tokenID from the terminal and paste it above in the `const nameTokenCategory` variable
     // and once done, comment out the line below
-    await createMintingSetup();
+    // await createMintingSetup();
 
     // Once this is done, you are ready to go!
   })();

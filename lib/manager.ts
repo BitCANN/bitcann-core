@@ -33,6 +33,7 @@ import {
 import {
 	constructContracts,
 	constructNameContract,
+	getAuctionPrice,
 } from './util/index.js';
 import type {
 	AccumulateParams,
@@ -55,6 +56,7 @@ import { LookupAddressCoreResponse } from './interfaces/resolver.js';
 import { resolveNameCore } from './functions/resolver.js';
 import { chaingraphURL } from './config.js';
 import type { ParsedRecordsInterface } from './util/parser.js';
+import { InvalidAuctionAmountError } from './errors.js';
 
 
 export class BitcannManager
@@ -261,7 +263,26 @@ export class BitcannManager
 			});
 		}
 
-		return createAuctionTransactionCore({ name, amount, address, networkProvider: this.networkProvider, contracts: this.contracts, category: this.category, utxos });
+		const { registrationCounterUTXO } = utxos;
+
+		const currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
+
+		// Check if the amount is greater than the minimum to start an auction
+		const auctionPrice = getAuctionPrice(BigInt(currentRegistrationId), BigInt(this.minStartingBid));
+		if(amount < auctionPrice)
+		{
+			throw new InvalidAuctionAmountError();
+		}
+
+		return createAuctionTransactionCore({
+			name,
+			amount,
+			address,
+			category: this.category,
+			networkProvider: this.networkProvider,
+			contracts: this.contracts,
+			utxos,
+		});
 	}
 
 	/**

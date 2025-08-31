@@ -112,7 +112,7 @@ export const createBidTransactionCore = async ({
 			},
 		})
 		.addOutput({
-			to: contracts.Bid.tokenAddress,
+			to: contracts.Bid.address,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({
