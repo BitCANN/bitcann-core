@@ -33,7 +33,7 @@ export const getAuctions = async ({
 
 		let initialAmount, previousTxHash, previousHeight, currentAmount;
 		// if output 4 has op_return then the previous transaction was auction transaction, else it was a bid transaction
-		if(decodedTx.outputs[4].valueSatoshis == BigInt(0))
+		if(decodedTx.outputs[2].token?.nft?.capability == 'minting' && decodedTx.outputs[3].token?.nft?.capability == 'mutable')
 		{
 			// auction transaction, this means
 			initialAmount = Number(decodedTx.outputs[3].valueSatoshis);
@@ -57,7 +57,7 @@ export const getAuctions = async ({
 					previousDecodedTx = null;
 				}
 
-				if(previousDecodedTx.outputs[4].valueSatoshis == BigInt(0))
+				if(decodedTx.outputs[2].token?.nft?.capability == 'minting' && decodedTx.outputs[3].token?.nft?.capability == 'mutable')
 				{
 					initialAmount = Number(previousDecodedTx.outputs[3].valueSatoshis);
 					const height = await fetchTransactionBlockHeight(electrumClient, previousHash);

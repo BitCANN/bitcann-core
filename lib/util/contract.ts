@@ -2,7 +2,7 @@ import { binToHex, hexToBin } from '@bitauth/libauth';
 import type { AddressType, NetworkProvider } from 'cashscript';
 import { Contract } from 'cashscript';
 import { BitCANNArtifacts } from '@bitcann/contracts';
-import { convertAddressToPkh } from './address';
+import { convertAddressToPkh } from './address.js';
 
 
 /**

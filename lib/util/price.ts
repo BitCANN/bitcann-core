@@ -33,5 +33,7 @@ export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint):
 	const decayPoints = minStartingBid * registrationId * 3n;
 	const currentPricePoints = minStartingBid * 1_000_000n;
 	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1_000_000n;
-	return currentAuctionPrice > 20_000n ? currentAuctionPrice : 20_000n;
+	return currentAuctionPrice > 6000n ? currentAuctionPrice : 6000n;
+	// TODO: make this 20_000n
+	// return currentAuctionPrice > 20_000n ? currentAuctionPrice : 20_000n;
 };

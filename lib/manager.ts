@@ -269,6 +269,8 @@ export class BitcannManager
 
 		// Check if the amount is greater than the minimum to start an auction
 		const auctionPrice = getAuctionPrice(BigInt(currentRegistrationId), BigInt(this.minStartingBid));
+		console.log('auctionPrice', auctionPrice);
+		console.log('amount', amount);
 		if(amount < auctionPrice)
 		{
 			throw new InvalidAuctionAmountError();
