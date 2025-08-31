@@ -3,6 +3,7 @@ import {
 } from './common/setup.js';
 import { aliceAddress, alicePriv } from './common/wallet.js';
 import { getSignedTransaction } from './common/sign.js';
+import { ElectrumNetworkProvider } from 'cashscript';
 
 
 (async () =>
@@ -21,5 +22,10 @@ import { getSignedTransaction } from './common/sign.js';
   })
 
   console.log(preparedTransaction);
+
+  const electrum = new ElectrumNetworkProvider('mainnet');
+  // @ts-ignore
+  const txid = await electrum.sendRawTransaction(preparedTransaction.hex);
+  console.log('txid: ', txid);
 	
 })();

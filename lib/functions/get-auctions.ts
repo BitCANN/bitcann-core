@@ -44,10 +44,15 @@ export const getAuctions = async ({
 		else
 		{
 			currentAmount = Number(decodedTx.outputs[2].valueSatoshis);
-
 			let previousDecodedTx: any = decodedTx;
 			while(previousDecodedTx != null)
 			{
+				if(previousDecodedTx.inputs.length !== 4 || previousDecodedTx.outputs.length > 5)
+				{
+					previousDecodedTx = null;
+					break;
+				}
+
 				const previousHash = binToHex(previousDecodedTx.inputs[2].outpointTransactionHash);
 				const previousTx = await fetchTransaction(electrumClient, previousHash);
 				previousDecodedTx = decodeTransaction(hexToBin(previousTx));
@@ -57,7 +62,7 @@ export const getAuctions = async ({
 					previousDecodedTx = null;
 				}
 
-				if(decodedTx.outputs[2].token?.nft?.capability == 'minting' && decodedTx.outputs[3].token?.nft?.capability == 'mutable')
+				if(previousDecodedTx.outputs[2].token?.nft?.capability == 'minting' && previousDecodedTx.outputs[3].token?.nft?.capability == 'mutable')
 				{
 					initialAmount = Number(previousDecodedTx.outputs[3].valueSatoshis);
 					const height = await fetchTransactionBlockHeight(electrumClient, previousHash);
