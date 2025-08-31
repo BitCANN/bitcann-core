@@ -11,12 +11,12 @@ import { isNameValid } from '../util/name.js';
  * @param {getNameParams} params - The parameters required to get name details.
  * @param {string} params.name - The name to retrieve information for.
  * @param {string} params.category - The category of the name.
- * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the name.
+ * @param {string} params.tld - The TLD of the name.
  * @param {object} params.options - Additional options for the name contract.
  * @param {Contract} params.registryContract - The contract instance for the registry.
  * @returns {Promise<NameInfo>} A promise that resolves to an object containing the name address and contract.
  */
-export const getName = async ({ name, category, inactivityExpiryTime, options, registryContract }: getNameParams): Promise<NameInfo> =>
+export const getName = async ({ name, category, tld, options, registryContract }: getNameParams): Promise<NameInfo> =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const nameCategoryReversed = binToHex(hexToBin(category).reverse());
@@ -28,12 +28,12 @@ export const getName = async ({ name, category, inactivityExpiryTime, options, r
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 
 	// Build the lock script hash for the name.
-	const nameScriptHash = buildLockScriptP2SH32(20 + nameCategoryReversed + pushDataHex(name) + namePartialBytecode);
+	const nameScriptHash = buildLockScriptP2SH32(20 + nameCategoryReversed + pushDataHex(tld) + pushDataHex(name) + namePartialBytecode);
 
 	// Convert the lock script hash to an address.
 	const address = lockScriptToAddress(nameScriptHash);

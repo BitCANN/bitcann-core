@@ -30,7 +30,7 @@ describe('records', () =>
 		const records = await fetchRecords({
 			name: name,
 			category: config.mockOptions.category,
-			inactivityExpiryTime: config.mockOptions.inactivityExpiryTime,
+			tld: config.mockOptions.tld,
 			options: {
 				provider: networkProvider,
 				addressType: 'p2sh32',

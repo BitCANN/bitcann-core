@@ -9,7 +9,7 @@ import { parseRecords, type ParsedRecordsInterface } from '../util/parser.js';
  * @param {FetchRecordsParams} params - The parameters for fetching name records.
  * @param {string} params.name - The name to retrieve records for.
  * @param {string} params.category - The category of the name.
- * @param {number} params.inactivityExpiryTime - The expiry time for name inactivity.
+ * @param {string} params.tld - The TLD of the name.
  * @param {object} params.options - Additional options for name contract construction.
  * @param {object} params.electrumClient - The Electrum client for blockchain interactions.
  * @returns {Promise<string[]>} A promise that resolves to an array of name records.
@@ -17,7 +17,7 @@ import { parseRecords, type ParsedRecordsInterface } from '../util/parser.js';
 export const fetchRecords = async ({
 	name,
 	category,
-	inactivityExpiryTime,
+	tld,
 	options,
 	electrumClient,
 }: FetchRecordsParams): Promise<ParsedRecordsInterface> =>
@@ -25,7 +25,7 @@ export const fetchRecords = async ({
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 

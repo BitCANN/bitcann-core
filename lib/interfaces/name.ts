@@ -36,8 +36,8 @@ export interface CreateClaimNameParams
 	category: string;
 	/** The contract instance for the name factory. */
 	FactoryContract: Contract;
-	/** The inactivity expiry time for the name. */
-	inactivityExpiryTime: number;
+	/** The TLD of the name. */
+	tld: string;
 	/** The minimum wait time for the transaction. */
 	minWaitTime: number;
 	/** The name of the name. */
@@ -96,8 +96,8 @@ export interface getNameParams
 {
 	/** The category of the name. */
 	category: string;
-	/** The inactivity expiry time for the name. */
-	inactivityExpiryTime: number;
+	/** The TLD of the name. */
+	tld: string;
 	/** The name of the name. */
 	name: string;
 	/** Additional options for the name contract. */

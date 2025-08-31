@@ -14,14 +14,14 @@ export const fetchIllegalAuctionGuardUtxos = async ({
 	name,
 	category,
 	contracts,
-	inactivityExpiryTime,
+	tld,
 	options,
 }: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosResponse> =>
 {
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 
@@ -77,7 +77,7 @@ export const penalizeIllegalAuction = async ({
 	name,
 	rewardTo,
 	category,
-	inactivityExpiryTime,
+	tld,
 	options,
 	networkProvider,
 	contracts,
@@ -87,7 +87,7 @@ export const penalizeIllegalAuction = async ({
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 

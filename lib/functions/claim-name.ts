@@ -120,7 +120,7 @@ export const fetchClaimNameUtxos = async ({
  * @param {string} params.category - The category of the name.
  * @param {Contract} params.registryContract - The registry contract instance.
  * @param {Contract} params.FactoryContract - The name factory contract instance.
- * @param {number} params.inactivityExpiryTime - The inactivity expiry time for the name.
+ * @param {string} params.tld - The TLD of the name.
  * @param {number} params.creatorIncentiveAddress - The creator incentive address.
  * @param {number} params.minWaitTime - The minimum wait time for the transaction.
  * @param {string} params.name - The name.
@@ -134,7 +134,7 @@ export const createClaimNameTransactionCore = async ({
 	category,
 	registryContract,
 	FactoryContract,
-	inactivityExpiryTime,
+	tld,
 	minWaitTime,
 	name,
 	options,
@@ -165,7 +165,7 @@ export const createClaimNameTransactionCore = async ({
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 

@@ -41,8 +41,8 @@ export interface FetchIllegalAuctionGuardUtxosParams
 	category: string;
 	/** The contracts involved in the auction. */
 	contracts: Record<string, any>;
-	/** The inactivity expiry time for the auction. */
-	inactivityExpiryTime: number;
+	/** The TLD of the auction. */
+	tld: string;
 	/** Additional options including provider and address type. */
 	options: { provider: NetworkProvider; addressType: AddressType };
 }
@@ -142,8 +142,8 @@ export interface PenaliseIllegalAuctionCoreParams
 	rewardTo: string;
 	/** The category of the auction. */
 	category: string;
-	/** The inactivity expiry time for the auction. */
-	inactivityExpiryTime: number;
+	/** The TLD of the auction. */
+	tld: string;
 	/** Additional options including provider and address type. */
 	options: { provider: NetworkProvider; addressType: AddressType };
 	/** The network provider for blockchain interactions. */

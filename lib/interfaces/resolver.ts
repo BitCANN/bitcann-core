@@ -43,7 +43,7 @@ export interface ResolveNameCoreParams
 {
 	name: string;
 	category: string;
-	inactivityExpiryTime: number;
+	tld: string;
 	options: any;
 	electrumClient: any;
 	useElectrum?: boolean;

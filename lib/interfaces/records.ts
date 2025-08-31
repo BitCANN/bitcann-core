@@ -52,8 +52,8 @@ export interface FetchRecordsParams
 	category: string;
 	/** Electrum client for network operations. */
 	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
-	/** Time after which inactivity leads to expiry. */
-	inactivityExpiryTime: number;
+	/** The TLD of the name. */
+	tld: string;
 	/** The name associated with the records. */
 	name: string;
 	options: {

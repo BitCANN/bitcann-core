@@ -197,7 +197,7 @@ export const resolveNameCore = async (
 	{
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 		electrumClient,
 		useElectrum,
@@ -214,7 +214,7 @@ export const resolveNameCore = async (
 	const nameContract = constructNameContract({
 		name,
 		category,
-		inactivityExpiryTime,
+		tld,
 		options,
 	});
 

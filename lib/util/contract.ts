@@ -11,14 +11,14 @@ import { convertAddressToPkh } from './address.js';
  * @param {Object} params - The parameters for constructing the Name contract.
  * @param {string} params.name - The name.
  * @param {string} params.category - The category identifier for the name.
- * @param {number} params.inactivityExpiryTime - The time period after which the name is considered inactive.
+ * @param {string} params.tld - The TLD of the name.
  * @returns {Contract} The constructed Name contract.
  */
 export const constructNameContract = (params: {
 	name: string;
 	category: string;
-	inactivityExpiryTime: number;
 	options: { provider: NetworkProvider; addressType: AddressType };
+	tld: string;
 }): Contract =>
 {
 	// Reverse the category bytes for use in contract parameters.
@@ -27,10 +27,15 @@ export const constructNameContract = (params: {
 	// Convert the name to a hex string.
 	const nameHex = Buffer.from(params.name).toString('hex');
 
+	const placeTLD = params.tld;
+	const placeTLDHex = Array.from(placeTLD).map(char => char.charCodeAt(0).toString(16)
+		.padStart(2, '0'))
+		.join('');
+
 	// Construct the Name contract with the provided parameters.
 	return new Contract(
 		BitCANNArtifacts.Name,
-		[ BigInt(params.inactivityExpiryTime), nameHex, reversedCategory ],
+		[ nameHex, placeTLDHex, reversedCategory ],
 		params.options,
 	);
 };

@@ -128,7 +128,7 @@ export class BitcannManager
 		return fetchRecords({
 			name,
 			category: this.category,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			options: this.options,
 			// @ts-ignore
 			electrumClient: this.networkProvider.electrum,
@@ -178,7 +178,7 @@ export class BitcannManager
 		return getName({
 			name,
 			category: this.category,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			options: this.options,
 			registryContract: this.contracts.Registry,
 		});
@@ -201,7 +201,7 @@ export class BitcannManager
 		return resolveNameCore({
 			name,
 			category: this.category,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			options: this.options,
 			// @ts-ignore
 			electrumClient: this.networkProvider.electrum,
@@ -351,7 +351,7 @@ export class BitcannManager
 			category: this.category,
 			registryContract: this.contracts.Registry,
 			FactoryContract: this.contracts.Factory,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			minWaitTime: this.minWaitTime,
 			name,
 			options: this.options,
@@ -433,7 +433,7 @@ export class BitcannManager
 				name,
 				category: this.category,
 				contracts: this.contracts,
-				inactivityExpiryTime: this.inactivityExpiryTime,
+				tld: this.tld,
 				options: this.options,
 			});
 		}
@@ -442,7 +442,7 @@ export class BitcannManager
 			name,
 			rewardTo,
 			category: this.category,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			options: this.options,
 			networkProvider: this.networkProvider,
 			contracts: this.contracts,
@@ -465,7 +465,7 @@ export class BitcannManager
 		const nameContract = constructNameContract({
 			name: name,
 			category: this.category,
-			inactivityExpiryTime: this.inactivityExpiryTime,
+			tld: this.tld,
 			options: this.options,
 		});
 
