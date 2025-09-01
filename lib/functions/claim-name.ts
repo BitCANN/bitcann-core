@@ -17,6 +17,7 @@ import {
 } from '../util/index.js';
 import type { fetchClaimNameUtxosParams, CreateClaimNameParams, fetchClaimNameUtxosResponse } from '../interfaces/index.js';
 import { InvalidPrevBidderAddressError, UserUTXONotFoundError } from '../errors.js';
+import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
 
 
 /**
@@ -91,18 +92,8 @@ export const fetchClaimNameUtxos = async ({
 		category,
 	});
 
-	const bidderAddress = deriveAddressFromPKHInCommitment(runningAuctionUTXO.token!.nft!.commitment);
-	const userUtxos = await networkProvider.getUtxos(bidderAddress);
-
-	const biddingReadUTXO = userUtxos.sort((a, b) => Number(a.satoshis - b.satoshis)).find((utxo) => !utxo.token);
-	if(!biddingReadUTXO)
-	{
-		throw new UserUTXONotFoundError();
-	}
-
 	return {
 		authorizedContractUTXO,
-		biddingReadUTXO,
 		nameMintingUTXO,
 		runningAuctionUTXO,
 		threadNFTUTXO,
@@ -145,7 +136,7 @@ export const createClaimNameTransactionCore = async ({
 	validateName(name);
 	const { nameBin } = convertNameToBinaryAndHex(name);
 
-	const { threadNFTUTXO, authorizedContractUTXO, nameMintingUTXO, runningAuctionUTXO, biddingReadUTXO } = utxos;
+	const { threadNFTUTXO, authorizedContractUTXO, nameMintingUTXO, runningAuctionUTXO } = utxos;
 
 	const bidderPKH = runningAuctionUTXO.token?.nft?.commitment.slice(0, 40);
 	if(!bidderPKH)
@@ -170,14 +161,12 @@ export const createClaimNameTransactionCore = async ({
 	});
 
 	const registrationId = createRegistrationId(runningAuctionUTXO);
-	const placeholderUnlocker = createPlaceholderUnlocker(bidderAddress);
 
 	const transaction = await new TransactionBuilder({ provider: options.provider })
 		.addInput(threadNFTUTXO, registryContract.unlock.call())
 		.addInput(authorizedContractUTXO, FactoryContract.unlock.call())
 		.addInput(nameMintingUTXO, registryContract.unlock.call())
 		.addInput(runningAuctionUTXO, registryContract.unlock.call(), { sequence: minWaitTime })
-		.addInput(biddingReadUTXO, placeholderUnlocker)
 		.addOutput({
 			to: registryContract.tokenAddress,
 			amount: threadNFTUTXO.satoshis,
@@ -241,15 +230,11 @@ export const createClaimNameTransactionCore = async ({
 					commitment: registrationId + binToHex(nameBin),
 				},
 			},
-		})
-		.addOutput({
-			to: bidderAddress,
-			amount: biddingReadUTXO.satoshis,
 		});
 	
 	const expectedCreatorIncentive = getCreatorIncentive(BigInt(runningAuctionUTXO.satoshis), BigInt(runningAuctionUTXO.token!.amount));
 
-	if(expectedCreatorIncentive > 20_000n)
+	if(expectedCreatorIncentive > MINIMAL_CREATOR_INCENTIVE)
 	{
 		transaction.addOutput({
 			to: creatorIncentiveAddress,
@@ -257,5 +242,5 @@ export const createClaimNameTransactionCore = async ({
 		});
 	}
 
-	return adjustLastOutputForFee(transaction, runningAuctionUTXO);
+	return transaction;
 };

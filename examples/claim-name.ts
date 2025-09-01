@@ -8,7 +8,7 @@ import { CreateClaimNameParams } from '../lib/interfaces/index.js';
 
 (async () =>
 {
-	const name = 'satoshi';
+	const name = 'test';
 	const address = aliceAddress;
 
 	const claimNameTransaction = await bitcannManager.createClaimNameTransaction({ name } as CreateClaimNameParams);

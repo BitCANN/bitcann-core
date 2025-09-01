@@ -5,6 +5,7 @@ import { InvalidBidAmountError, UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
 import type { CreateBidCoreParams, FetchBidUtxosParams, FetchBidUtxosResponse } from '../interfaces/index.js';
 import { convertAddressToPkh, toCashaddr } from '../util/address.js';
+import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
 
 /**
  * Fetches the necessary UTXOs for placing a bid in an auction.
@@ -44,7 +45,7 @@ export const fetchBidUtxos = async ({
 		category,
 	});
 
-	const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 2000) && !utxo.token);
+	const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + Number(MINIMAL_DEDUCTION_IN_AUCTION)) && !utxo.token);
 	if(!fundingUTXO)
 	{
 		throw new UserUTXONotFoundError();

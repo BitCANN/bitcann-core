@@ -6,6 +6,7 @@ import { convertAddressToPkh } from '../util/address.js';
 import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
 import { createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, padVmNumber } from '../util/index.js';
 import type { CreateAuctionCoreParams, FetchAuctionUtxosParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
+import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
 
 /**
  * Fetches the necessary UTXOs for creating an auction.
@@ -42,7 +43,7 @@ export const fetchAuctionUtxos = async ({ amount, address, networkProvider, cont
 		utxos: auctionUtxos,
 	});
 
-	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + 5000));
+	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + Number(MINIMAL_DEDUCTION_IN_AUCTION)));
 	if(!userUTXO)
 	{
 		throw new UserUTXONotFoundError();

@@ -159,7 +159,7 @@ export const getValidCandidateTransactions = async ({
  */
 export const createRegistrationId = (utxo: Utxo): string =>
 {
-	if(!utxo.token?.amount)
+	if(!utxo.token?.amount && utxo.token?.amount !== BigInt(0))
 	{
 		throw new Error('UTXO must have a token amount');
 	}

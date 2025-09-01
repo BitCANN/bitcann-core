@@ -1,9 +1,7 @@
+import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from "../constants";
 
 /**
  * Calculates the creator incentive from the auction price and registration ID.
- *
- * The creator incentive is determined by first deducting a fixed amount (5000) from the auction price,
- * then multiplying the result by (100,000 - registrationId) and dividing by 100,000.
  *
  * @param {bigint} auctionPrice - The final auction price in satoshis.
  * @param {bigint} registrationId - The registration ID (should be between 0 and 100,000).
@@ -11,8 +9,8 @@
  */
 export const getCreatorIncentive = (auctionPrice: bigint, registrationId: bigint): bigint =>
 {
-	const minimalDeduction = auctionPrice - 5000n;
-	const creatorIncentive = (minimalDeduction * (100_000n - registrationId)) / 100_000n;
+	const minimalDeduction = auctionPrice - MINIMAL_DEDUCTION_IN_NAME_CLAIM;
+    const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
 	return creatorIncentive;
 };
 
@@ -33,7 +31,5 @@ export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint):
 	const decayPoints = minStartingBid * registrationId * 3n;
 	const currentPricePoints = minStartingBid * 1_000_000n;
 	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1_000_000n;
-	return currentAuctionPrice > 6000n ? currentAuctionPrice : 6000n;
-	// TODO: make this 20_000n
-	// return currentAuctionPrice > 20_000n ? currentAuctionPrice : 20_000n;
+	return currentAuctionPrice > MINIMAL_AUCTION_PRICE ? currentAuctionPrice : MINIMAL_AUCTION_PRICE;
 };

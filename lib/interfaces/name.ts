@@ -118,8 +118,6 @@ export interface fetchClaimNameUtxosResponse
 {
 	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;
-	/** The pure UTXO from the bidder. */
-	biddingReadUTXO: Utxo;
 	/** The UTXO for name minting. */
 	nameMintingUTXO: Utxo;
 	/** The UTXO for the running auction. */
