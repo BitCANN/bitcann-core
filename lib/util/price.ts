@@ -1,4 +1,4 @@
-import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from "../constants";
+import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from "../constants.js";
 
 /**
  * Calculates the creator incentive from the auction price and registration ID.
@@ -32,4 +32,20 @@ export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint):
 	const currentPricePoints = minStartingBid * 1_000_000n;
 	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1_000_000n;
 	return currentAuctionPrice > MINIMAL_AUCTION_PRICE ? currentAuctionPrice : MINIMAL_AUCTION_PRICE;
+};
+
+/**
+ * Calculates the minimum required bid amount for an auction.
+ *
+ * The minimum bid must be at least the current auction price plus a percentage increase.
+ * The formula is:
+ *   minimumBid = price * (1 + minBidIncreasePercentage / 100)
+ *
+ * @param {bigint} price - The current auction price in satoshis.
+ * @param {bigint} minBidIncreasePercentage - The minimum required increase as a percentage (e.g., 5n for 5%).
+ * @returns {bigint} The minimum allowed bid amount in satoshis.
+ */
+export const getMinimumBidAmount = (price: bigint, minBidIncreasePercentage: bigint): bigint =>
+{
+	return price * (1n + minBidIncreasePercentage / 100n);
 };

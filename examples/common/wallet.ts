@@ -10,11 +10,6 @@ import {
 import dotenv from 'dotenv';
 dotenv.config();
 
-// This is duplicated from common.ts because it is not possible to import from a .ts file in p2pkh.js
-
-// Generate entropy from BIP39 mnemonic phrase and initialise a root HD-wallet node
-// const seed = deriveSeedFromBip39Mnemonic('CashScript Examples');
-
 // @ts-ignore
 const seed = deriveSeedFromBip39Mnemonic(process.env.SEED);
 const rootNode = deriveHdPrivateNodeFromSeed(seed, { assumeValidity: true, throwErrors: true });

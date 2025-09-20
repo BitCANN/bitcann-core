@@ -1,12 +1,10 @@
 import { binToHex, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
 import {
-	adjustLastOutputForFee,
 	constructNameContract,
 	convertCashAddressToTokenAddress,
 	convertNameToBinaryAndHex,
 	convertPkhToLockingBytecode,
-	createPlaceholderUnlocker,
 	createRegistrationId,
 	getAuthorizedContractUtxo,
 	getCreatorIncentive,
@@ -16,35 +14,9 @@ import {
 	validateName,
 } from '../util/index.js';
 import type { fetchClaimNameUtxosParams, CreateClaimNameParams, fetchClaimNameUtxosResponse } from '../interfaces/index.js';
-import { InvalidPrevBidderAddressError, UserUTXONotFoundError } from '../errors.js';
+import { InvalidPrevBidderAddressError } from '../errors.js';
 import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
 
-
-/**
- * Derives a CashAddress from a public key hash (PKH) stored in a commitment.
- *
- * @param {string} commitment - The commitment string containing the PKH in the first 40 characters.
- * @returns {string} The derived CashAddress.
- * @throws {InvalidPrevBidderAddressError} If the PKH cannot be extracted or converted to a valid address.
- */
-const deriveAddressFromPKHInCommitment = (commitment: string): string =>
-{
-	const pkh = commitment.slice(0, 40);
-	if(!pkh)
-	{
-		throw new InvalidPrevBidderAddressError();
-	}
-	const pkhLockingBytecode = convertPkhToLockingBytecode(pkh);
-	const pkhAddressResult = lockingBytecodeToCashAddress({ bytecode: pkhLockingBytecode });
-
-	if(typeof pkhAddressResult !== 'object' || !pkhAddressResult.address)
-	{
-		throw new InvalidPrevBidderAddressError();
-	}
-
-	return pkhAddressResult.address;
-
-};
 
 /**
  * Fetches UTXOs required for claiming a name.
@@ -69,7 +41,6 @@ export const fetchClaimNameUtxos = async ({
 		networkProvider.getUtxos(registryContract.address),
 		networkProvider.getUtxos(FactoryContract.address),
 	]);
-
 
 	const threadNFTUTXO = getThreadUtxo({
 		utxos: registryUtxos,

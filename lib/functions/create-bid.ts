@@ -6,6 +6,7 @@ import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingB
 import type { CreateBidCoreParams, FetchBidUtxosParams, FetchBidUtxosResponse } from '../interfaces/index.js';
 import { convertAddressToPkh, toCashaddr } from '../util/address.js';
 import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
+import { getMinimumBidAmount } from '../util/price.js';
 
 /**
  * Fetches the necessary UTXOs for placing a bid in an auction.
@@ -83,7 +84,7 @@ export const createBidTransactionCore = async ({
 	const { nameBin } = convertNameToBinaryAndHex(name);
 	const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO, fundingUTXO } = utxos;
 
-	if(BigInt(amount) < BigInt(Math.ceil(Number(runningAuctionUTXO.satoshis) * (1 + minBidIncreasePercentage / 100))))
+	if(BigInt(amount) < getMinimumBidAmount(BigInt(runningAuctionUTXO.satoshis), BigInt(minBidIncreasePercentage)))
 	{
 		throw new InvalidBidAmountError();
 	}

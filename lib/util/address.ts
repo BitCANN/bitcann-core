@@ -29,17 +29,17 @@ export const toCashaddr = (lockingBytecode: Uint8Array): string =>
 
 /**
  * Converts a CashAddr address to a public key hash (PKH).
- * @param {string} userAddress - The CashAddr address to convert.
+ * @param {string} address - The CashAddr address to convert.
  * @returns {string} The public key hash as a hexadecimal string.
  * @throws {Error} Will throw an error if the address cannot be decoded.
  */
-export const convertAddressToPkh = (userAddress: string): string =>
+export const convertAddressToPkh = (address: string): string =>
 {
-	const decodeAddressObj = decodeCashAddress(userAddress);
+	const decodeAddressObj = decodeCashAddress(address);
 	if(typeof decodeAddressObj == 'string') throw new Error('error decodeCashAddress()');
-	const userPkh = decodeAddressObj.payload;
+	const pkh = decodeAddressObj.payload;
 
-	return binToHex(userPkh);
+	return binToHex(pkh);
 };
 
 /**
@@ -58,14 +58,14 @@ export const scriptToScripthash = async (lockingBytecode: Uint8Array): Promise<s
 
 /**
  * Converts a public key hash (PKH) to a locking bytecode.
- * @param {string} userPkh - The public key hash as a hexadecimal string.
+ * @param {string} pkh - The public key hash as a hexadecimal string.
  * @returns {Uint8Array} The locking bytecode.
  */
-export const convertPkhToLockingBytecode = (userPkh: string): Uint8Array =>
+export const convertPkhToLockingBytecode = (pkh: string): Uint8Array =>
 {
-	const userPkhBin = hexToBin(userPkh);
+	const Bin = hexToBin(pkh);
 
-	return addressContentsToLockingBytecode({ type: 'P2PKH', payload: userPkhBin });
+	return addressContentsToLockingBytecode({ type: 'P2PKH', payload: Bin });
 };
 
 /**
