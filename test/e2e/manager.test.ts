@@ -1,7 +1,7 @@
 import { cashAddressToLockingBytecode, binToHex } from '@bitauth/libauth';
 import { describe, it, expect } from '@jest/globals';
 import { MockNetworkProvider } from 'cashscript';
-import { BitcannManager } from '../../lib/manager.js';
+import { BitcannManager } from '../../lib/managers/manager.js';
 import * as config	from '../config.js';
 
 describe('manager', () =>

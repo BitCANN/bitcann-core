@@ -7,47 +7,6 @@ import { extractOpReturnPayload } from './binary.js';
 import type { GetValidCandidateTransactionsParams } from '../interfaces/index.js';
 
 /**
- * Finds the internal authorization NFT UTXO from a list of UTXOs.
- *
- * @param {Utxo[]} utxos - The list of UTXOs to search through.
- * @param {string} category - The category to match against the UTXO's token category.
- * @returns {Utxo | null} The found UTXO or null if not found.
- */
-export const findInternalAuthNFTUTXO = (utxos: Utxo[], category: string): Utxo | null =>
-	utxos.find((utxo) =>
-		utxo.token?.nft?.capability === 'none'
-		&& utxo.token?.category === category
-		&& utxo.token?.nft?.commitment.length > 0,
-	) || null;
-
-/**
- * Finds the ownership NFT UTXO from a list of UTXOs.
- *
- * @param {Utxo[]} utxos - The list of UTXOs to search through.
- * @param {string} category - The category to match against the UTXO's token category.
- * @param {string} name - The name to match against the UTXO's token commitment.
- * @returns {Utxo | null} The found UTXO or null if not found.
- */
-export const findOwnershipNFTUTXO = (utxos: Utxo[], category: string, name: string): Utxo | null =>
-	utxos.find((utxo) =>
-		utxo.token?.nft?.capability === 'none'
-		&& utxo.token?.category === category
-		&& Buffer.from(utxo.token?.nft?.commitment.slice(16), 'hex').toString('utf8') === name,
-	) || null;
-
-/**
- * Finds the funding UTXO with the highest satoshis from a list of UTXOs.
- *
- * @param {Utxo[]} utxos - The list of UTXOs to search through.
- * @returns {Utxo | null} The UTXO with the highest satoshis or null if not found.
- */
-export const findFundingUTXO = (utxos: Utxo[]): Utxo | null =>
-	utxos.reduce<Utxo | null>((max, utxo) =>
-		(!utxo.token && utxo.satoshis > (max?.satoshis || 0)) ? utxo : max,
-	null,
-	);
-
-/**
  * Creates a placeholder unlocker for a given address.
  *
  * @param {string} address - The address for which to create the unlocker.

@@ -1,8 +1,116 @@
 import { binToHex, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
-import type { LibauthOutput, UnlockableUtxo } from 'cashscript';
-import { RegistrationCounterUTXONotFoundError, ThreadNFTUTXONotFoundError, AuctionUTXONotFoundError, AuthorizedContractUTXONotFoundError, RunningAuctionUTXONotFoundError, NameMintingUTXONotFoundError, ThreadWithTokenUTXONotFoundError } from '../errors.js';
 import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
+import type { LibauthOutput, NetworkProvider, UnlockableUtxo, Utxo } from 'cashscript';
+import {
+	AuthorizedContractUTXONotFoundError,
+	AuctionUTXONotFoundError,
+	ExternalAuthNFTUTXONotFoundError,
+	FundingUTXONotFoundError,
+	InternalAuthNFTUTXONotFoundError,
+	NameMintingUTXONotFoundError,
+	OwnershipNFTUTXONotFoundError,
+	RegistrationCounterUTXONotFoundError,
+	RunningAuctionUTXONotFoundError,
+	ThreadNFTUTXONotFoundError,
+	ThreadWithTokenUTXONotFoundError,
+	UserUTXONotFoundError,
+} from '../errors.js';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
+
+export const fetchUtxosFromNetworkProvider = async (networkProvider: NetworkProvider, addresses: string[]): Promise<Utxo[][]> => {
+	return await Promise.all(addresses.map(address => networkProvider.getUtxos(address)));
+};
+
+
+/**
+ * Finds the internal authorization NFT UTXO from a list of UTXOs.
+ *
+ * @param {Utxo[]} utxos - The list of UTXOs to search through.
+ * @param {string} category - The category to match against the UTXO's token category.
+ * @returns {Utxo} The found UTXO.
+ * @throws {InternalAuthNFTUTXONotFoundError} If no internal auth NFT UTXO is found.
+ */
+export const findInternalAuthNFTUTXO = (utxos: Utxo[], category: string): Utxo =>
+{
+	const utxo = utxos.find((u) =>
+		u.token?.nft?.capability === 'none'
+		&& u.token?.category === category
+		&& u.token?.nft?.commitment.length > 0,
+	);
+
+	if(!utxo)
+	{
+		throw new InternalAuthNFTUTXONotFoundError();
+	}
+
+	return utxo;
+};
+
+/**
+ * Finds the ownership NFT UTXO from a list of UTXOs.
+ *
+ * @param {Utxo[]} utxos - The list of UTXOs to search through.
+ * @param {string} category - The category to match against the UTXO's token category.
+ * @param {string} name - The name to match against the UTXO's token commitment.
+ * @returns {Utxo} The found UTXO.
+ * @throws {OwnershipNFTUTXONotFoundError} If no ownership NFT UTXO is found.
+ */
+export const findOwnershipNFTUTXO = (utxos: Utxo[], category: string, name: string): Utxo =>
+{
+	const utxo = utxos.find((u) =>
+		u.token?.nft?.capability === 'none'
+		&& u.token?.category === category
+		&& Buffer.from(u.token?.nft?.commitment.slice(16), 'hex').toString('utf8') === name,
+	);
+
+	if(!utxo)
+	{
+		throw new OwnershipNFTUTXONotFoundError();
+	}
+
+	return utxo;
+};
+
+/**
+ * Finds the funding UTXO with the highest satoshis from a list of UTXOs.
+ *
+ * @param {Utxo[]} utxos - The list of UTXOs to search through.
+ * @returns {Utxo} The UTXO with the highest satoshis.
+ * @throws {FundingUTXONotFoundError} If no funding UTXO is found.
+ */
+export const findBiggestUserUTXO = (utxos: Utxo[]): Utxo =>
+{
+	const utxo = utxos.reduce<Utxo | null>((max, u) =>
+		(!u.token && u.satoshis > (max?.satoshis || 0)) ? u : max,
+	null,
+	);
+
+	if(!utxo)
+	{
+		throw new FundingUTXONotFoundError();
+	}
+
+	return utxo;
+};
+
+/**
+ * Finds any user UTXO with at least a minimum number of satoshis (default 2000).
+ *
+ * @param {Utxo[]} utxos - The list of user UTXOs to search through.
+ * @param {number} [amount=2000] - The minimum amount of satoshis required.
+ * @returns {Utxo} The found UTXO.
+ * @throws {UserUTXONotFoundError} If no suitable user UTXO is found.
+ */
+export const findAnyUserUtxo = (utxos: Utxo[], amount: number = 2000): Utxo =>
+{
+	const utxo = utxos.find((u) => u.satoshis >= BigInt(amount) && !u.token);
+	if(!utxo)
+	{
+		throw new UserUTXONotFoundError();
+	}
+
+	return utxo;
+};
 
 /**
  * Retrieves the registration UTXO from a list of UTXOs.
@@ -13,7 +121,7 @@ import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
  * @returns {Promise<any>} A promise that resolves to the registration UTXO.
  * @throws {RegistrationCounterUTXONotFoundError} If no registration UTXO is found.
  */
-export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+export const findRegistrationUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
@@ -39,7 +147,7 @@ export const getRegistrationUtxo = ({ utxos, category }: { utxos: any[]; categor
  * @returns {any} The name minting UTXO.
  * @throws {NameMintingUTXONotFoundError} If no name minting UTXO is found.
  */
-export const getNameMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+export const findNameMintingUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'minting'
@@ -65,7 +173,7 @@ export const getNameMintingUtxo = ({ utxos, category }: { utxos: any[]; category
  * @returns {any[]} An array of running auction UTXOs.
  * @throws {RunningAuctionUTXONotFoundError} If no running auction UTXOs are found.
  */
-export const getAllRunningAuctionUtxos = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any[] =>
+export const findAllRunningAuctionUtxos = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any[] =>
 {
 	const auctionUtxos = utxos.filter((utxo) =>
 	{
@@ -98,9 +206,9 @@ export const getAllRunningAuctionUtxos = ({ name, utxos, category }: { name: str
  * @returns {any} The running auction UTXO with the smallest token amount.
  * @throws {RunningAuctionUTXONotFoundError} If no running auction UTXO is found.
  */
-export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string; utxos: any[]; category: string }): any =>
+export const findRunningAuctionUtxo = (params: { name: string; utxos: any[]; category: string }): any =>
 {
-	const auctionUtxo = getAllRunningAuctionUtxos({ name, utxos, category })
+	const auctionUtxo = findAllRunningAuctionUtxos(params)
 		.reduce((prev, current) =>
 		{
 			if(!prev) return current;
@@ -126,7 +234,7 @@ export const getRunningAuctionUtxo = ({ name, utxos, category }: { name: string;
  * @returns {any} The thread UTXO.
  * @throws {ThreadNFTUTXONotFoundError} If no thread UTXO is found.
  */
-export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxos: any[]; category: string; threadContractAddress: string }): any =>
+export const findThreadUtxo = ({ utxos, category, threadContractAddress }: { utxos: any[]; category: string; threadContractAddress: string }): any =>
 {
 	const utxo = utxos.find(u =>
 	// @ts-ignore
@@ -153,7 +261,7 @@ export const getThreadUtxo = ({ utxos, category, threadContractAddress }: { utxo
  * @returns {any} The thread UTXO with a token.
  * @throws {ThreadWithTokenUTXONotFoundError} If no thread UTXO with a token is found.
  */
-export const getThreadWithTokenUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+export const findThreadWithTokenUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'none'
@@ -178,7 +286,7 @@ export const getThreadWithTokenUtxo = ({ utxos, category }: { utxos: any[]; cate
  * @returns {any} The auction UTXO.
  * @throws {AuctionUTXONotFoundError} If no auction UTXO is found.
  */
-export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+export const findAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
 {
 	const utxo = utxos.find(u =>
 		u.token?.nft?.capability === 'mutable'
@@ -202,13 +310,38 @@ export const getAuctionUtxo = ({ utxos, category }: { utxos: any[]; category: st
  * @returns {any} The authorized contract UTXO.
  * @throws {AuthorizedContractUTXONotFoundError} If no authorized contract UTXO is found.
  */
-export const getAuthorizedContractUtxo = ({ utxos }: { utxos: any[] }): any =>
+export const findAuthorizedContractUtxo = ({ utxos }: { utxos: any[] }): any =>
 {
 	const utxo = utxos[Math.floor(Math.random() * utxos.length)];
 
 	if(!utxo)
 	{
 		throw new AuthorizedContractUTXONotFoundError();
+	}
+
+	return utxo;
+};
+
+/**
+ * Finds the external authorization NFT UTXO from a list of UTXOs.
+ *
+ * @param {Object} params - The parameters for the function.
+ * @param {any[]} params.utxos - The list of UTXOs to search through.
+ * @param {string} params.category - The category to match against.
+ * @returns {any} The external authorization NFT UTXO.
+ * @throws {ExternalAuthNFTUTXONotFoundError} If no external authorization NFT UTXO is found.
+ */
+export const findExternalAuthUtxo = ({ utxos, category }: { utxos: any[]; category: string }): any =>
+{
+	const utxo = utxos.find(u =>
+		u.token?.nft?.capability === 'none'
+		&& u.token?.category === category
+		&& u.token?.nft?.commitment.length === 0,
+	);
+
+	if(!utxo)
+	{
+		throw new ExternalAuthNFTUTXONotFoundError();
 	}
 
 	return utxo;

@@ -1,71 +1,7 @@
 import { TransactionBuilder } from 'cashscript';
-import { constructNameContract, getRunningAuctionUtxo, getThreadUtxo, getAuthorizedContractUtxo } from '../util/index.js';
-import { ExternalAuthNFTUTXONotFoundError } from '../errors.js';
-import { FetchIllegalAuctionGuardUtxosParams, FetchIllegalAuctionGuardUtxosResponse, PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
+import { constructNameContract } from '../util/index.js';
+import { PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
 
-/**
- * Fetches UTXOs required for penalizing an illegal auction.
- *
- * @param {FetchIllegalAuctionGuardUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchIllegalAuctionGuardUtxosResponse>} A promise that resolves to the required UTXOs.
- * @throws {ExternalAuthNFTUTXONotFoundError} If the external authorization NFT UTXO is not found.
- */
-export const fetchIllegalAuctionGuardUtxos = async ({
-	name,
-	category,
-	contracts,
-	tld,
-	options,
-}: FetchIllegalAuctionGuardUtxosParams): Promise<FetchIllegalAuctionGuardUtxosResponse> =>
-{
-	const nameContract = constructNameContract({
-		name,
-		category,
-		tld,
-		options,
-	});
-
-	const [ registryUtxos, guardUtxos, nameUtxos ] = await Promise.all([
-		options.provider.getUtxos(contracts.Registry.address),
-		options.provider.getUtxos(contracts.OwnershipGuard.address),
-		options.provider.getUtxos(nameContract.address),
-	]);
-
-	const threadNFTUTXO = getThreadUtxo({
-		utxos: registryUtxos,
-		category,
-		threadContractAddress: contracts.OwnershipGuard.address,
-	});
-
-	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: guardUtxos,
-	});
-
-	const runningAuctionUTXO = getRunningAuctionUtxo({
-		name,
-		utxos: registryUtxos,
-		category,
-	});
-
-	// Find the internal authorization NFT UTXO.
-	const externalAuthUTXO = nameUtxos.find(utxo =>
-		utxo.token?.nft?.capability === 'none'
-    && utxo.token?.category === category
-    && utxo.token?.nft?.commitment.length === 0,
-	) || null;
-
-	if(!externalAuthUTXO)
-	{
-		throw new ExternalAuthNFTUTXONotFoundError();
-	}
-
-	return {
-		threadNFTUTXO,
-		authorizedContractUTXO,
-		runningAuctionUTXO,
-		externalAuthUTXO,
-	};
-};
 
 /**
  * Constructs a transaction to penalize an illegal auction.

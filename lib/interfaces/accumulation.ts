@@ -18,35 +18,18 @@ export interface FetchAccumulationUtxosParams
 /**
  * Core parameters required for the accumulation process.
  */
-export interface AccumulateCoreParams
-{
-	/** Network provider for BCH network operations. */
-	networkProvider: NetworkProvider;
-	/** The registry contract used in the accumulation. */
-	registryContract: Contract;
-	/** The accumulator contract used in the accumulation. */
-	accumulatorContract: Contract;
-	/** UTXOs required for the accumulation process. */
-	utxos: FetchAccumulationUtxosResponse;
-	/** The address associated with the accumulation. */
-	address: string;
-}
-
-/**
- * Parameters required for the accumulation process.
- */
 export interface AccumulateParams
 {
+	/** UTXOs required for the accumulation process. */
+	utxos?: AccumulationUtxos;
 	/** The address associated with the accumulation. */
 	address: string;
-	/** UTXOs required for the accumulation process. */
-	utxos?: FetchAccumulationUtxosResponse;
 }
 
 /**
  * Response structure for fetched UTXOs used in accumulation.
  */
-export interface FetchAccumulationUtxosResponse
+export interface AccumulationUtxos
 {
 	/** UTXO for the thread NFT. */
 	threadNFTUTXO: Utxo;

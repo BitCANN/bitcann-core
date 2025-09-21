@@ -6,70 +6,13 @@ import {
 	convertNameToBinaryAndHex,
 	convertPkhToLockingBytecode,
 	createRegistrationId,
-	getAuthorizedContractUtxo,
 	getCreatorIncentive,
-	getNameMintingUtxo,
-	getRunningAuctionUtxo,
-	getThreadUtxo,
 	validateName,
 } from '../util/index.js';
-import type { fetchClaimNameUtxosParams, CreateClaimNameParams, fetchClaimNameUtxosResponse } from '../interfaces/index.js';
+import type { CreateClaimNameParams } from '../interfaces/index.js';
 import { InvalidPrevBidderAddressError } from '../errors.js';
 import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
 
-
-/**
- * Fetches UTXOs required for claiming a name.
- *
- * @param {fetchClaimNameUtxosParams} params - The parameters for fetching UTXOs.
- * @param {string} params.category - The category of the name.
- * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.FactoryContract - The name factory contract instance.
- * @param {string} params.name - The name of the name.
- * @param {NetworkProvider} params.networkProvider - The network provider for blockchain interactions.
- * @returns {Promise<fetchClaimNameUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
- */
-export const fetchClaimNameUtxos = async ({
-	category,
-	registryContract,
-	FactoryContract,
-	name,
-	networkProvider,
-}: fetchClaimNameUtxosParams): Promise<fetchClaimNameUtxosResponse> =>
-{
-	const [ registryUtxos, FactoryUtxos ] = await Promise.all([
-		networkProvider.getUtxos(registryContract.address),
-		networkProvider.getUtxos(FactoryContract.address),
-	]);
-
-	const threadNFTUTXO = getThreadUtxo({
-		utxos: registryUtxos,
-		category: category,
-		threadContractAddress: FactoryContract.address,
-	});
-
-	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: FactoryUtxos,
-	});
-
-	const nameMintingUTXO = getNameMintingUtxo({
-		utxos: registryUtxos,
-		category,
-	});
-
-	const runningAuctionUTXO = getRunningAuctionUtxo({
-		name,
-		utxos: registryUtxos,
-		category,
-	});
-
-	return {
-		authorizedContractUTXO,
-		nameMintingUTXO,
-		runningAuctionUTXO,
-		threadNFTUTXO,
-	};
-};
 
 /**
  * Creates a transaction for claiming a name.
@@ -81,7 +24,7 @@ export const fetchClaimNameUtxos = async ({
  * @param {CreateClaimNameParams} params - The parameters required to create the claim name transaction.
  * @param {string} params.category - The category of the name.
  * @param {Contract} params.registryContract - The registry contract instance.
- * @param {Contract} params.FactoryContract - The name factory contract instance.
+ * @param {Contract} params.factoryContract - The name factory contract instance.
  * @param {string} params.tld - The TLD of the name.
  * @param {number} params.creatorIncentiveAddress - The creator incentive address.
  * @param {number} params.minWaitTime - The minimum wait time for the transaction.
@@ -95,7 +38,7 @@ export const fetchClaimNameUtxos = async ({
 export const createClaimNameTransactionCore = async ({
 	category,
 	registryContract,
-	FactoryContract,
+	factoryContract,
 	tld,
 	minWaitTime,
 	name,
@@ -135,7 +78,7 @@ export const createClaimNameTransactionCore = async ({
 
 	const transaction = await new TransactionBuilder({ provider: options.provider })
 		.addInput(threadNFTUTXO, registryContract.unlock.call())
-		.addInput(authorizedContractUTXO, FactoryContract.unlock.call())
+		.addInput(authorizedContractUTXO, factoryContract.unlock.call())
 		.addInput(nameMintingUTXO, registryContract.unlock.call())
 		.addInput(runningAuctionUTXO, registryContract.unlock.call(), { sequence: minWaitTime })
 		.addOutput({
@@ -151,7 +94,7 @@ export const createClaimNameTransactionCore = async ({
 			},
 		})
 		.addOutput({
-			to: FactoryContract.tokenAddress,
+			to: factoryContract.tokenAddress,
 			amount: authorizedContractUTXO.satoshis,
 		})
 		.addOutput({
@@ -202,7 +145,7 @@ export const createClaimNameTransactionCore = async ({
 				},
 			},
 		});
-	
+
 	const expectedCreatorIncentive = getCreatorIncentive(BigInt(runningAuctionUTXO.satoshis), BigInt(runningAuctionUTXO.token!.amount));
 
 	if(expectedCreatorIncentive > MINIMAL_CREATOR_INCENTIVE)

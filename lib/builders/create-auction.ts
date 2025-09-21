@@ -1,56 +1,11 @@
 import { binToHex } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
-import { UserUTXONotFoundError } from '../errors.js';
 import { adjustLastOutputForFee } from '../util/transaction.js';
 import { convertAddressToPkh } from '../util/address.js';
 import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
-import { createPlaceholderUnlocker, getAuthorizedContractUtxo, getRegistrationUtxo, getThreadUtxo, padVmNumber } from '../util/index.js';
-import type { CreateAuctionCoreParams, FetchAuctionUtxosParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
-import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
+import { createPlaceholderUnlocker, padVmNumber } from '../util/index.js';
+import type { CreateAuctionCoreParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 
-/**
- * Fetches the necessary UTXOs for creating an auction.
- *
- * @param {FetchAuctionUtxosParams} params - The parameters required to fetch UTXOs.
- * @param {number} params.amount - The amount for the auction.
- * @param {string} params.address - The address of the user initiating the auction.
- * @param {NetworkProvider} params.networkProvider - The network provider to fetch UTXOs.
- * @param {Record<string, Contract>} params.contracts - The contracts involved in the auction.
- * @param {string} params.category - The category of the auction.
- * @returns {Promise<FetchAuctionUtxosResponse>} A promise that resolves to an object containing the necessary UTXOs.
- * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the auction.
- */
-export const fetchAuctionUtxos = async ({ amount, address, networkProvider, contracts, category }: FetchAuctionUtxosParams): Promise<FetchAuctionUtxosResponse> =>
-{
-	const [ registryUtxos, auctionUtxos, userUtxos ] = await Promise.all([
-		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.Auction.address),
-		networkProvider.getUtxos(address),
-	]);
-
-	const threadNFTUTXO = getThreadUtxo({
-		utxos: registryUtxos,
-		category: category,
-		threadContractAddress: contracts.Auction.address,
-	});
-
-	const registrationCounterUTXO = getRegistrationUtxo({
-		utxos: registryUtxos,
-		category: category,
-	});
-
-	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: auctionUtxos,
-	});
-
-	const userUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + Number(MINIMAL_DEDUCTION_IN_AUCTION)));
-	if(!userUTXO)
-	{
-		throw new UserUTXONotFoundError();
-	}
-
-	return { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO };
-};
 
 /**
 /**

@@ -106,31 +106,6 @@ export class ExternalAuthNFTUTXONotFoundError extends Error
 	}
 }
 
-/**
- * Error thrown when a User Ownership NFT UTXO is not found.
- */
-export class UserOwnershipNFTUTXONotFoundError extends Error
-{
-	constructor()
-	{
-		const message = 'User Ownership NFT UTXO not found';
-
-		super(message);
-	}
-}
-
-/**
- * Error thrown when a User Funding UTXO is not found.
- */
-export class UserFundingUTXONotFoundError extends Error
-{
-	constructor()
-	{
-		const message = 'User Funding UTXO not found';
-
-		super(message);
-	}
-}
 
 /**
  * Error thrown when a Running Auction UTXO is not found.
@@ -231,6 +206,32 @@ export class InvalidPrevBidderAddressError extends Error
 	constructor()
 	{
 		const message = 'The previous bidder address is invalid';
+
+		super(message);
+	}
+}
+
+/**
+ * Error thrown when an Ownership NFT UTXO is not found.
+ */
+export class OwnershipNFTUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'Ownership NFT UTXO not found';
+
+		super(message);
+	}
+}
+
+/**
+ * Error thrown when a Funding UTXO is not found.
+ */
+export class FundingUTXONotFoundError extends Error
+{
+	constructor()
+	{
+		const message = 'Funding UTXO not found';
 
 		super(message);
 	}

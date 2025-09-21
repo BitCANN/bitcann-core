@@ -1,4 +1,4 @@
-import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from "../constants.js";
+import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from '../constants.js';
 
 /**
  * Calculates the creator incentive from the auction price and registration ID.
@@ -10,7 +10,8 @@ import { MINIMAL_AUCTION_PRICE, MINIMAL_DEDUCTION_IN_NAME_CLAIM } from "../const
 export const getCreatorIncentive = (auctionPrice: bigint, registrationId: bigint): bigint =>
 {
 	const minimalDeduction = auctionPrice - MINIMAL_DEDUCTION_IN_NAME_CLAIM;
-    const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
+	const creatorIncentive = (minimalDeduction * (BigInt(1e5) - registrationId) / BigInt(1e5));
+
 	return creatorIncentive;
 };
 
@@ -31,6 +32,7 @@ export const getAuctionPrice = (registrationId: bigint, minStartingBid: bigint):
 	const decayPoints = minStartingBid * registrationId * 3n;
 	const currentPricePoints = minStartingBid * 1_000_000n;
 	const currentAuctionPrice = (currentPricePoints - decayPoints) / 1_000_000n;
+
 	return currentAuctionPrice > MINIMAL_AUCTION_PRICE ? currentAuctionPrice : MINIMAL_AUCTION_PRICE;
 };
 

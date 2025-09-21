@@ -1,14 +1,14 @@
 import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
 import { hexToBin, binToHex } from '@bitauth/libauth';
-import { NameInfo, getNameParams, NameStatus } from '../interfaces/index.js';
-import { buildLockScriptP2SH32, getRunningAuctionUtxo, lockScriptToAddress, pushDataHex } from '../util/index.js';
+import { NameInfo, GetNameParams, NameStatus } from '../interfaces/index.js';
+import { buildLockScriptP2SH32, findRunningAuctionUtxo, lockScriptToAddress, pushDataHex } from '../util/index.js';
 import { isNameValid } from '../util/name.js';
 
 
 /**
  * Retrieves the name information for a specified name.
  *
- * @param {getNameParams} params - The parameters required to get name details.
+ * @param {GetNameParams} params - The parameters required to get name details.
  * @param {string} params.name - The name to retrieve information for.
  * @param {string} params.category - The category of the name.
  * @param {string} params.tld - The TLD of the name.
@@ -16,7 +16,7 @@ import { isNameValid } from '../util/name.js';
  * @param {Contract} params.registryContract - The contract instance for the registry.
  * @returns {Promise<NameInfo>} A promise that resolves to an object containing the name address and contract.
  */
-export const getName = async ({ name, category, tld, options, registryContract }: getNameParams): Promise<NameInfo> =>
+export const getName = async ({ name, category, tld, options, registryContract }: GetNameParams): Promise<NameInfo> =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const nameCategoryReversed = binToHex(hexToBin(category).reverse());
@@ -60,7 +60,7 @@ export const getName = async ({ name, category, tld, options, registryContract }
 	// Check for any running auction for the name.
 	try
 	{
-		const runningAuctionUTXO = getRunningAuctionUtxo({
+		const runningAuctionUTXO = findRunningAuctionUtxo({
 			name,
 			utxos: registryUtxos,
 			category,

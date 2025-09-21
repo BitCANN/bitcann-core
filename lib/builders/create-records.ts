@@ -1,61 +1,11 @@
 import { TransactionBuilder } from 'cashscript';
-import { InternalAuthNFTUTXONotFoundError, UserFundingUTXONotFoundError, UserOwnershipNFTUTXONotFoundError } from '../errors.js';
 import {
 	adjustLastOutputForFee,
 	convertCashAddressToTokenAddress,
 	createPlaceholderUnlocker,
-	findFundingUTXO,
-	findInternalAuthNFTUTXO,
-	findOwnershipNFTUTXO,
 } from '../util/index.js';
-import { CreateRecordsCoreParams, FetchRecordsUtxosParams, FetchRecordsUtxosResponse } from '../interfaces/index.js';
+import { CreateRecordsCoreParams } from '../interfaces/index.js';
 
-/**
- * Fetches the UTXOs required for creating records.
- *
- * @param {FetchRecordsUtxosParams} params - The parameters for fetching UTXOs.
- * @returns {Promise<FetchRecordsUtxosResponse>} A promise that resolves to the fetched UTXOs.
- * @throws {InternalAuthNFTUTXONotFoundError} If the internal authorization NFT UTXO is not found.
- * @throws {UserOwnershipNFTUTXONotFoundError} If the user ownership NFT UTXO is not found.
- * @throws {UserFundingUTXONotFoundError} If the user funding UTXO is not found.
- */
-export const fetchRecordsUtxos = async ({
-	name,
-	category,
-	nameContract,
-	address,
-	networkProvider,
-}: FetchRecordsUtxosParams): Promise<FetchRecordsUtxosResponse> =>
-{
-	const [ nameUTXOs, userUtxos ] = await Promise.all([
-		networkProvider.getUtxos(nameContract.address),
-		networkProvider.getUtxos(address),
-	]);
-
-	const internalAuthNFTUTXO = findInternalAuthNFTUTXO(nameUTXOs, category);
-	if(!internalAuthNFTUTXO)
-	{
-		throw new InternalAuthNFTUTXONotFoundError();
-	}
-
-	const ownershipNFTUTXO = findOwnershipNFTUTXO(userUtxos, category, name);
-	if(!ownershipNFTUTXO)
-	{
-		throw new UserOwnershipNFTUTXONotFoundError();
-	}
-
-	const fundingUTXO = findFundingUTXO(userUtxos);
-	if(!fundingUTXO)
-	{
-		throw new UserFundingUTXONotFoundError();
-	}
-
-	return {
-		internalAuthNFTUTXO,
-		ownershipNFTUTXO,
-		fundingUTXO,
-	};
-};
 
 /**
  * Creates a transaction for adding a record to a name.

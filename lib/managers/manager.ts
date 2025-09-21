@@ -8,20 +8,11 @@ import {
 	TransactionBuilder,
 } from 'cashscript';
 import {
-	accumulate,
 	createAuctionTransactionCore,
 	createBidTransactionCore,
 	createClaimNameTransactionCore,
 	createRecordsTransaction,
-	fetchAccumulationUtxos,
-	fetchAuctionUtxos,
-	fetchBidUtxos,
-	fetchClaimNameUtxos,
-	fetchDuplicateAuctionGuardUtxos,
-	fetchIllegalAuctionGuardUtxos,
-	fetchInvalidNameGuardUtxos,
 	fetchRecords,
-	fetchRecordsUtxos,
 	getAuctions,
 	getName,
 	getPastAuctions,
@@ -29,12 +20,12 @@ import {
 	penalizeDuplicateAuction,
 	penalizeIllegalAuction,
 	penalizeInvalidAuctionName,
-} from './functions/index.js';
+} from '../services/index.js';
 import {
 	constructContracts,
 	constructNameContract,
 	getAuctionPrice,
-} from './util/index.js';
+} from '../util/index.js';
 import type {
 	AccumulateParams,
 	CreateAuctionParams,
@@ -51,12 +42,14 @@ import type {
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
 	ResolveNameParams,
-} from './interfaces/index.js';
-import { LookupAddressCoreResponse } from './interfaces/resolver.js';
-import { resolveNameCore } from './functions/resolver.js';
-import { chaingraphURL } from './config.js';
-import type { ParsedRecordsInterface } from './util/parser.js';
-import { InvalidAuctionAmountError } from './errors.js';
+} from '../interfaces/index.js';
+import { LookupAddressCoreResponse } from '../interfaces/resolver.js';
+import { resolveNameCore } from '../services/resolver.js';
+import { chaingraphURL } from '../config.js';
+import type { ParsedRecordsInterface } from '../util/parser.js';
+import { InvalidAuctionAmountError } from '../errors.js';
+import { UtxoManager } from './utxo.manager.js';
+import { AccumulationTransactionBuilder } from '../builders/accumulation.js';
 
 
 export class BitcannManager
@@ -77,6 +70,10 @@ export class BitcannManager
 
 	// Contracts in the BitCANN system.
 	public contracts: Record<string, Contract>;
+
+	public utxoManager: UtxoManager;
+
+	public accumulationTransactionBuilder: AccumulationTransactionBuilder;
 
 	constructor(config: ManagerConfig)
 	{
@@ -107,6 +104,10 @@ export class BitcannManager
 			category: this.category,
 			options: this.options,
 		});
+
+		this.utxoManager = new UtxoManager(this.networkProvider, this.contracts, this.category, this.tld, this.options);
+
+		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.utxoManager);
 	}
 
 	// *********************************************************************************
@@ -214,7 +215,7 @@ export class BitcannManager
 	 * Looks up all names associated with a given address.
 	 *
 	 * This function queries the blockchain to find all UTXOs linked to the specified address
-	 * and filters them to extract the names owned by the address. 
+	 * and filters them to extract the names owned by the address.
 	 *
 	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
 	 * @param {string} params.address - The address to look up names for.
@@ -254,7 +255,7 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchAuctionUtxos({
+			utxos = await this.utxoManager.fetchAuctionUtxos({
 				amount,
 				address,
 				networkProvider: this.networkProvider,
@@ -301,7 +302,7 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchBidUtxos({
+			utxos = await this.utxoManager.fetchBidUtxos({
 				name,
 				category: this.category,
 				address,
@@ -327,7 +328,7 @@ export class BitcannManager
 	 *
 	 * @param {CreateClaimNameCoreParams} params - The parameters for claiming the name.
 	 * @param {string} params.name - The name to claim.
-	 * @param {fetchClaimNameUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
+	 * @param {FetchClaimNameUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the name.
 	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
 	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
@@ -336,10 +337,10 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchClaimNameUtxos({
+			utxos = await this.utxoManager.fetchClaimNameUtxos({
 				category: this.category,
 				registryContract: this.contracts.Registry,
-				FactoryContract: this.contracts.Factory,
+				factoryContract: this.contracts.Factory,
 				name,
 				networkProvider: this.networkProvider,
 			});
@@ -348,7 +349,7 @@ export class BitcannManager
 		return createClaimNameTransactionCore({
 			category: this.category,
 			registryContract: this.contracts.Registry,
-			FactoryContract: this.contracts.Factory,
+			factoryContract: this.contracts.Factory,
 			tld: this.tld,
 			minWaitTime: this.minWaitTime,
 			name,
@@ -371,7 +372,7 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchInvalidNameGuardUtxos({
+			utxos = await this.utxoManager.fetchInvalidNameGuardUtxos({
 				name,
 				category: this.category,
 				networkProvider: this.networkProvider,
@@ -401,7 +402,7 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchDuplicateAuctionGuardUtxos({
+			utxos = await this.utxoManager.fetchDuplicateAuctionGuardUtxos({
 				name,
 				category: this.category,
 				contracts: this.contracts,
@@ -427,7 +428,7 @@ export class BitcannManager
 	{
 		if(!utxos)
 		{
-			utxos = await fetchIllegalAuctionGuardUtxos({
+			utxos = await this.utxoManager.fetchIllegalAuctionGuardUtxos({
 				name,
 				category: this.category,
 				contracts: this.contracts,
@@ -469,7 +470,7 @@ export class BitcannManager
 
 		if(!utxos)
 		{
-			utxos = await fetchRecordsUtxos({
+			utxos = await this.utxoManager.fetchRecordsUtxos({
 				name,
 				category: this.category,
 				nameContract,
@@ -497,30 +498,14 @@ export class BitcannManager
 	 *
 	 * @param {AccumulateParams} params - The parameters required for the accumulation process.
 	 * @param {string} params.address - The blockchain address associated with the accumulation.
-	 * @param {FetchAccumulationUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction.
+	 * @param {AccumulationUtxos} [params.utxos] - Optional UTXOs required for the transaction.
 	 * If not provided, they will be fetched automatically.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object
 	 * representing the constructed transaction for the accumulation process.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
-	public async accumulateTokens({ address, utxos }: AccumulateParams): Promise<TransactionBuilder>
+	public async buildAccumulateTokensTransaction(params: AccumulateParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await fetchAccumulationUtxos({
-				networkProvider: this.networkProvider,
-				contracts: this.contracts,
-				category: this.category,
-				address,
-			});
-		}
-
-		return accumulate({
-			networkProvider: this.networkProvider,
-			registryContract: this.contracts.Registry,
-			accumulatorContract: this.contracts.Accumulator,
-			utxos,
-			address,
-		});
+		return this.accumulationTransactionBuilder.build(params);
 	}
 }

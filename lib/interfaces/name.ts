@@ -35,7 +35,7 @@ export interface CreateClaimNameParams
 	/** The token category. */
 	category: string;
 	/** The contract instance for the name factory. */
-	FactoryContract: Contract;
+	factoryContract: Contract;
 	/** The TLD of the name. */
 	tld: string;
 	/** The minimum wait time for the transaction. */
@@ -54,7 +54,7 @@ export interface CreateClaimNameParams
 	/** The contract instance for the registry. */
 	registryContract: Contract;
 	/** The UTXOs to be used in the transaction, if already available. */
-	utxos: fetchClaimNameUtxosResponse;
+	utxos: FetchClaimNameUtxosResponse;
 }
 
 /**
@@ -75,12 +75,12 @@ export interface NameInfo
 /**
  * Parameters required to fetch UTXOs for claiming a name.
  */
-export interface fetchClaimNameUtxosParams
+export interface FetchClaimNameUtxosParams
 {
 	/** The category of the name. */
 	category: string;
 	/** The contract instance for the name factory. */
-	FactoryContract: Contract;
+	factoryContract: Contract;
 	/** The name of the name. */
 	name: string;
 	/** The network provider for blockchain interactions. */
@@ -92,7 +92,7 @@ export interface fetchClaimNameUtxosParams
 /**
  * Parameters required to get name details.
  */
-export interface getNameParams
+export interface GetNameParams
 {
 	/** The category of the name. */
 	category: string;
@@ -114,7 +114,7 @@ export interface getNameParams
 /**
  * Response containing UTXOs required for claiming a name.
  */
-export interface fetchClaimNameUtxosResponse
+export interface FetchClaimNameUtxosResponse
 {
 	/** The UTXO for the authorized contract. */
 	authorizedContractUTXO: Utxo;

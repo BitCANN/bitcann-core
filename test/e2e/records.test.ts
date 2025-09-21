@@ -2,7 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import { MockNetworkProvider } from 'cashscript';
 import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import { ElectrumClient } from '@electrum-cash/network';
-import { fetchRecords } from '../../lib/functions';
+import { fetchRecords } from '../../lib/services';
 import { getElectrum, disconnectElectrum } from '../context.js';
 import * as config from '../config.js';
 

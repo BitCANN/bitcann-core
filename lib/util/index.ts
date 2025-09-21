@@ -32,21 +32,21 @@ export {
 
 // UTXO utilities
 export {
-	getRegistrationUtxo,
-	getNameMintingUtxo,
-	getAllRunningAuctionUtxos,
-	getRunningAuctionUtxo,
-	getThreadUtxo,
-	getAuctionUtxo,
-	getAuthorizedContractUtxo,
+	findRegistrationUtxo,
+	findNameMintingUtxo,
+	findAllRunningAuctionUtxos,
+	findRunningAuctionUtxo,
+	findThreadUtxo,
+	findAuctionUtxo,
+	findAuthorizedContractUtxo,
+	findInternalAuthNFTUTXO,
+	findOwnershipNFTUTXO,
+	findBiggestUserUTXO,
 	generateSourceOutputs,
 } from './utxo.js';
 
 // Transaction utilities
 export {
-	findInternalAuthNFTUTXO,
-	findOwnershipNFTUTXO,
-	findFundingUTXO,
 	createPlaceholderUnlocker,
 	adjustLastOutputForFee,
 	isValidTransaction,

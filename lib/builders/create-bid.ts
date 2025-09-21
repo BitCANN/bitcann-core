@@ -1,64 +1,12 @@
 import { binToHex } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';
 
-import { InvalidBidAmountError, UserUTXONotFoundError } from '../errors.js';
-import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, getAuthorizedContractUtxo, getRunningAuctionUtxo, getThreadUtxo, validateName } from '../util/index.js';
-import type { CreateBidCoreParams, FetchBidUtxosParams, FetchBidUtxosResponse } from '../interfaces/index.js';
+import { InvalidBidAmountError } from '../errors.js';
+import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, validateName } from '../util/index.js';
+import type { CreateBidCoreParams } from '../interfaces/index.js';
 import { convertAddressToPkh, toCashaddr } from '../util/address.js';
-import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
 import { getMinimumBidAmount } from '../util/price.js';
 
-/**
- * Fetches the necessary UTXOs for placing a bid in an auction.
- *
- * @param {FetchBidUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchBidUtxosResponse>} A promise that resolves to the required UTXOs.
- * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
- */
-export const fetchBidUtxos = async ({
-	name,
-	category,
-	address,
-	networkProvider,
-	contracts,
-	amount,
-}: FetchBidUtxosParams): Promise<FetchBidUtxosResponse> =>
-{
-	const [ registryUtxos, bidUtxos, userUtxos ] = await Promise.all([
-		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.Bid.address),
-		networkProvider.getUtxos(address),
-	]);
-
-	const threadNFTUTXO = getThreadUtxo({
-		utxos: registryUtxos,
-		category,
-		threadContractAddress: contracts.Bid.address,
-	});
-
-	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: bidUtxos,
-	});
-
-	const runningAuctionUTXO = getRunningAuctionUtxo({
-		name,
-		utxos: registryUtxos,
-		category,
-	});
-
-	const fundingUTXO = userUtxos.find((utxo) => utxo.satoshis >= BigInt(amount + Number(MINIMAL_DEDUCTION_IN_AUCTION)) && !utxo.token);
-	if(!fundingUTXO)
-	{
-		throw new UserUTXONotFoundError();
-	}
-
-	return {
-		threadNFTUTXO,
-		authorizedContractUTXO,
-		runningAuctionUTXO,
-		fundingUTXO,
-	};
-};
 
 /**
  * Creates a transaction for placing a bid in an auction.

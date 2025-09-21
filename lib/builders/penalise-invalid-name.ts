@@ -1,48 +1,7 @@
 import { TransactionBuilder } from 'cashscript';
-import { getThreadUtxo, getAuthorizedContractUtxo, getRunningAuctionUtxo, findFirstInvalidCharacterIndex, adjustLastOutputForFee } from '../util/index.js';
-import { FetchInvalidNameGuardUtxosParams, FetchInvalidNameGuardUtxosResponse, PenalizeInvalidNameCoreParams } from '../interfaces/index.js';
+import { findFirstInvalidCharacterIndex, adjustLastOutputForFee } from '../util/index.js';
+import { PenalizeInvalidNameCoreParams } from '../interfaces/index.js';
 import { AuctionNameDoesNotContainInvalidCharacterError } from '../errors.js';
-
-/**
- * Fetches UTXOs required for penalizing an invalid auction name.
- *
- * @param {FetchInvalidNameGuardUtxosParams} params - The parameters required to fetch UTXOs.
- * @returns {Promise<FetchInvalidNameGuardUtxosResponse>} A promise that resolves to the required UTXOs.
- */
-export const fetchInvalidNameGuardUtxos = async ({
-	name,
-	category,
-	networkProvider,
-	contracts,
-}: FetchInvalidNameGuardUtxosParams): Promise<FetchInvalidNameGuardUtxosResponse> =>
-{
-	const [ registryUtxos, guardUtxos ] = await Promise.all([
-		networkProvider.getUtxos(contracts.Registry.address),
-		networkProvider.getUtxos(contracts.NameEnforcer.address),
-	]);
-
-	const threadNFTUTXO = getThreadUtxo({
-		utxos: registryUtxos,
-		category,
-		threadContractAddress: contracts.NameEnforcer.address,
-	});
-
-	const authorizedContractUTXO = getAuthorizedContractUtxo({
-		utxos: guardUtxos,
-	});
-
-	const runningAuctionUTXO = getRunningAuctionUtxo({
-		name,
-		utxos: registryUtxos,
-		category,
-	});
-
-	return {
-		threadNFTUTXO,
-		authorizedContractUTXO,
-		runningAuctionUTXO,
-	};
-};
 
 /**
  * Constructs a transaction to penalize an invalid auction name.
