@@ -39,21 +39,9 @@ export interface CreateAuctionCoreParams
    */
 	amount: number;
 	/**
-   * The token category.
-   */
-	category: string;
-	/**
-   * Contracts involved in the auction.
-   */
-	contracts: Record<string, Contract>;
-	/**
    * The name to be auctioned.
    */
 	name: string;
-	/**
-   * Network provider for BCH network operations.
-   */
-	networkProvider: NetworkProvider;
 	/**
    * UTXOs required for the auction transaction.
    */
@@ -73,18 +61,6 @@ export interface FetchAuctionUtxosParams
    * The initial amount for the auction.
    */
 	amount: number;
-	/**
-   * The token category.
-   */
-	category: string;
-	/**
-   * Contracts involved in the auction.
-   */
-	contracts: Record<string, Contract>;
-	/**
-   * Network provider for BCH network operations.
-   */
-	networkProvider: NetworkProvider;
 }
 
 /**

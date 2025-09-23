@@ -34,27 +34,27 @@ import type {
 	FetchRecordsUtxosResponse,
 } from '../interfaces/index.js';
 import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
-import { AddressType, Contract, type NetworkProvider } from 'cashscript';
+import { type AddressType, Contract, type NetworkProvider } from 'cashscript';
 
 /**
  * Utility class for fetching UTXOs required for various operations.
  */
 export class UtxoManager
 {
-    networkProvider: NetworkProvider;
-    contracts: Record<string, Contract>;
+	networkProvider: NetworkProvider;
+	contracts: Record<string, Contract>;
 	category: string;
 	tld: string;
 	options: { provider: NetworkProvider; addressType: AddressType };
 
-    constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, category: string, tld: string, options: { provider: NetworkProvider; addressType: AddressType })
-    {
-        this.networkProvider = networkProvider;
-        this.contracts = contracts;
-        this.category = category;
+	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, category: string, tld: string, options: { provider: NetworkProvider; addressType: AddressType })
+	{
+		this.networkProvider = networkProvider;
+		this.contracts = contracts;
+		this.category = category;
 		this.tld = tld;
 		this.options = options;
-    }
+	}
 
 	/**
      * Fetches UTXOs required for accumulation operations.

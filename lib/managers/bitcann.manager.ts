@@ -8,19 +8,17 @@ import {
 	TransactionBuilder,
 } from 'cashscript';
 import {
-	createAuctionTransactionCore,
-	createBidTransactionCore,
-	createClaimNameTransactionCore,
-	createRecordsTransaction,
 	fetchRecords,
 	getAuctions,
 	getName,
 	getPastAuctions,
 	lookupAddressCore,
-	penalizeDuplicateAuction,
-	penalizeIllegalAuction,
-	penalizeInvalidAuctionName,
 } from '../services/index.js';
+import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
+import { BidTransactionBuilder } from '../transactions/bid.builder.js';
+import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
+import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
+import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
 import {
 	constructContracts,
 	constructNameContract,
@@ -30,7 +28,6 @@ import type {
 	AccumulateParams,
 	CreateAuctionParams,
 	CreateBidParams,
-	CreateClaimNameCoreParams,
 	CreateRecordsParams,
 	NameInfo,
 	GetAuctionsResponse,
@@ -42,6 +39,7 @@ import type {
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
 	ResolveNameParams,
+	CreateClaimNameParams,
 } from '../interfaces/index.js';
 import { LookupAddressCoreResponse } from '../interfaces/resolver.js';
 import { resolveNameCore } from '../services/resolver.js';
@@ -49,7 +47,7 @@ import { chaingraphURL } from '../config.js';
 import type { ParsedRecordsInterface } from '../util/parser.js';
 import { InvalidAuctionAmountError } from '../errors.js';
 import { UtxoManager } from './utxo.manager.js';
-import { AccumulationTransactionBuilder } from '../builders/accumulation.js';
+import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
 
 
 export class BitcannManager
@@ -72,8 +70,12 @@ export class BitcannManager
 	public contracts: Record<string, Contract>;
 
 	public utxoManager: UtxoManager;
-
 	public accumulationTransactionBuilder: AccumulationTransactionBuilder;
+	public claimNameTransactionBuilder: ClaimNameTransactionBuilder;
+	public auctionTransactionBuilder: AuctionTransactionBuilder;
+	public bidTransactionBuilder: BidTransactionBuilder;
+	public recordsTransactionBuilder: RecordsTransactionBuilder;
+	public penalisationTransactionBuilder: PenalisationTransactionBuilder;
 
 	constructor(config: ManagerConfig)
 	{
@@ -103,11 +105,60 @@ export class BitcannManager
 			creatorIncentiveAddress: this.creatorIncentiveAddress,
 			category: this.category,
 			options: this.options,
+			tld: this.tld,
 		});
 
-		this.utxoManager = new UtxoManager(this.networkProvider, this.contracts, this.category, this.tld, this.options);
+		this.utxoManager = new UtxoManager(
+			this.networkProvider,
+			this.contracts,
+			this.category,
+			this.tld,
+			this.options,
+		);
 
-		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.utxoManager);
+		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(
+			this.networkProvider,
+			this.contracts,
+			this.category,
+			this.utxoManager,
+		);
+		this.claimNameTransactionBuilder = new ClaimNameTransactionBuilder(
+			this.networkProvider,
+			this.utxoManager,
+			this.contracts,
+			this.category,
+			this.tld,
+			this.options,
+			this.minWaitTime,
+			this.creatorIncentiveAddress,
+		);
+
+		this.auctionTransactionBuilder = new AuctionTransactionBuilder(
+			this.networkProvider,
+			this.contracts,
+			this.utxoManager,
+		);
+
+		this.bidTransactionBuilder = new BidTransactionBuilder(
+			this.networkProvider,
+			this.contracts,
+			this.utxoManager,
+			this.minBidIncreasePercentage,
+		);
+
+		this.recordsTransactionBuilder = new RecordsTransactionBuilder(
+			this.networkProvider,
+			this.utxoManager,
+		);
+
+		this.penalisationTransactionBuilder = new PenalisationTransactionBuilder(
+			this.networkProvider,
+			this.contracts,
+			this.category,
+			this.tld,
+			this.options,
+			this.minWaitTime,
+		);
 	}
 
 	// *********************************************************************************
@@ -258,9 +309,6 @@ export class BitcannManager
 			utxos = await this.utxoManager.fetchAuctionUtxos({
 				amount,
 				address,
-				networkProvider: this.networkProvider,
-				contracts: this.contracts,
-				category: this.category,
 			});
 		}
 
@@ -275,13 +323,10 @@ export class BitcannManager
 			throw new InvalidAuctionAmountError();
 		}
 
-		return createAuctionTransactionCore({
+		return this.auctionTransactionBuilder.build({
 			name,
 			amount,
 			address,
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
 			utxos,
 		});
 	}
@@ -306,19 +351,14 @@ export class BitcannManager
 				name,
 				category: this.category,
 				address,
-				networkProvider: this.networkProvider,
-				contracts: this.contracts,
 				amount,
 			});
 		}
 
-		return createBidTransactionCore({
+		return this.bidTransactionBuilder.build({
 			name,
 			amount,
 			address,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			minBidIncreasePercentage: this.minBidIncreasePercentage,
 			utxos,
 		});
 	}
@@ -326,37 +366,15 @@ export class BitcannManager
 	/**
 	 * Creates a transaction to claim a name.
 	 *
-	 * @param {CreateClaimNameCoreParams} params - The parameters for claiming the name.
+	 * @param {CreateClaimNameParams} params - The parameters for claiming the name.
 	 * @param {string} params.name - The name to claim.
-	 * @param {FetchClaimNameUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the name.
 	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
 	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
-	public async createClaimNameTransaction({ name, utxos }: CreateClaimNameCoreParams): Promise<TransactionBuilder>
+	public async createClaimNameTransaction({ name, utxos }: CreateClaimNameParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchClaimNameUtxos({
-				category: this.category,
-				registryContract: this.contracts.Registry,
-				factoryContract: this.contracts.Factory,
-				name,
-				networkProvider: this.networkProvider,
-			});
-		}
-
-		return createClaimNameTransactionCore({
-			category: this.category,
-			registryContract: this.contracts.Registry,
-			factoryContract: this.contracts.Factory,
-			tld: this.tld,
-			minWaitTime: this.minWaitTime,
-			name,
-			options: this.options,
-			creatorIncentiveAddress: this.creatorIncentiveAddress,
-			utxos,
-		});
+		return this.claimNameTransactionBuilder.build({ name, utxos });
 	}
 
 	/**
@@ -380,11 +398,9 @@ export class BitcannManager
 			});
 		}
 
-		return penalizeInvalidAuctionName({
+		return this.penalisationTransactionBuilder.buildPenaliseInvalidAuctionNameTransaction({
 			name,
 			rewardTo,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
 			utxos,
 		});
 	}
@@ -410,10 +426,8 @@ export class BitcannManager
 			});
 		}
 
-		return penalizeDuplicateAuction({
+		return this.penalisationTransactionBuilder.buildPenaliseDuplicateAuctionTransaction({
 			rewardTo,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
 			utxos,
 		});
 	}
@@ -437,14 +451,9 @@ export class BitcannManager
 			});
 		}
 
-		return penalizeIllegalAuction({
+		return this.penalisationTransactionBuilder.buildPenaliseIllegalAuctionTransaction({
 			name,
 			rewardTo,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
 			utxos,
 		});
 	}
@@ -479,11 +488,10 @@ export class BitcannManager
 			});
 		}
 
-		return createRecordsTransaction({
+		return this.recordsTransactionBuilder.build({
 			records,
 			address,
 			nameContract,
-			networkProvider: this.networkProvider,
 			utxos,
 		});
 	}

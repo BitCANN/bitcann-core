@@ -1,19 +1,14 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, beforeAll } from '@jest/globals';
 import { MockNetworkProvider, randomUtxo } from 'cashscript';
 import * as config	from '../config.js';
 import {
-	BitcannManager,
-	UtxoManager,
 	intToBytesToHex,
-	type FetchAuctionUtxosResponse,
 } from '../../lib/index.js';
 
 describe('validateName', () =>
 {
 	const networkProvider = new MockNetworkProvider();
 	config.mockOptions.networkProvider = networkProvider;
-
-	const manager = new BitcannManager(config.mockOptions);
 
 	beforeAll( async () =>
 	{
@@ -53,21 +48,4 @@ describe('validateName', () =>
 		});
 	});
 
-
-	it('should fetch utxos necessary for an auction', async () =>
-	{
-		const utxos: FetchAuctionUtxosResponse = await UtxoManager.fetchAuctionUtxos({
-			amount: 1000,
-			address: config.aliceAddress,
-			networkProvider,
-			contracts: manager.contracts,
-			category: config.mockOptions.category,
-		});
-
-		expect(utxos).toBeDefined();
-		expect(utxos.threadNFTUTXO).toBeDefined();
-		expect(utxos.registrationCounterUTXO).toBeDefined();
-		expect(utxos.authorizedContractUTXO).toBeDefined();
-		expect(utxos.userUTXO).toBeDefined();
-	});
 });

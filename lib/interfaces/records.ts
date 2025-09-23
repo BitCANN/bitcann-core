@@ -35,8 +35,6 @@ export interface CreateRecordsCoreParams
 	address: string;
 	/** The contract related to the name. */
 	nameContract: Contract;
-	/** Network provider for BCH network operations. */
-	networkProvider: NetworkProvider;
 	/** List of records to be created. */
 	records: string[];
 	/** UTXOs required for the records creation process. */

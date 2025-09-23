@@ -57,10 +57,7 @@ export class AccumulationTransactionBuilder
 	 * @param {string} params.address - The address to send the accumulated UTXOs to.
 	 * @returns {Promise<TransactionBuilder>} The constructed transaction builder.
 	 */
-	build = async ({
-		utxos,
-		address,
-	}: AccumulateParams): Promise<TransactionBuilder> =>
+	build = async ({ utxos, address }: AccumulateParams): Promise<TransactionBuilder> =>
 	{
 		// Fetch UTXOs if not provided
 		if(!utxos)
@@ -72,7 +69,7 @@ export class AccumulationTransactionBuilder
 			registrationCounterUTXO,
 			authorizedContractUTXO,
 			threadWithTokenUTXO,
-			userUTXO
+			userUTXO,
 		} = utxos as AccumulationUtxos;
 
 		const placeholderUnlocker = createPlaceholderUnlocker(address);

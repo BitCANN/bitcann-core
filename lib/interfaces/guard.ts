@@ -110,10 +110,6 @@ export interface PenaliseDuplicateAuctionCoreParams
 {
 	/** The address to reward for identifying the duplicate auction. */
 	rewardTo: string;
-	/** The network provider for blockchain interactions. */
-	networkProvider: NetworkProvider;
-	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
 	/** The UTXOs required for the transaction. */
 	utxos: FetchDuplicateAuctionGuardUtxosResponse;
 }
@@ -140,16 +136,6 @@ export interface PenaliseIllegalAuctionCoreParams
 	name: string;
 	/** The address to reward for identifying the illegal auction. */
 	rewardTo: string;
-	/** The category of the auction. */
-	category: string;
-	/** The TLD of the auction. */
-	tld: string;
-	/** Additional options including provider and address type. */
-	options: { provider: NetworkProvider; addressType: AddressType };
-	/** The network provider for blockchain interactions. */
-	networkProvider: NetworkProvider;
-	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
 	/** The UTXOs required for the transaction. */
 	utxos: FetchIllegalAuctionGuardUtxosResponse;
 }
@@ -176,10 +162,6 @@ export interface PenalizeInvalidNameCoreParams
 	name: string;
 	/** The address to reward for identifying the invalid name. */
 	rewardTo: string;
-	/** The network provider for blockchain interactions. */
-	networkProvider: NetworkProvider;
-	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
 	/** The UTXOs required for the transaction. */
 	utxos: FetchInvalidNameGuardUtxosResponse;
 }

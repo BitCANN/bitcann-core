@@ -17,8 +17,9 @@ import {
 } from '../errors.js';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 
-export const fetchUtxosFromNetworkProvider = async (networkProvider: NetworkProvider, addresses: string[]): Promise<Utxo[][]> => {
-	return await Promise.all(addresses.map(address => networkProvider.getUtxos(address)));
+export const fetchUtxosFromNetworkProvider = async (networkProvider: NetworkProvider, addresses: string[]): Promise<Utxo[][]> =>
+{
+	return Promise.all(addresses.map(address => networkProvider.getUtxos(address)));
 };
 
 

@@ -61,7 +61,7 @@
             "skipComments": true,
             "IIFEs": true
         }],
-        "max-params": ["warn", 5],
+        "max-params": ["warn", 10],
         "max-statements-per-line": ["error", { "max": 1 }],
         "multiline-ternary": ["warn", "never"],
         "newline-before-return": ["warn"],

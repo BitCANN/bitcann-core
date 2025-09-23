@@ -49,10 +49,10 @@ export const constructNameContract = (params: {
  * @param {AddressType} options.addressType - The address type.
  * @returns {string} The partial bytecode of the Name contract.
  */
-export const getNamePartialBytecode = (category: string, options: { provider: NetworkProvider; addressType: AddressType }): string =>
+export const getNamePartialBytecode = (params: { category: string; options: { provider: NetworkProvider; addressType: AddressType }; tld: string }): string =>
 {
 	// Reverse the category bytes for use in contract parameters.
-	const reversedCategory = binToHex(hexToBin(category).reverse());
+	const reversedCategory = binToHex(hexToBin(params.category).reverse());
 
 	// Placeholder name used for constructing a partial name contract bytecode.
 	const placeholderName = 'test';
@@ -60,13 +60,13 @@ export const getNamePartialBytecode = (category: string, options: { provider: Ne
 		.padStart(2, '0'))
 		.join('');
 
-	const placeTLD = '.bch';
+	const placeTLD = params.tld;
 	const placeTLDHex = Array.from(placeTLD).map(char => char.charCodeAt(0).toString(16)
 		.padStart(2, '0'))
 		.join('');
 
 	// Construct a placeholder name contract to extract partial bytecode.
-	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], options);
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], params.options);
 	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2 + 2 + placeTLD.length * 2;
 	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
 
@@ -84,12 +84,13 @@ export const constructContracts = (params: {
 	creatorIncentiveAddress: string;
 	category: string;
 	options: { provider: NetworkProvider; addressType: AddressType };
+	tld: string;
 }): { [key: string]: Contract } =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(params.category).reverse());
 
-	const namePartialBytecode = getNamePartialBytecode(params.category, params.options);
+	const namePartialBytecode = getNamePartialBytecode({ category: params.category, options: params.options, tld: params.tld });
 
 	// Return an object containing all the constructed contracts.
 	return {

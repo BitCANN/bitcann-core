@@ -1,4 +1,4 @@
-import type { Contract, NetworkProvider, Utxo } from 'cashscript';
+import type { Utxo } from 'cashscript';
 
 /**
  * Parameters required to create a bid transaction.
@@ -41,18 +41,6 @@ export interface CreateBidCoreParams
 	 */
 	address: string;
 	/**
-	 * Network provider for BCH network operations.
-	 */
-	networkProvider: NetworkProvider;
-	/**
-	 * Contracts involved in the bid.
-	 */
-	contracts: Record<string, any>;
-	/**
-	 * Minimum percentage increase required for the bid.
-	 */
-	minBidIncreasePercentage: number;
-	/**
 	 * UTXOs required for the bid transaction.
 	 */
 	utxos: FetchBidUtxosResponse;
@@ -75,14 +63,6 @@ export interface FetchBidUtxosParams
 	 * The address of the bidder.
 	 */
 	address: string;
-	/**
-	 * Network provider for BCH network operations.
-	 */
-	networkProvider: NetworkProvider;
-	/**
-	 * Contracts involved in the bid.
-	 */
-	contracts: Record<string, Contract>;
 	/**
 	 * The amount of the bid.
 	 */

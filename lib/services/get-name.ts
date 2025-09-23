@@ -22,7 +22,7 @@ export const getName = async ({ name, category, tld, options, registryContract }
 	const nameCategoryReversed = binToHex(hexToBin(category).reverse());
 
 	// Retrieve the partial bytecode of the Name contract.
-	const namePartialBytecode = getNamePartialBytecode(category, options);
+	const namePartialBytecode = getNamePartialBytecode({ category, options, tld });
 
 	// Construct the Name contract with the provided parameters.
 	const nameContract = constructNameContract({

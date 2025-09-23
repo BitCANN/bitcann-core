@@ -19,42 +19,12 @@ export enum NameStatus
 /**
  * Parameters required to create a claim name transaction.
  */
-export interface CreateClaimNameCoreParams
+export interface CreateClaimNameParams
 {
 	/** The name. */
 	name: string;
 	/** The UTXOs to be used in the transaction, if already available. */
-	utxos?: any;
-}
-
-/**
- * Parameters required to create a claim name transaction.
- */
-export interface CreateClaimNameParams
-{
-	/** The token category. */
-	category: string;
-	/** The contract instance for the name factory. */
-	factoryContract: Contract;
-	/** The TLD of the name. */
-	tld: string;
-	/** The minimum wait time for the transaction. */
-	minWaitTime: number;
-	/** The name of the name. */
-	name: string;
-	/** Additional options for the name contract. */
-	options: {
-		/** The type of address used. */
-		addressType: AddressType;
-		/** The network provider for blockchain interactions. */
-		provider: NetworkProvider;
-	};
-	/** The address to receive the creator incentive. */
-	creatorIncentiveAddress: string;
-	/** The contract instance for the registry. */
-	registryContract: Contract;
-	/** The UTXOs to be used in the transaction, if already available. */
-	utxos: FetchClaimNameUtxosResponse;
+	utxos?: FetchClaimNameUtxosResponse;
 }
 
 /**
@@ -77,16 +47,8 @@ export interface NameInfo
  */
 export interface FetchClaimNameUtxosParams
 {
-	/** The category of the name. */
-	category: string;
-	/** The contract instance for the name factory. */
-	factoryContract: Contract;
 	/** The name of the name. */
 	name: string;
-	/** The network provider for blockchain interactions. */
-	networkProvider: NetworkProvider;
-	/** The contract instance for the registry. */
-	registryContract: Contract;
 }
 
 /**
