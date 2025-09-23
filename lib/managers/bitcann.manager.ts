@@ -7,13 +7,8 @@ import {
 	ElectrumNetworkProvider,
 	TransactionBuilder,
 } from 'cashscript';
-import {
-	fetchRecords,
-	getAuctions,
-	getName,
-	getPastAuctions,
-	lookupAddressCore,
-} from '../services/index.js';
+import { NameService } from '../services/name.service.js';
+import { RegistryService } from '../services/registry.service.js';
 import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
 import { BidTransactionBuilder } from '../transactions/bid.builder.js';
 import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
@@ -21,8 +16,7 @@ import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
 import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
 import {
 	constructContracts,
-	constructNameContract,
-	getAuctionPrice,
+	lookupAddressCore,
 } from '../util/index.js';
 import type {
 	AccumulateParams,
@@ -42,10 +36,9 @@ import type {
 	CreateClaimNameParams,
 } from '../interfaces/index.js';
 import { LookupAddressCoreResponse } from '../interfaces/resolver.js';
-import { resolveNameCore } from '../services/resolver.js';
+import { resolveNameCore } from '../util/index.js';
 import { chaingraphURL } from '../config.js';
 import type { ParsedRecordsInterface } from '../util/parser.js';
-import { InvalidAuctionAmountError } from '../errors.js';
 import { UtxoManager } from './utxo.manager.js';
 import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
 
@@ -76,6 +69,9 @@ export class BitcannManager
 	public bidTransactionBuilder: BidTransactionBuilder;
 	public recordsTransactionBuilder: RecordsTransactionBuilder;
 	public penalisationTransactionBuilder: PenalisationTransactionBuilder;
+
+	public nameService: NameService;
+	public registryService: RegistryService;
 
 	constructor(config: ManagerConfig)
 	{
@@ -137,6 +133,7 @@ export class BitcannManager
 			this.networkProvider,
 			this.contracts,
 			this.utxoManager,
+			this.minStartingBid,
 		);
 
 		this.bidTransactionBuilder = new BidTransactionBuilder(
@@ -144,11 +141,15 @@ export class BitcannManager
 			this.contracts,
 			this.utxoManager,
 			this.minBidIncreasePercentage,
+			this.category,
 		);
 
 		this.recordsTransactionBuilder = new RecordsTransactionBuilder(
 			this.networkProvider,
 			this.utxoManager,
+			this.category,
+			this.tld,
+			this.options,
 		);
 
 		this.penalisationTransactionBuilder = new PenalisationTransactionBuilder(
@@ -158,6 +159,21 @@ export class BitcannManager
 			this.tld,
 			this.options,
 			this.minWaitTime,
+			this.utxoManager,
+		);
+
+		this.nameService = new NameService(
+			this.networkProvider,
+			this.contracts,
+			this.category,
+			this.tld,
+			this.options,
+		);
+
+		this.registryService = new RegistryService(
+			this.networkProvider,
+			this.contracts,
+			this.category,
 		);
 	}
 
@@ -177,7 +193,7 @@ export class BitcannManager
 	 */
 	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
 	{
-		return fetchRecords({
+		return this.nameService.fetchRecords({
 			name,
 			category: this.category,
 			tld: this.tld,
@@ -194,7 +210,7 @@ export class BitcannManager
 	 */
 	public async getAuctions(): Promise<GetAuctionsResponse[]>
 	{
-		return getAuctions({
+		return this.registryService.getAuctions({
 			category: this.category,
 			networkProvider: this.networkProvider,
 			contracts: this.contracts,
@@ -211,7 +227,7 @@ export class BitcannManager
 	 */
 	public async getHistory(): Promise<PastAuctionResponse[]>
 	{
-		return getPastAuctions({
+		return this.registryService.getPastAuctions({
 			category: this.category,
 			Factory: this.contracts.Factory,
 			// @ts-ignore
@@ -227,7 +243,7 @@ export class BitcannManager
 	 */
 	public async getName(name: string): Promise<NameInfo>
 	{
-		return getName({
+		return this.nameService.getName({
 			name,
 			category: this.category,
 			tld: this.tld,
@@ -275,9 +291,9 @@ export class BitcannManager
 	public async lookupAddress({ address }: LookupAddressParams): Promise<LookupAddressCoreResponse>
 	{
 		return lookupAddressCore({
-			address,
-			category: this.category,
 			networkProvider: this.networkProvider,
+			category: this.category,
+			address,
 		});
 	}
 
@@ -297,32 +313,13 @@ export class BitcannManager
 	 * @throws {InvalidNameError} If the provided name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
-	public async createAuctionTransaction({
+	public async buildAuctionTransaction({
 		name,
 		amount,
 		address,
 		utxos,
 	}: CreateAuctionParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchAuctionUtxos({
-				amount,
-				address,
-			});
-		}
-
-		const { registrationCounterUTXO } = utxos;
-
-		const currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
-
-		// Check if the amount is greater than the minimum to start an auction
-		const auctionPrice = getAuctionPrice(BigInt(currentRegistrationId), BigInt(this.minStartingBid));
-		if(amount < auctionPrice)
-		{
-			throw new InvalidAuctionAmountError();
-		}
-
 		return this.auctionTransactionBuilder.build({
 			name,
 			amount,
@@ -343,18 +340,8 @@ export class BitcannManager
 	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
 	 */
-	public async createBidTransaction({ name, amount, address, utxos }: CreateBidParams): Promise<TransactionBuilder>
+	public async buildBidTransaction({ name, amount, address, utxos }: CreateBidParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchBidUtxos({
-				name,
-				category: this.category,
-				address,
-				amount,
-			});
-		}
-
 		return this.bidTransactionBuilder.build({
 			name,
 			amount,
@@ -372,7 +359,7 @@ export class BitcannManager
 	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
 	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
-	public async createClaimNameTransaction({ name, utxos }: CreateClaimNameParams): Promise<TransactionBuilder>
+	public async buildClaimNameTransaction({ name, utxos }: CreateClaimNameParams): Promise<TransactionBuilder>
 	{
 		return this.claimNameTransactionBuilder.build({ name, utxos });
 	}
@@ -386,18 +373,8 @@ export class BitcannManager
 	 * @param {FetchInvalidNameGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async penalizeInvalidAuctionName({ name, rewardTo, utxos }: PenalizeInvalidNameParams): Promise<TransactionBuilder>
+	public async buildPenalizeInvalidAuctionNameTransaction({ name, rewardTo, utxos }: PenalizeInvalidNameParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchInvalidNameGuardUtxos({
-				name,
-				category: this.category,
-				networkProvider: this.networkProvider,
-				contracts: this.contracts,
-			});
-		}
-
 		return this.penalisationTransactionBuilder.buildPenaliseInvalidAuctionNameTransaction({
 			name,
 			rewardTo,
@@ -414,19 +391,10 @@ export class BitcannManager
 	 * @param {FetchDuplicateAuctionGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async penalizeDuplicateAuction({ name, rewardTo, utxos }: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder>
+	public async buildPenalizeDuplicateAuctionTransaction({ name, rewardTo, utxos }: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchDuplicateAuctionGuardUtxos({
-				name,
-				category: this.category,
-				contracts: this.contracts,
-				options: this.options,
-			});
-		}
-
 		return this.penalisationTransactionBuilder.buildPenaliseDuplicateAuctionTransaction({
+			name,
 			rewardTo,
 			utxos,
 		});
@@ -438,19 +406,8 @@ export class BitcannManager
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async penalizeIllegalAuction({ name, rewardTo, utxos }: PenaliseIllegalAuctionParams): Promise<TransactionBuilder>
+	public async buildPenalizeIllegalAuctionTransaction({ name, rewardTo, utxos }: PenaliseIllegalAuctionParams): Promise<TransactionBuilder>
 	{
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchIllegalAuctionGuardUtxos({
-				name,
-				category: this.category,
-				contracts: this.contracts,
-				tld: this.tld,
-				options: this.options,
-			});
-		}
-
 		return this.penalisationTransactionBuilder.buildPenaliseIllegalAuctionTransaction({
 			name,
 			rewardTo,
@@ -468,30 +425,12 @@ export class BitcannManager
 	 * @param {FetchRecordsUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction. If not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder instance for the record transaction.
 	 */
-	public async createRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
+	public async buildRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
 	{
-		const nameContract = constructNameContract({
-			name: name,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-		});
-
-		if(!utxos)
-		{
-			utxos = await this.utxoManager.fetchRecordsUtxos({
-				name,
-				category: this.category,
-				nameContract,
-				address,
-				networkProvider: this.networkProvider,
-			});
-		}
-
 		return this.recordsTransactionBuilder.build({
-			records,
 			address,
-			nameContract,
+			name,
+			records,
 			utxos,
 		});
 	}

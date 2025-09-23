@@ -33,12 +33,12 @@ export interface CreateRecordsCoreParams
 {
 	/** The address associated with the records. */
 	address: string;
-	/** The contract related to the name. */
-	nameContract: Contract;
+	/** The name associated with the records. */
+	name: string;
 	/** List of records to be created. */
 	records: string[];
 	/** UTXOs required for the records creation process. */
-	utxos: FetchRecordsUtxosResponse;
+	utxos?: FetchRecordsUtxosResponse;
 }
 
 /**
@@ -48,8 +48,6 @@ export interface FetchRecordsParams
 {
 	/** The category of the records. */
 	category: string;
-	/** Electrum client for network operations. */
-	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
 	/** The TLD of the name. */
 	tld: string;
 	/** The name associated with the records. */

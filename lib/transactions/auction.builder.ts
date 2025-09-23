@@ -3,9 +3,10 @@ import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { adjustLastOutputForFee } from '../util/transaction.js';
 import { convertAddressToPkh } from '../util/address.js';
 import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
-import { createPlaceholderUnlocker, padVmNumber } from '../util/index.js';
+import { createPlaceholderUnlocker, padVmNumber, getAuctionPrice } from '../util/index.js';
 import type { CreateAuctionCoreParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
+import { InvalidAuctionAmountError } from '../errors.js';
 
 
 /**
@@ -24,6 +25,11 @@ export class AuctionTransactionBuilder
 	contracts: Record<string, Contract>;
 
 	/**
+	 * The minimum starting bid.
+	 */
+	minStartingBid: number;
+
+	/**
 	 * The UTXO manager.
 	 */
 	utxoManager: UtxoManager;
@@ -35,12 +41,14 @@ export class AuctionTransactionBuilder
 	 * @param {NetworkProvider} networkProvider - The network provider instance.
 	 * @param {Record<string, Contract>} contracts - The contracts used in the transaction.
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
+	 * @param {number} minStartingBid - The minimum starting bid.
 	 */
-	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, utxoManager: UtxoManager)
+	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, utxoManager: UtxoManager, minStartingBid: number)
 	{
 		this.networkProvider = networkProvider;
 		this.contracts = contracts;
 		this.utxoManager = utxoManager;
+		this.minStartingBid = minStartingBid;
 	}
 
 	/**
@@ -78,8 +86,17 @@ export class AuctionTransactionBuilder
 		// Destructure the necessary UTXOs from the provided utxos object
 		const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO }: FetchAuctionUtxosResponse = utxos as FetchAuctionUtxosResponse;
 
-		// Calculate the new registration ID and its commitment
+
 		const currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
+
+		// Check if the amount is greater than the minimum to start an auction
+		const auctionPrice = getAuctionPrice(BigInt(currentRegistrationId), BigInt(this.minStartingBid));
+		if(amount < auctionPrice)
+		{
+			throw new InvalidAuctionAmountError();
+		}
+
+		// Calculate the new registration ID and its commitment
 		const nextRegistrationIdCommitment = padVmNumber(BigInt(currentRegistrationId + 1), 8);
 
 		// Convert the user's address to a public key hash

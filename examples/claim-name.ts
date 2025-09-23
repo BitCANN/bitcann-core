@@ -11,7 +11,7 @@ import { CreateClaimNameParams } from '../lib/interfaces/index.js';
 	const name = 'test';
 	const address = aliceAddress;
 
-	const claimNameTransaction = await bitcannManager.createClaimNameTransaction({ name } as CreateClaimNameParams);
+	const claimNameTransaction = await bitcannManager.buildClaimNameTransaction({ name } as CreateClaimNameParams);
 
   const preparedTransaction = await getSignedTransaction({
     transaction: claimNameTransaction,

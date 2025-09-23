@@ -43,7 +43,7 @@ export interface CreateBidCoreParams
 	/**
 	 * UTXOs required for the bid transaction.
 	 */
-	utxos: FetchBidUtxosResponse;
+	utxos?: FetchBidUtxosResponse;
 }
 
 /**

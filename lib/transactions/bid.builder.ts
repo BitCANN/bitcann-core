@@ -34,19 +34,26 @@ export class BidTransactionBuilder
 	minBidIncreasePercentage: number;
 
 	/**
+	 * The category.
+	 */
+	category: string;
+
+	/**
 	 * Constructs a new BidTransactionBuilder.
 	 *
 	 * @param {NetworkProvider} networkProvider - The network provider instance.
 	 * @param {Record<string, Contract>} contracts - The contracts used in the transaction.
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
 	 * @param {number} minBidIncreasePercentage - The minimum bid increase percentage.
+	 * @param {string} category - The category.
 	 */
-	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, utxoManager: UtxoManager, minBidIncreasePercentage: number)
+	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, utxoManager: UtxoManager, minBidIncreasePercentage: number, category: string)
 	{
 		this.networkProvider = networkProvider;
 		this.contracts = contracts;
 		this.utxoManager = utxoManager;
 		this.minBidIncreasePercentage = minBidIncreasePercentage;
+		this.category = category;
 	}
 
 	/**
@@ -66,8 +73,18 @@ export class BidTransactionBuilder
 	}: CreateBidCoreParams): Promise<TransactionBuilder> =>
 	{
 		validateName(name);
-
 		const { nameBin } = convertNameToBinaryAndHex(name);
+
+		if(!utxos)
+		{
+			utxos = await this.utxoManager.fetchBidUtxos({
+				name,
+				category: this.category,
+				address,
+				amount,
+			});
+		}
+		
 		const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO, fundingUTXO } = utxos;
 
 		if(BigInt(amount) < getMinimumBidAmount(BigInt(runningAuctionUTXO.satoshis), BigInt(this.minBidIncreasePercentage)))

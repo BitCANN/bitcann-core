@@ -10,7 +10,7 @@ import { ElectrumNetworkProvider } from 'cashscript';
 {
 	const name = 'test';
 	const address = aliceAddress;
-	const auctionTransaction = await bitcannManager.createAuctionTransaction({ name, amount: 10000, address });
+	const auctionTransaction = await bitcannManager.buildAuctionTransaction({ name, amount: 10000, address });
 
   // console.log(auctionTransaction);
 

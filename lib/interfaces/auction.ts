@@ -45,7 +45,7 @@ export interface CreateAuctionCoreParams
 	/**
    * UTXOs required for the auction transaction.
    */
-	utxos: FetchAuctionUtxosResponse;
+	utxos?: FetchAuctionUtxosResponse;
 }
 
 /**

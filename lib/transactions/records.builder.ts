@@ -1,6 +1,7 @@
-import { type NetworkProvider, TransactionBuilder } from 'cashscript';
+import { AddressType, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import {
 	adjustLastOutputForFee,
+	constructNameContract,
 	convertCashAddressToTokenAddress,
 	createPlaceholderUnlocker,
 } from '../util/index.js';
@@ -24,15 +25,36 @@ export class RecordsTransactionBuilder
 	utxoManager: UtxoManager;
 
 	/**
+	 * The category.
+	 */
+	category: string;
+
+	/**
+	 * The TLD.
+	 */
+	tld: string;
+
+	/**
+	 * The options.
+	 */
+	options: { provider: NetworkProvider; addressType: AddressType };
+
+	/**
 	 * Constructs a new RecordsTransactionBuilder.
 	 *
 	 * @param {NetworkProvider} networkProvider - The network provider instance.
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
+	 * @param {string} category - The category.
+	 * @param {string} tld - The TLD.
+	 * @param {object} options - The options.
 	 */
-	constructor(networkProvider: NetworkProvider, utxoManager: UtxoManager)
+	constructor(networkProvider: NetworkProvider, utxoManager: UtxoManager, category: string, tld: string, options: { provider: NetworkProvider; addressType: AddressType })
 	{
 		this.networkProvider = networkProvider;
 		this.utxoManager = utxoManager;
+		this.category = category;
+		this.tld = tld;
+		this.options = options;
 	}
 
 	/**
@@ -43,11 +65,28 @@ export class RecordsTransactionBuilder
 	 */
 	build = async ({
 		address,
-		nameContract,
+		name,
 		records,
 		utxos,
 	}: CreateRecordsCoreParams): Promise<TransactionBuilder> =>
 	{
+		const nameContract = constructNameContract({
+			name: name,
+			category: this.category,
+			tld: this.tld,
+			options: this.options,
+		});
+	
+		if(!utxos)
+		{
+			utxos = await this.utxoManager.fetchRecordsUtxos({
+				name,
+				category: this.category,
+				nameContract,
+				address,
+				networkProvider: this.networkProvider,
+			});
+		}
 		const { internalAuthNFTUTXO, ownershipNFTUTXO, fundingUTXO } = utxos;
 
 		const placeholderUnlocker = createPlaceholderUnlocker(address);

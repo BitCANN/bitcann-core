@@ -1,9 +1,9 @@
 import { fetchTransaction, fetchHistory, fetchUnspentTransactionOutputs } from '@electrum-cash/protocol';
 import type { LookupAddressCoreParams, LookupAddressCoreResponse, ResolveNameByChainGraphParams, ResolveNameByElectrumParams, ResolveNameCoreParams } from '../interfaces/resolver.js';
-import { constructNameContract } from '../util/index.js';
+import { constructNameContract } from './index.js';
 import { binToHex, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { ChaingraphClient, graphql } from 'chaingraph-ts';
-import { lockScriptToAddress, scriptToScripthash } from '../util/address.js';
+import { lockScriptToAddress, scriptToScripthash } from './address.js';
 import { chaingraphURL } from '../config.js';
 
 

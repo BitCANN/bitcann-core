@@ -108,10 +108,12 @@ export interface PenaliseDuplicateAuctionParams
  */
 export interface PenaliseDuplicateAuctionCoreParams
 {
+	/** The name of the auction. */
+	name: string;
 	/** The address to reward for identifying the duplicate auction. */
 	rewardTo: string;
 	/** The UTXOs required for the transaction. */
-	utxos: FetchDuplicateAuctionGuardUtxosResponse;
+	utxos?: FetchDuplicateAuctionGuardUtxosResponse;
 }
 
 /**
@@ -137,7 +139,7 @@ export interface PenaliseIllegalAuctionCoreParams
 	/** The address to reward for identifying the illegal auction. */
 	rewardTo: string;
 	/** The UTXOs required for the transaction. */
-	utxos: FetchIllegalAuctionGuardUtxosResponse;
+	utxos?: FetchIllegalAuctionGuardUtxosResponse;
 }
 
 /**
@@ -163,5 +165,5 @@ export interface PenalizeInvalidNameCoreParams
 	/** The address to reward for identifying the invalid name. */
 	rewardTo: string;
 	/** The UTXOs required for the transaction. */
-	utxos: FetchInvalidNameGuardUtxosResponse;
+	utxos?: FetchInvalidNameGuardUtxosResponse;
 }

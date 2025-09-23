@@ -12,7 +12,7 @@ import { binToHex, hexToBin, hash256 } from '@bitauth/libauth';
 	const record = "description Bitcoin finally has it's own naming system!!";
 	const rmvRecord = "RMV " + binToHex(hash256(hexToBin(record)));
 
-	const recordTransaction = await bitcannManager.createRecordsTransaction({ name, records: [ rmvRecord ], address });
+	const recordTransaction = await bitcannManager.buildRecordsTransaction({ name, records: [ rmvRecord ], address });
 
   const preparedTransaction = await getSignedTransaction({
     transaction: recordTransaction,

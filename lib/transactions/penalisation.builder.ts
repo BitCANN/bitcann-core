@@ -2,6 +2,7 @@ import { type AddressType, Contract, type NetworkProvider, TransactionBuilder } 
 import { PenaliseDuplicateAuctionCoreParams, PenalizeInvalidNameCoreParams, PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
 import { constructNameContract, findFirstInvalidCharacterIndex, adjustLastOutputForFee } from '../util/index.js';
 import { AuctionNameDoesNotContainInvalidCharacterError } from '../errors.js';
+import { UtxoManager } from '../managers/utxo.manager.js';
 
 
 /**
@@ -35,6 +36,11 @@ export class PenalisationTransactionBuilder
 	minWaitTime: number;
 
 	/**
+	 * The UTXO manager.
+	 */
+	utxoManager: UtxoManager;
+
+	/**
 	 * Constructs a new PenalisationTransactionBuilder.
 	 *
 	 * @param {NetworkProvider} networkProvider - The network provider instance.
@@ -51,6 +57,7 @@ export class PenalisationTransactionBuilder
 		tld: string,
 		options: { provider: NetworkProvider; addressType: AddressType },
 		minWaitTime: number,
+		utxoManager: UtxoManager,
 	)
 	{
 		this.networkProvider = networkProvider;
@@ -59,6 +66,7 @@ export class PenalisationTransactionBuilder
 		this.tld = tld;
 		this.options = options;
 		this.minWaitTime = minWaitTime;
+		this.utxoManager = utxoManager;
 	}
 
 	/**
@@ -68,10 +76,20 @@ export class PenalisationTransactionBuilder
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
 	buildPenaliseDuplicateAuctionTransaction = async ({
+		name,
 		rewardTo,
 		utxos,
 	}: PenaliseDuplicateAuctionCoreParams): Promise<TransactionBuilder> =>
 	{
+		if(!utxos)
+		{
+			utxos = await this.utxoManager.fetchDuplicateAuctionGuardUtxos({
+				name,
+				category: this.category,
+				contracts: this.contracts,
+				options: this.options,
+			});
+		}
 		const { threadNFTUTXO, authorizedContractUTXO, runningValidAuctionUTXO, runningInValidAuctionUTXO } = utxos;
 
 		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
@@ -131,6 +149,17 @@ export class PenalisationTransactionBuilder
 		utxos,
 	}: PenaliseIllegalAuctionCoreParams): Promise<TransactionBuilder> =>
 	{
+		if(!utxos)
+		{
+			utxos = await this.utxoManager.fetchIllegalAuctionGuardUtxos({
+				name,
+				category: this.category,
+				contracts: this.contracts,
+				tld: this.tld,
+				options: this.options,
+			});
+		}
+
 		const nameContract = constructNameContract({
 			name,
 			category: this.category,
@@ -203,8 +232,18 @@ export class PenalisationTransactionBuilder
 		{
 			throw new AuctionNameDoesNotContainInvalidCharacterError();
 		}
+		if(!utxos)
+		{
+			utxos = await this.utxoManager.fetchInvalidNameGuardUtxos({
+				name,
+				category: this.category,
+				networkProvider: this.networkProvider,
+				contracts: this.contracts,
+			});
+		}
 
 		const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO } = utxos;
+
 
 		const transaction = await new TransactionBuilder({ provider: this.networkProvider })
 			.addInput(threadNFTUTXO, this.contracts.Registry.unlock.call())

@@ -13,7 +13,7 @@ import { ElectrumNetworkProvider } from 'cashscript';
 
 	const amount = 10000*1.05;
   console.log('amount', amount);
-	const bidTransaction = await bitcannManager.createBidTransaction({ name, amount, address });
+	const bidTransaction = await bitcannManager.buildBidTransaction({ name, amount, address });
 
   const preparedTransaction = await getSignedTransaction({
     transaction: bidTransaction,

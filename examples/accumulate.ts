@@ -8,7 +8,7 @@ import { getSignedTransaction } from './common/sign.js';
 (async () =>
 {
 	const address = aliceAddress;
-	const accumulateTransaction = await bitcannManager.accumulateTokens({ address });
+	const accumulateTransaction = await bitcannManager.buildAccumulateTokensTransaction({ address });
 
   console.log(accumulateTransaction);
 

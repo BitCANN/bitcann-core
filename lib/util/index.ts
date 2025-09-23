@@ -74,3 +74,10 @@ export {
 	getSignedTransaction,
 	signTransaction,
 } from './sign.js';
+
+// Resolver utilities
+export {
+	lookupAddressCore,
+	resolveNameByChainGraph,
+	resolveNameCore,
+} from './resolver.js';
