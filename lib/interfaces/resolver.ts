@@ -1,13 +1,9 @@
-import type { NetworkProvider } from 'cashscript';
-
 /**
  * Interface for the request parameters of the lookupAddressCore function.
  */
 export interface LookupAddressCoreParams
 {
 	address: string;
-	category: string;
-	networkProvider: NetworkProvider;
 }
 
 /**
@@ -42,13 +38,8 @@ export interface LookupAddressParams
 export interface ResolveNameCoreParams
 {
 	name: string;
-	category: string;
-	tld: string;
-	options: any;
-	electrumClient: any;
 	useElectrum?: boolean;
 	useChaingraph?: boolean;
-	chaingraphUrl?: string;
 }
 
 /**
@@ -59,7 +50,6 @@ export interface ResolveNameByElectrumParams
 	baseHeight: number;
 	token: any;
 	ownerLockingBytecode: any;
-	electrumClient: any;
 }
 
 /**
@@ -68,6 +58,4 @@ export interface ResolveNameByElectrumParams
 export interface ResolveNameByChainGraphParams
 {
 	token: any;
-	chaingraphUrl: string;
-	electrumClient: any;
 }

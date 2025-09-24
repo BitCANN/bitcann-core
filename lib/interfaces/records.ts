@@ -46,18 +46,8 @@ export interface CreateRecordsCoreParams
  */
 export interface FetchRecordsParams
 {
-	/** The category of the records. */
-	category: string;
-	/** The TLD of the name. */
-	tld: string;
 	/** The name associated with the records. */
 	name: string;
-	options: {
-		/** The type of address used. */
-		addressType: AddressType;
-		/** The network provider for blockchain interactions. */
-		provider: NetworkProvider;
-	};
 }
 
 /**

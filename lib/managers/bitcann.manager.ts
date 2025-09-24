@@ -1,78 +1,136 @@
-import type {
-	AddressType,
-	NetworkProvider,
-} from 'cashscript';
 import {
 	Contract,
 	ElectrumNetworkProvider,
 	TransactionBuilder,
 } from 'cashscript';
+import type {
+	AddressType,
+	NetworkProvider,
+} from 'cashscript';
+import { chaingraphURL } from '../config.js';
 import { NameService } from '../services/name.service.js';
 import { RegistryService } from '../services/registry.service.js';
 import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
 import { BidTransactionBuilder } from '../transactions/bid.builder.js';
 import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
-import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
 import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
+import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
+import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
+import { UtxoManager } from './utxo.manager.js';
 import {
 	constructContracts,
 	lookupAddressCore,
+	resolveNameCore,
 } from '../util/index.js';
 import type {
 	AccumulateParams,
 	CreateAuctionParams,
 	CreateBidParams,
+	CreateClaimNameParams,
 	CreateRecordsParams,
-	NameInfo,
 	GetAuctionsResponse,
 	GetRecordsParams,
 	LookupAddressParams,
 	ManagerConfig,
+	NameInfo,
 	PastAuctionResponse,
 	PenaliseDuplicateAuctionParams,
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
 	ResolveNameParams,
-	CreateClaimNameParams,
 } from '../interfaces/index.js';
 import { LookupAddressCoreResponse } from '../interfaces/resolver.js';
-import { resolveNameCore } from '../util/index.js';
-import { chaingraphURL } from '../config.js';
 import type { ParsedRecordsInterface } from '../util/parser.js';
-import { UtxoManager } from './utxo.manager.js';
-import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
 
 
 export class BitcannManager
 {
-	// Config to build the contracts in the BitCANN system.
-	public category: string;
-	public minStartingBid: number;
-	public minBidIncreasePercentage: number;
-	public inactivityExpiryTime: number;
-	public minWaitTime: number;
-	public tld: string;
-	public creatorIncentiveAddress: string;
-	public options: { provider: NetworkProvider; addressType: AddressType };
+	/**
+	 * The category of the name.
+	 */
+	private category: string;
+	/**
+	 * The minimum starting bid for the name.
+	 */
+	private minStartingBid: number;
+	/**
+	 * The minimum bid increase percentage for the name.
+	 */
+	private minBidIncreasePercentage: number;
+	/**
+	 * The inactivity expiry time before the name can be considered expired.
+	 */
+	private inactivityExpiryTime: number;
+	/**
+	 * The minimum wait time for the name.
+	 */
+	private minWaitTime: number;
+	/**
+	 * The TLD of the name.
+	 */
+	private tld: string;
+	/**
+	 * The creator incentive address for the protocol.
+	 */
+	private creatorIncentiveAddress: string;
+	/**
+	 * The options for the name contract.
+	 */
+	private options: { provider: NetworkProvider; addressType: AddressType };
+	/**
+	 * The network provider to use for BCH network operations.
+	 */
+	private networkProvider: NetworkProvider;
+	/**
+	 * The Chaingraph URL to use for lookups.
+	 */
+	private chaingraphUrl: string;
+	/**
+	 * The contracts in the BitCANN system.
+	 */
+	private contracts: Record<string, Contract>;
+	/**
+	 * The UTXO manager for builders and 
+	 */
+	private utxoManager: UtxoManager;
+	/**
+	 * The builder for accumulation transactions.
+	 */
+	private accumulationTransactionBuilder: AccumulationTransactionBuilder;
+	/**
+	 * The builder for claim name transactions.
+	 */
+	private claimNameTransactionBuilder: ClaimNameTransactionBuilder;
+	/**
+	 * The builder for auction transactions.
+	 */
+	private auctionTransactionBuilder: AuctionTransactionBuilder;
+	/**
+	 * The builder for bid transactions.
+	 */
+	private bidTransactionBuilder: BidTransactionBuilder;
+	/**
+	 * The builder for records transactions.
+	 */
+	private recordsTransactionBuilder: RecordsTransactionBuilder;
+	/**
+	 * The builder for penalisation transactions.
+	 */
+	private penalisationTransactionBuilder: PenalisationTransactionBuilder;
+	/**
+	 * The service for registry operations.
+	 */
+	private registryService: RegistryService;
+	/**
+	 * The service for name operations.
+	 */
+	private nameService: NameService;
 
-	// Network provider to use for BCH network operations.
-	public networkProvider: NetworkProvider;
-	public chaingraphUrl: string;
-
-	// Contracts in the BitCANN system.
-	public contracts: Record<string, Contract>;
-
-	public utxoManager: UtxoManager;
-	public accumulationTransactionBuilder: AccumulationTransactionBuilder;
-	public claimNameTransactionBuilder: ClaimNameTransactionBuilder;
-	public auctionTransactionBuilder: AuctionTransactionBuilder;
-	public bidTransactionBuilder: BidTransactionBuilder;
-	public recordsTransactionBuilder: RecordsTransactionBuilder;
-	public penalisationTransactionBuilder: PenalisationTransactionBuilder;
-
-	public nameService: NameService;
-	public registryService: RegistryService;
-
+	/**
+	 * Constructs a new BitcannManager.
+	 *
+	 * @param {ManagerConfig} config - The configuration for the manager.
+	 */
 	constructor(config: ManagerConfig)
 	{
 		this.category = config.category;
@@ -168,6 +226,7 @@ export class BitcannManager
 			this.category,
 			this.tld,
 			this.options,
+			this.chaingraphUrl,
 		);
 
 		this.registryService = new RegistryService(
@@ -193,14 +252,7 @@ export class BitcannManager
 	 */
 	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
 	{
-		return this.nameService.fetchRecords({
-			name,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-			// @ts-ignore
-			electrumClient: this.networkProvider.electrum,
-		});
+		return this.nameService.fetchRecords({ name });
 	}
 
 	/**
@@ -210,13 +262,7 @@ export class BitcannManager
 	 */
 	public async getAuctions(): Promise<GetAuctionsResponse[]>
 	{
-		return this.registryService.getAuctions({
-			category: this.category,
-			networkProvider: this.networkProvider,
-			contracts: this.contracts,
-			// @ts-ignore
-			electrumClient: this.networkProvider.electrum,
-		});
+		return this.registryService.getAuctions();
 	}
 
 	/**
@@ -227,12 +273,7 @@ export class BitcannManager
 	 */
 	public async getHistory(): Promise<PastAuctionResponse[]>
 	{
-		return this.registryService.getPastAuctions({
-			category: this.category,
-			Factory: this.contracts.Factory,
-			// @ts-ignore
-			electrumClient: this.networkProvider.electrum,
-		});
+		return this.registryService.getPastAuctions();
 	}
 
 	/**
@@ -243,13 +284,7 @@ export class BitcannManager
 	 */
 	public async getName(name: string): Promise<NameInfo>
 	{
-		return this.nameService.getName({
-			name,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-			registryContract: this.contracts.Registry,
-		});
+		return this.nameService.getName({ name });
 	}
 
 	/**
@@ -273,6 +308,7 @@ export class BitcannManager
 			options: this.options,
 			// @ts-ignore
 			electrumClient: this.networkProvider.electrum,
+			chaingraphUrl: this.chaingraphUrl,
 			useElectrum,
 			useChaingraph,
 		});

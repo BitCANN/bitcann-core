@@ -1,11 +1,10 @@
 import { binToHex, hexToBin, decodeTransaction } from '@bitauth/libauth';
-import { ElectrumProtocolEvents, fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
+import { fetchHistory, fetchTransaction } from '@electrum-cash/protocol';
 import type { GetPastAuctionsParams, PastAuctionResponse } from '../interfaces/index.js';
-import type { GetAuctionsParams, GetAuctionsResponse } from '../interfaces/index.js';
+import type { GetAuctionsResponse } from '../interfaces/index.js';
 import { fetchTransactionBlockHeight } from '@electrum-cash/protocol';
 import { convertPkhToLockingBytecode, lockScriptToAddress } from '../util/address.js';
 import { Contract, NetworkProvider } from 'cashscript';
-import { ElectrumClient } from '@electrum-cash/network';
 
 
 export class RegistryService
@@ -37,8 +36,7 @@ export class RegistryService
      * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
      * each containing a transaction hex and an auction name.
      */
-    getPastAuctions = async ({
-    }: GetPastAuctionsParams): Promise<PastAuctionResponse[]> =>
+    getPastAuctions = async (): Promise<PastAuctionResponse[]> =>
     {
         // @ts-ignore
         const history = await fetchHistory(this.networkProvider.electrum, this.contracts.Factory.address);
@@ -112,8 +110,7 @@ export class RegistryService
      *
      * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
      */
-    getAuctions = async ({
-    }: GetAuctionsParams): Promise<GetAuctionsResponse[]> =>
+    getAuctions = async (): Promise<GetAuctionsResponse[]> =>
     {
         const registryUtxos = await this.networkProvider.getUtxos(this.contracts.Registry.address);
         const filteredUtxos = registryUtxos.filter((utxo) => utxo.token?.category === this.category && utxo.token?.nft?.capability === 'mutable');

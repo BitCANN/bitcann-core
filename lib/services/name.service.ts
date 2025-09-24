@@ -1,13 +1,20 @@
-import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
-import { hexToBin, binToHex } from '@bitauth/libauth';
-import { NameInfo, GetNameParams, NameStatus, FetchRecordsParams } from '../interfaces/index.js';
-import { buildLockScriptP2SH32, findRunningAuctionUtxo, lockScriptToAddress, pushDataHex } from '../util/index.js';
-import { isNameValid } from '../util/name.js';
+import { hexToBin, decodeTransaction, binToHex } from '@bitauth/libauth';
+import { ChaingraphClient, graphql } from 'chaingraph-ts';
 import { type AddressType, Contract, type NetworkProvider } from 'cashscript';
-import { ParsedRecordsInterface } from '../util/parser.js';
-import { fetchHistory } from '@electrum-cash/protocol';
-import { extractRecordsFromTransaction, getValidCandidateTransactions } from '../util/index.js';
-import { parseRecords } from '../util/parser.js';
+import { fetchHistory, fetchTransaction, fetchUnspentTransactionOutputs } from '@electrum-cash/protocol';
+import type {
+    LookupAddressCoreParams,
+    LookupAddressCoreResponse,
+    ResolveNameByChainGraphParams,
+    ResolveNameByElectrumParams,
+    ResolveNameCoreParams
+} from '../interfaces/resolver.js';
+import { NameInfo, GetNameParams, NameStatus, FetchRecordsParams } from '../interfaces/index.js';
+import { isNameValid } from '../util/name.js';
+import { extractRecordsFromTransaction, findRunningAuctionUtxo, buildLockScriptP2SH32, lockScriptToAddress, pushDataHex, getValidCandidateTransactions } from '../util/index.js';
+import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
+import { parseRecords, ParsedRecordsInterface } from '../util/parser.js';
+import { scriptToScripthash } from '../util/address.js';
 
 
 export class NameService
@@ -34,6 +41,11 @@ export class NameService
     options: { provider: NetworkProvider; addressType: AddressType };
 
     /**
+     * The Chaingraph URL.
+     */
+    chaingraphUrl: string;
+
+    /**
      * Constructs a new NameService.
      *
      * @param {NetworkProvider} networkProvider - The network provider.
@@ -48,6 +60,7 @@ export class NameService
         category: string,
         tld: string,
         options: { provider: NetworkProvider; addressType: AddressType },
+        chaingraphUrl: string,
     )
 	{
         this.networkProvider = networkProvider;
@@ -55,6 +68,7 @@ export class NameService
         this.category = category;
         this.tld = tld;
         this.options = options;
+        this.chaingraphUrl = chaingraphUrl;
 	}
 
     /**
@@ -138,7 +152,7 @@ export class NameService
      * @param {string} params.category - The category of the name.
      * @param {string} params.tld - The TLD of the name.
      * @param {object} params.options - Additional options for name contract construction.
-     * @param {object} params.electrumClient - The Electrum client for blockchain interactions.
+     * @param {object} params.networkProvider - The network provider for blockchain interactions.
      * @returns {Promise<string[]>} A promise that resolves to an array of name records.
      */
     fetchRecords = async ({
@@ -167,4 +181,325 @@ export class NameService
 
         return parseRecords(records);
     };
+    
+    
+    resolveNameByChainGraph = async ({ token }: ResolveNameByChainGraphParams): Promise<string> =>
+    {
+        const queryReq = graphql(`query SearchNameOwner(
+        $tokenId: bytea,
+        $commitment: bytea
+      ){
+        output(where: {token_category: {_eq: $tokenId}, nonfungible_token_commitment: {_eq: $commitment} }) {
+        transaction_hash
+        transaction {
+          block_inclusions {
+            block {
+              height
+            }
+          }
+        }
+      }
+      }`);
+    
+        const category = binToHex(token.category);
+        const commitment = binToHex(token.nft.commitment);
+    
+        const chaingraphClient = new ChaingraphClient(this.chaingraphUrl);
+        const resultQuery = await chaingraphClient.query(queryReq, {
+            tokenId: `\\x${category}`,
+            commitment: `\\x${commitment}`,
+        });
+    
+        if(!resultQuery.data)
+        {
+            throw new Error('No data returned from Chaingraph query');
+        }
+    
+        const transactions = resultQuery.data.output.map((output: any) => ({
+            height: output.transaction.block_inclusions.length > 0 ? output.transaction.block_inclusions[0].block.height : null,
+            txHash: output.transaction_hash.replace(/^\\x/, ''),
+        }));
+    
+        // Filter transactions to keep only those with block_inclusions length of 0
+        let filteredTransaction = transactions.filter(output => output.height === null);
+        // If the filteredTransaction has a length then it means that the NFT is currently in the mempool.
+        // Go through all the transactions that are filtered here and fine the one that currently ownes the NFT.
+    
+        // If no such transactions exist, keep only the one with the highest block height
+        // That means the NFT exists with the recipient of the address in that transaction.
+        if(filteredTransaction.length === 0)
+        {
+            const maxHeight = Math.max(...transactions.map(output => parseInt(output.height || '0', 10)));
+            filteredTransaction = transactions.filter(output => parseInt(output.height || '0', 10) === maxHeight);
+        }
+    
+        let ownerLockingBytecode;
+    
+        const potentialOwners = new Set();
+    
+        for(const tx of filteredTransaction)
+        {
+            // @ts-ignore
+            const t = await fetchTransaction(this.networkProvider.electrum, tx.txHash);
+            const decodedTx = decodeTransaction(hexToBin(t));
+            // @ts-ignore
+            for(const output of decodedTx.outputs)
+            {
+                if(output.token
+            // @ts-ignore
+            && output.token.amount === token.amount
+            // @ts-ignore
+            && binToHex(output.token.category) === binToHex(token.category)
+            // @ts-ignore
+            && output.token.nft.capability === token.nft.capability
+            // @ts-ignore
+            && binToHex(output.token.nft.commitment) === binToHex(token.nft.commitment))
+                {
+                    potentialOwners.add(binToHex(output.lockingBytecode));
+                }
+            }
+        }
+    
+        const promises = Array.from(potentialOwners).map(async (owner) =>
+        {
+            const ownerAddress = await lockScriptToAddress(owner as string);
+            // @ts-ignore
+            const utxos = await fetchUnspentTransactionOutputs(this.networkProvider.electrum, ownerAddress, false, true);
+    
+            const matchingUtxo = utxos.find(utxo =>
+                utxo.token_data
+                // @ts-ignore
+            && utxo.token_data.category === binToHex(token.category)
+                // @ts-ignore
+            && utxo.token_data.nft
+                // @ts-ignore
+            && utxo.token_data.nft.commitment === binToHex(token.nft.commitment),
+            );
+    
+            if(matchingUtxo)
+            {
+                ownerLockingBytecode = owner;
+            }
+        });
+        await Promise.all(promises);
+    
+        if(!ownerLockingBytecode)
+        {
+            throw new Error('No owner found');
+        }
+    
+        const ownerAddress = await lockScriptToAddress(ownerLockingBytecode);
+    
+        return ownerAddress;
+    };
+    
+    // // Name to address
+    // // Returns the bitcoin cash address for the given name.
+    resolveNameByElectrum = async ({ baseHeight, token, ownerLockingBytecode }: ResolveNameByElectrumParams): Promise<string> =>
+    {
+    
+        let lookingForNewOwner = true;
+        while(lookingForNewOwner)
+        {
+            let foundTransferTxn = false;
+            // @ts-ignore
+            const scriptHash = await scriptToScripthash(ownerLockingBytecode);
+            // @ts-ignore
+            const scriptHashHistory = await this.networkProvider.electrum.request('blockchain.scripthash.get_history', scriptHash);
+    
+            // Capture the current value of baseHeight
+            const currentBaseHeight = baseHeight;
+            const filteredScriptHashHistory = scriptHashHistory.filter((entry: any) => entry.height > currentBaseHeight).reverse();
+    
+            if(filteredScriptHashHistory.length === 0)
+            {
+                lookingForNewOwner = false;
+            }
+    
+            for(const txn of filteredScriptHashHistory)
+            {
+                // @ts-ignore
+                const tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+                const decodedTx = decodeTransaction(hexToBin(tx));
+                if(decodedTx === null || typeof decodedTx === 'string')
+                {
+                    throw new Error('No valid base transaction found');
+                }
+                // @ts-ignore
+                for(const output of decodedTx.outputs)
+                {
+                    if(
+                        output.token
+                        // @ts-ignore
+                        && output.token.amount === token.amount
+                        // @ts-ignore
+                        && binToHex(output.token.category) === binToHex(token.category)
+                        // @ts-ignore
+                        && output.token.nft.capability === token.nft.capability
+                        // @ts-ignore
+                        && binToHex(output.token.nft.commitment) === binToHex(token.nft.commitment)
+                        // @ts-ignore
+                        && binToHex(output.lockingBytecode) !== binToHex(ownerLockingBytecode)
+                    )
+                    {
+                        // Assign the value of owner to the new owner.
+                        ownerLockingBytecode = output.lockingBytecode;
+                        // Set the height of the base transaction.
+                        baseHeight = txn.height;
+                        // Set this variable to true to break out of the loop. [Outputs]
+                        foundTransferTxn = true;
+                        break;
+                    }
+                }
+    
+                // If the transfer transaction is found then break out of the loop. [scriptHashHistory]
+                if(foundTransferTxn)
+                {
+                    break;
+                }
+    
+                lookingForNewOwner = false;
+            }
+        }
+    
+        // If not transaction then the owner still has the NFT.
+        // Go through the history and check the inputs for the spending of that token above.
+        // If it's found then check the output and repeat the process untill it's not spent.
+        // The last output is the owner.
+    
+        const ownerAddress = await lockScriptToAddress(binToHex(ownerLockingBytecode));
+    
+        return ownerAddress;
+    };
+    
+    resolveNameCore = async (
+        {
+            name,
+            useElectrum,
+            useChaingraph,
+        }: ResolveNameCoreParams,
+    ): Promise<any> =>
+    {
+        if(useElectrum && useChaingraph || !useElectrum && !useChaingraph)
+        {
+            throw new Error('Either useElectrum or useChaingraph must be true');
+        }
+    
+        const nameContract = constructNameContract({
+            name,
+            category: this.category,
+            tld: this.tld,
+            options: this.options,
+        });
+    
+        const [ history, utxos ] = await Promise.all([
+            // @ts-ignore
+            fetchHistory(this.networkProvider.electrum, nameContract.address),
+            // @ts-ignore
+            fetchUnspentTransactionOutputs(this.networkProvider.electrum, nameContract.address, false, true),
+        ]);
+    
+        const filteredUtxos = utxos
+        // @ts-ignore
+            .filter((utxo) => utxo.token_data.category === category && utxo.token_data.nft?.commitment !== '');
+    
+        if(filteredUtxos.length === 0)
+        {
+            throw new Error('No UTXOs found for the name');
+        }
+    
+        const validUtxo = filteredUtxos.reduce((prev, current) =>
+        {
+            // @ts-ignore
+            const prevCommitment = parseInt(prev.token_data.nft!.commitment, 16);
+            // @ts-ignore
+            const currentCommitment = parseInt(current.token_data.nft!.commitment, 16);
+    
+            return currentCommitment < prevCommitment ? current : prev;
+        });
+    
+        // @ts-ignore
+        const validRegistrationId = validUtxo.token_data.nft.commitment;
+    
+        let baseTransaction = null;
+        let baseHeight = 0;
+    
+        for(const txn of history)
+        {
+            // @ts-ignore
+            const tx = await fetchTransaction(this.networkProvider.electrum, txn.tx_hash);
+            const decodedTx = decodeTransaction(hexToBin(tx));
+    
+            if(typeof decodedTx === 'string')
+            {
+                continue;
+            }
+    
+            if(decodedTx.inputs.length !== 5
+                    || decodedTx.outputs.length !== 8
+                    || !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== this.category
+                    || !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== this.category
+                    || !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== this.category
+                    || !decodedTx.outputs[4].token?.category || binToHex(decodedTx.outputs[4].token.category) !== this.category
+                    || !decodedTx.outputs[5].token?.category || binToHex(decodedTx.outputs[5].token.category) !== this.category
+                    || decodedTx.outputs[2].token?.nft?.capability != 'minting'
+            )
+            {
+                continue;
+            }
+    
+            const registrationId = binToHex(decodedTx.outputs[5].token!.nft!.commitment).slice(0, 16);
+    
+            if(registrationId == validRegistrationId)
+            {
+                baseTransaction = decodedTx;
+                baseHeight = txn.height;
+                break;
+            }
+        }
+    
+        if(baseTransaction === null || typeof baseTransaction === 'string')
+        {
+            throw new Error('Name has not been auctioned yet');
+        }
+    
+        if(useChaingraph)
+        {
+            return this.resolveNameByChainGraph({ token: baseTransaction.outputs[5].token });
+        }
+    
+        let ownerLockingBytecode = baseTransaction.outputs[5].lockingBytecode;
+    
+        return this.resolveNameByElectrum({ baseHeight, token: baseTransaction.outputs[5].token, ownerLockingBytecode });
+    };
+    
+    
+    /**
+     * Retrieves all names associated with a given Bitcoin Cash address.
+     *
+     * This function queries the blockchain to find all UTXOs linked to the specified address
+     * and filters them to extract the names owned by the address.
+     *
+     * @param {LookupAddressRequest} params - The parameters for the lookup operation.
+     * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
+     */
+    lookupAddressCore = async ({
+        address,
+    }: LookupAddressCoreParams): Promise<LookupAddressCoreResponse> =>
+    {
+        // Look for all the UTXOs for the given address and filter the names.
+        const utxos = await this.networkProvider.getUtxos(address);
+    
+        const filteredUtxos = utxos.filter((utxo) => utxo.token?.category === this.category);
+    
+        const names = filteredUtxos.map((utxo) =>
+        {
+            const nameHex = utxo.token!.nft!.commitment.slice(16);
+    
+            return Buffer.from(nameHex, 'hex').toString('utf8');
+        });
+    
+        return { names };
+    };
+
 }

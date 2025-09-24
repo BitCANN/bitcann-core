@@ -1,4 +1,4 @@
-import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
+import type { Contract, Utxo } from 'cashscript';
 
 /**
  * Enum representing the various statuses a name can have.
@@ -56,21 +56,8 @@ export interface FetchClaimNameUtxosParams
  */
 export interface GetNameParams
 {
-	/** The category of the name. */
-	category: string;
-	/** The TLD of the name. */
-	tld: string;
 	/** The name of the name. */
 	name: string;
-	/** Additional options for the name contract. */
-	options: {
-		/** The type of address used. */
-		addressType: AddressType;
-		/** The network provider for blockchain interactions. */
-		provider: NetworkProvider;
-	};
-	/** The contract instance for the registry. */
-	registryContract: Contract;
 }
 
 /**

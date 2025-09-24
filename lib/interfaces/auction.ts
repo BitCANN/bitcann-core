@@ -87,29 +87,6 @@ export interface FetchAuctionUtxosResponse
 }
 
 /**
- * Parameters for retrieving all active auctions.
- */
-export interface GetAuctionsParams
-{
-	/**
-   * The category of the auctions.
-   */
-	category: string;
-	/**
-   * Contracts involved in the auctions.
-   */
-	contracts: Record<string, Contract>;
-	/**
-   * Network provider for BCH network operations.
-   */
-	networkProvider: NetworkProvider;
-	/**
-   * Electrum client for protocol events.
-   */
-	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
-}
-
-/**
  * Response type for retrieving all active auctions.
  */
 export interface GetAuctionsResponse
