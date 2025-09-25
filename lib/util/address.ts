@@ -1,13 +1,13 @@
 import {
+	addressContentsToLockingBytecode,
+	binToHex,
 	cashAddressToLockingBytecode,
+	decodeCashAddress,
 	encodeLockingBytecodeP2sh32,
-	lockingBytecodeToCashAddress,
 	hash256,
 	hexToBin,
-	binToHex,
-	decodeCashAddress,
-	addressContentsToLockingBytecode,
 	instantiateSha256,
+	lockingBytecodeToCashAddress,
 } from '@bitauth/libauth';
 
 /**

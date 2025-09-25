@@ -1,26 +1,8 @@
-import {
-	constructNameContract,
-	findBiggestUserUTXO,
-	findInternalAuthNFTUTXO,
-	findOwnershipNFTUTXO,
-	findAllRunningAuctionUtxos,
-	findAuthorizedContractUtxo,
-	findNameMintingUtxo,
-	findRegistrationUtxo,
-	findRunningAuctionUtxo,
-	findThreadUtxo,
-} from '../util/index.js';
+import { Contract, type NetworkProvider } from 'cashscript';
+import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
 import {
 	DuplicateAuctionsDoNotExistError,
 } from '../errors.js';
-import { findAnyUserUtxo, findExternalAuthUtxo, findThreadWithTokenUtxo } from '../util/utxo.js';
-import {
-	AccumulationUtxos,
-	FetchDuplicateAuctionGuardUtxosParams,
-	FetchDuplicateAuctionGuardUtxosResponse,
-	FetchIllegalAuctionGuardUtxosParams,
-	FetchIllegalAuctionGuardUtxosResponse,
-} from '../interfaces/index.js';
 import type {
 	FetchAuctionUtxosParams,
 	FetchAuctionUtxosResponse,
@@ -33,8 +15,26 @@ import type {
 	FetchRecordsUtxosParams,
 	FetchRecordsUtxosResponse,
 } from '../interfaces/index.js';
-import { MINIMAL_DEDUCTION_IN_AUCTION } from '../constants.js';
-import { type AddressType, Contract, type NetworkProvider } from 'cashscript';
+import {
+	AccumulationUtxos,
+	FetchDuplicateAuctionGuardUtxosParams,
+	FetchDuplicateAuctionGuardUtxosResponse,
+	FetchIllegalAuctionGuardUtxosParams,
+	FetchIllegalAuctionGuardUtxosResponse,
+} from '../interfaces/index.js';
+import {
+	constructNameContract,
+	findAllRunningAuctionUtxos,
+	findAuthorizedContractUtxo,
+	findBiggestUserUTXO,
+	findInternalAuthNFTUTXO,
+	findNameMintingUtxo,
+	findOwnershipNFTUTXO,
+	findRegistrationUtxo,
+	findRunningAuctionUtxo,
+	findThreadUtxo,
+} from '../util/index.js';
+import { findAnyUserUtxo, findExternalAuthUtxo, findThreadWithTokenUtxo } from '../util/utxo.js';
 
 /**
  * Utility class for fetching UTXOs required for various operations.
@@ -45,15 +45,13 @@ export class UtxoManager
 	contracts: Record<string, Contract>;
 	category: string;
 	tld: string;
-	options: { provider: NetworkProvider; addressType: AddressType };
 
-	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, category: string, tld: string, options: { provider: NetworkProvider; addressType: AddressType })
+	constructor(networkProvider: NetworkProvider, contracts: Record<string, Contract>, category: string, tld: string)
 	{
 		this.networkProvider = networkProvider;
 		this.contracts = contracts;
 		this.category = category;
 		this.tld = tld;
-		this.options = options;
 	}
 
 	/**
@@ -281,8 +279,8 @@ export class UtxoManager
 		const nameContract = constructNameContract({
 			name,
 			category: this.category,
+			provider: this.networkProvider,
 			tld: this.tld,
-			options: this.options,
 		});
 
 		const [ registryUtxos, guardUtxos, nameUtxos ] = await Promise.all([

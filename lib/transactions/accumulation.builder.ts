@@ -1,7 +1,7 @@
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
-import { adjustLastOutputForFee, createPlaceholderUnlocker } from '../util/index.js';
 import { AccumulateParams, AccumulationUtxos } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
+import { adjustLastOutputForFee, createPlaceholderUnlocker } from '../util/index.js';
 
 /**
  * Builder class for accumulation transactions.
@@ -27,11 +27,6 @@ export class AccumulationTransactionBuilder
 	 * The UTXO manager.
 	 */
 	utxoManager: UtxoManager;
-
-	/**
-	 * The UTXOs.
-	 */
-	utxos: AccumulationUtxos;
 
 	/**
 	 * Constructs a new AccumulationTransactionBuilder.

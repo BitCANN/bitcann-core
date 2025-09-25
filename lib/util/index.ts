@@ -1,83 +1,47 @@
 // Address utilities
 export {
-	convertAddressToPkh,
-	convertPkhToLockingBytecode,
+	addressToLockScript, buildLockScriptP2SH32, convertAddressToPkh, convertCashAddressToTokenAddress, convertPkhToLockingBytecode,
 	lockScriptToAddress,
-	buildLockScriptP2SH32,
-	addressToLockScript,
-	convertCashAddressToTokenAddress,
 } from './address.js';
 
 // Binary utilities
 export {
-	intToBytesToHex,
-	hexToInt,
-	pushDataHex,
-	extractOpReturnPayload,
-	padVmNumber,
+	extractOpReturnPayload, hexToInt, intToBytesToHex, padVmNumber, pushDataHex,
 } from './binary.js';
 
 // Price utilities
 export {
-	getCreatorIncentive,
-	getAuctionPrice,
+	getAuctionPrice, getCreatorIncentive,
 } from './price.js';
 
 // Name utilities
 export {
-	validateName,
-	findFirstInvalidCharacterIndex,
-	convertNameToBinaryAndHex,
+	convertNameToBinaryAndHex, findFirstInvalidCharacterIndex, validateName,
 } from './name.js';
 
 // UTXO utilities
 export {
-	findRegistrationUtxo,
-	findNameMintingUtxo,
-	findAllRunningAuctionUtxos,
-	findRunningAuctionUtxo,
-	findThreadUtxo,
-	findAuctionUtxo,
-	findAuthorizedContractUtxo,
-	findInternalAuthNFTUTXO,
-	findOwnershipNFTUTXO,
-	findBiggestUserUTXO,
-	generateSourceOutputs,
+	findAllRunningAuctionUtxos, findAuctionUtxo,
+	findAuthorizedContractUtxo, findBiggestUserUTXO, findInternalAuthNFTUTXO, findNameMintingUtxo, findOwnershipNFTUTXO, findRegistrationUtxo, findRunningAuctionUtxo,
+	findThreadUtxo, generateSourceOutputs,
 } from './utxo.js';
 
 // Transaction utilities
 export {
-	createPlaceholderUnlocker,
-	adjustLastOutputForFee,
-	isValidTransaction,
-	getValidCandidateTransactions,
-	extractRecordsFromTransaction,
-	createRegistrationId,
+	adjustLastOutputForFee, createPlaceholderUnlocker, createRegistrationId, extractRecordsFromTransaction, getValidCandidateTransactions, isValidTransaction,
 } from './transaction.js';
 
 // Contract utilities
 export {
-	constructNameContract,
+	constructContracts, constructNameContract,
 	getNamePartialBytecode,
-	constructContracts,
 } from './contract.js';
 
 // Sign utilities
 export {
-	GetWalletConnectTransactionParams,
-	GetWalletConnectTransactionResponse,
-	GetSignedTransactionParams,
-	GetSignedTransactionResponse,
-	SignTransactionParams,
+	getSignedTransaction, GetSignedTransactionParams,
+	GetSignedTransactionResponse, getWalletConnectTransaction, GetWalletConnectTransactionParams,
+	GetWalletConnectTransactionResponse, signTransaction, SignTransactionParams,
 	SignTransactionResponse,
-	getWalletConnectTransaction,
-	getSignedTransaction,
-	signTransaction,
 } from './sign.js';
 
-// Resolver utilities
-export {
-	lookupAddressCore,
-	resolveNameByChainGraph,
-	resolveNameCore,
-} from './resolver.js';

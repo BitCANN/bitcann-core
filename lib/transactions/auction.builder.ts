@@ -1,12 +1,12 @@
 import { binToHex } from '@bitauth/libauth';
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
-import { adjustLastOutputForFee } from '../util/transaction.js';
-import { convertAddressToPkh } from '../util/address.js';
-import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
-import { createPlaceholderUnlocker, padVmNumber, getAuctionPrice } from '../util/index.js';
+import { InvalidAuctionAmountError } from '../errors.js';
 import type { CreateAuctionCoreParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
-import { InvalidAuctionAmountError } from '../errors.js';
+import { convertAddressToPkh } from '../util/address.js';
+import { createPlaceholderUnlocker, getAuctionPrice, padVmNumber } from '../util/index.js';
+import { convertNameToBinaryAndHex, validateName } from '../util/name.js';
+import { adjustLastOutputForFee } from '../util/transaction.js';
 
 
 /**
@@ -85,7 +85,6 @@ export class AuctionTransactionBuilder
 
 		// Destructure the necessary UTXOs from the provided utxos object
 		const { threadNFTUTXO, registrationCounterUTXO, authorizedContractUTXO, userUTXO }: FetchAuctionUtxosResponse = utxos as FetchAuctionUtxosResponse;
-
 
 		const currentRegistrationId = parseInt(registrationCounterUTXO.token!.nft!.commitment, 16);
 

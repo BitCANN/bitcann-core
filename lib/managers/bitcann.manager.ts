@@ -1,27 +1,12 @@
+import type {
+	NetworkProvider,
+} from 'cashscript';
 import {
 	Contract,
 	ElectrumNetworkProvider,
 	TransactionBuilder,
 } from 'cashscript';
-import type {
-	AddressType,
-	NetworkProvider,
-} from 'cashscript';
 import { chaingraphURL } from '../config.js';
-import { NameService } from '../services/name.service.js';
-import { RegistryService } from '../services/registry.service.js';
-import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
-import { BidTransactionBuilder } from '../transactions/bid.builder.js';
-import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
-import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
-import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
-import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
-import { UtxoManager } from './utxo.manager.js';
-import {
-	constructContracts,
-	lookupAddressCore,
-	resolveNameCore,
-} from '../util/index.js';
 import type {
 	AccumulateParams,
 	CreateAuctionParams,
@@ -29,6 +14,7 @@ import type {
 	CreateClaimNameParams,
 	CreateRecordsParams,
 	GetAuctionsResponse,
+	GetNameParams,
 	GetRecordsParams,
 	LookupAddressParams,
 	ManagerConfig,
@@ -39,8 +25,18 @@ import type {
 	PenalizeInvalidNameParams,
 	ResolveNameParams,
 } from '../interfaces/index.js';
-import { LookupAddressCoreResponse } from '../interfaces/resolver.js';
+import { LookupAddressCoreResponse } from '../interfaces/index.js';
+import { NameService } from '../services/name.service.js';
+import { RegistryService } from '../services/registry.service.js';
+import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
+import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
+import { BidTransactionBuilder } from '../transactions/bid.builder.js';
+import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
+import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
+import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
+import { constructContracts } from '../util/contract.js';
 import type { ParsedRecordsInterface } from '../util/parser.js';
+import { UtxoManager } from './utxo.manager.js';
 
 
 export class BitcannManager
@@ -74,23 +70,19 @@ export class BitcannManager
 	 */
 	private creatorIncentiveAddress: string;
 	/**
-	 * The options for the name contract.
+	 * The Chaingraph URL to use for lookups.
 	 */
-	private options: { provider: NetworkProvider; addressType: AddressType };
+	private chaingraphUrl: string;
 	/**
 	 * The network provider to use for BCH network operations.
 	 */
 	private networkProvider: NetworkProvider;
 	/**
-	 * The Chaingraph URL to use for lookups.
-	 */
-	private chaingraphUrl: string;
-	/**
 	 * The contracts in the BitCANN system.
 	 */
 	private contracts: Record<string, Contract>;
 	/**
-	 * The UTXO manager for builders and 
+	 * The UTXO manager for builders and
 	 */
 	private utxoManager: UtxoManager;
 	/**
@@ -152,88 +144,18 @@ export class BitcannManager
 			this.networkProvider = new ElectrumNetworkProvider('mainnet');
 		}
 
-		// Options for contract construction, specifying the network provider and address type.
-		this.options = { provider: this.networkProvider, addressType: 'p2sh32' as AddressType };
+		this.contracts = constructContracts({ creatorIncentiveAddress: this.creatorIncentiveAddress, category: this.category, provider: this.networkProvider, tld: this.tld });
 
-		this.contracts = constructContracts({
-			creatorIncentiveAddress: this.creatorIncentiveAddress,
-			category: this.category,
-			options: this.options,
-			tld: this.tld,
-		});
+		this.utxoManager = new UtxoManager(this.networkProvider, this.contracts, this.category, this.tld);
 
-		this.utxoManager = new UtxoManager(
-			this.networkProvider,
-			this.contracts,
-			this.category,
-			this.tld,
-			this.options,
-		);
-
-		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(
-			this.networkProvider,
-			this.contracts,
-			this.category,
-			this.utxoManager,
-		);
-		this.claimNameTransactionBuilder = new ClaimNameTransactionBuilder(
-			this.networkProvider,
-			this.utxoManager,
-			this.contracts,
-			this.category,
-			this.tld,
-			this.options,
-			this.minWaitTime,
-			this.creatorIncentiveAddress,
-		);
-
-		this.auctionTransactionBuilder = new AuctionTransactionBuilder(
-			this.networkProvider,
-			this.contracts,
-			this.utxoManager,
-			this.minStartingBid,
-		);
-
-		this.bidTransactionBuilder = new BidTransactionBuilder(
-			this.networkProvider,
-			this.contracts,
-			this.utxoManager,
-			this.minBidIncreasePercentage,
-			this.category,
-		);
-
-		this.recordsTransactionBuilder = new RecordsTransactionBuilder(
-			this.networkProvider,
-			this.utxoManager,
-			this.category,
-			this.tld,
-			this.options,
-		);
-
-		this.penalisationTransactionBuilder = new PenalisationTransactionBuilder(
-			this.networkProvider,
-			this.contracts,
-			this.category,
-			this.tld,
-			this.options,
-			this.minWaitTime,
-			this.utxoManager,
-		);
-
-		this.nameService = new NameService(
-			this.networkProvider,
-			this.contracts,
-			this.category,
-			this.tld,
-			this.options,
-			this.chaingraphUrl,
-		);
-
-		this.registryService = new RegistryService(
-			this.networkProvider,
-			this.contracts,
-			this.category,
-		);
+		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.utxoManager);
+		this.claimNameTransactionBuilder = new ClaimNameTransactionBuilder(this.networkProvider, this.utxoManager, this.contracts, this.category, this.tld, this.minWaitTime, this.creatorIncentiveAddress);
+		this.auctionTransactionBuilder = new AuctionTransactionBuilder(this.networkProvider, this.contracts, this.utxoManager, this.minStartingBid);
+		this.bidTransactionBuilder = new BidTransactionBuilder(this.networkProvider, this.contracts, this.utxoManager, this.minBidIncreasePercentage, this.category);
+		this.recordsTransactionBuilder = new RecordsTransactionBuilder(this.networkProvider, this.utxoManager, this.category, this.tld, this.inactivityExpiryTime);
+		this.penalisationTransactionBuilder = new PenalisationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.tld, this.minWaitTime, this.utxoManager);
+		this.nameService = new NameService(this.networkProvider, this.contracts, this.category, this.tld, this.chaingraphUrl);
+		this.registryService = new RegistryService(this.networkProvider, this.contracts, this.category);
 	}
 
 	// *********************************************************************************
@@ -252,13 +174,13 @@ export class BitcannManager
 	 */
 	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
 	{
-		return this.nameService.fetchRecords({ name });
+		return this.nameService.getRecords({ name });
 	}
 
 	/**
 	 * Fetches all active auctions.
 	 *
-	 * @returns {Promise<Utxo[]>} A promise that resolves to an array of UTXOs representing active auctions.
+	 * @returns {Promise<GetAuctionsResponse[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
 	public async getAuctions(): Promise<GetAuctionsResponse[]>
 	{
@@ -271,7 +193,7 @@ export class BitcannManager
 	 * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
 	 * each containing a transaction hex and a name.
 	 */
-	public async getHistory(): Promise<PastAuctionResponse[]>
+	public async getPastAuctions(): Promise<PastAuctionResponse[]>
 	{
 		return this.registryService.getPastAuctions();
 	}
@@ -279,10 +201,11 @@ export class BitcannManager
 	/**
 	 * Retrieves detailed information about a specific name.
 	 *
-	 * @param {string} name - The name to retrieve information for.
+	 * @param {GetNameParams} params - The parameters for retrieving name information.
+	 * @param {string} params.name - The name to retrieve information for.
 	 * @returns {Promise<NameInfo>} A promise that resolves to an object containing the name's address and contract.
 	 */
-	public async getName(name: string): Promise<NameInfo>
+	public async getName({ name }: GetNameParams): Promise<NameInfo>
 	{
 		return this.nameService.getName({ name });
 	}
@@ -301,14 +224,8 @@ export class BitcannManager
 	 */
 	public async resolveName({ name, useElectrum, useChaingraph }: ResolveNameParams): Promise<string>
 	{
-		return resolveNameCore({
+		return this.nameService.resolveNameCore({
 			name,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-			// @ts-ignore
-			electrumClient: this.networkProvider.electrum,
-			chaingraphUrl: this.chaingraphUrl,
 			useElectrum,
 			useChaingraph,
 		});
@@ -326,9 +243,7 @@ export class BitcannManager
 	 */
 	public async lookupAddress({ address }: LookupAddressParams): Promise<LookupAddressCoreResponse>
 	{
-		return lookupAddressCore({
-			networkProvider: this.networkProvider,
-			category: this.category,
+		return this.nameService.lookupAddressCore({
 			address,
 		});
 	}

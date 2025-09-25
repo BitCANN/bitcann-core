@@ -1,6 +1,4 @@
-import type { ElectrumClient } from '@electrum-cash/network';
-import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
-import type { AddressType, Contract, NetworkProvider, Utxo } from 'cashscript';
+import type { Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
  * Parameters required to retrieve name records.
@@ -39,15 +37,6 @@ export interface CreateRecordsCoreParams
 	records: string[];
 	/** UTXOs required for the records creation process. */
 	utxos?: FetchRecordsUtxosResponse;
-}
-
-/**
- * Parameters required to fetch records.
- */
-export interface FetchRecordsParams
-{
-	/** The name associated with the records. */
-	name: string;
 }
 
 /**

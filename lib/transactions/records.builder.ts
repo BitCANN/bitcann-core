@@ -1,12 +1,12 @@
-import { AddressType, type NetworkProvider, TransactionBuilder } from 'cashscript';
+import { type Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
+import { CreateRecordsCoreParams } from '../interfaces/index.js';
+import { UtxoManager } from '../managers/utxo.manager.js';
 import {
 	adjustLastOutputForFee,
 	constructNameContract,
 	convertCashAddressToTokenAddress,
 	createPlaceholderUnlocker,
 } from '../util/index.js';
-import { CreateRecordsCoreParams } from '../interfaces/index.js';
-import { UtxoManager } from '../managers/utxo.manager.js';
 
 
 /**
@@ -17,27 +17,27 @@ export class RecordsTransactionBuilder
 	/**
 	 * The network provider.
 	 */
-	networkProvider: NetworkProvider;
+	private networkProvider: NetworkProvider;
 
 	/**
 	 * The UTXO manager.
 	 */
-	utxoManager: UtxoManager;
+	private utxoManager: UtxoManager;
 
 	/**
 	 * The category.
 	 */
-	category: string;
+	private category: string;
 
 	/**
 	 * The TLD.
 	 */
-	tld: string;
+	private tld: string;
 
 	/**
-	 * The options.
+	 * The min expiry time for a name to expire due to inactivity
 	 */
-	options: { provider: NetworkProvider; addressType: AddressType };
+	private inactivityExpiryTime: number;
 
 	/**
 	 * Constructs a new RecordsTransactionBuilder.
@@ -46,16 +46,25 @@ export class RecordsTransactionBuilder
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
 	 * @param {string} category - The category.
 	 * @param {string} tld - The TLD.
-	 * @param {object} options - The options.
 	 */
-	constructor(networkProvider: NetworkProvider, utxoManager: UtxoManager, category: string, tld: string, options: { provider: NetworkProvider; addressType: AddressType })
+	constructor(networkProvider: NetworkProvider, utxoManager: UtxoManager, category: string, tld: string, inactivityExpiryTime: number)
 	{
 		this.networkProvider = networkProvider;
 		this.utxoManager = utxoManager;
 		this.category = category;
 		this.tld = tld;
-		this.options = options;
+		this.inactivityExpiryTime = inactivityExpiryTime;
 	}
+
+	getNameContract = (name: string): Contract =>
+	{
+		return constructNameContract({
+			name: name,
+			category: this.category,
+			tld: this.tld,
+			provider: this.networkProvider,
+		});
+	};
 
 	/**
 	 * Creates a transaction for adding a record to a name.
@@ -70,13 +79,8 @@ export class RecordsTransactionBuilder
 		utxos,
 	}: CreateRecordsCoreParams): Promise<TransactionBuilder> =>
 	{
-		const nameContract = constructNameContract({
-			name: name,
-			category: this.category,
-			tld: this.tld,
-			options: this.options,
-		});
-	
+		const nameContract = this.getNameContract(name);
+
 		if(!utxos)
 		{
 			utxos = await this.utxoManager.fetchRecordsUtxos({
@@ -131,5 +135,27 @@ export class RecordsTransactionBuilder
 		});
 
 		return adjustLastOutputForFee(transaction, fundingUTXO);
+	};
+
+	expireName = async (name: string): Promise<Contract> =>
+	{
+		const nameContract = this.getNameContract(name);
+
+		return nameContract;
+	};
+
+	buildResolveOwnershipConflictTransaction = (): void =>
+	{
+
+	};
+
+	buildRenounceOwnershipTransaction = (): void =>
+	{
+
+	};
+
+	buildPenaliseInvalidNameTransaction = (): void =>
+	{
+
 	};
 }

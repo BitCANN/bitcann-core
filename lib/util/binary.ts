@@ -1,4 +1,4 @@
-import { numberToBinUint16BE, hexToBin, binToHex, padMinimallyEncodedVmNumber, bigIntToVmNumber } from '@bitauth/libauth';
+import { bigIntToVmNumber, binToHex, hexToBin, numberToBinUint16BE, padMinimallyEncodedVmNumber } from '@bitauth/libauth';
 
 /**
  * Converts an integer to a hexadecimal string representation of a byte array with a specified length.

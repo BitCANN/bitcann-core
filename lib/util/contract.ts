@@ -1,7 +1,8 @@
 import { binToHex, hexToBin } from '@bitauth/libauth';
-import type { AddressType, NetworkProvider } from 'cashscript';
-import { Contract } from 'cashscript';
 import { BitCANNArtifacts } from '@bitcann/contracts';
+import type { NetworkProvider } from 'cashscript';
+import { Contract } from 'cashscript';
+import { ADDRESS_TYPE } from '../constants.js';
 import { convertAddressToPkh } from './address.js';
 
 
@@ -17,7 +18,7 @@ import { convertAddressToPkh } from './address.js';
 export const constructNameContract = (params: {
 	name: string;
 	category: string;
-	options: { provider: NetworkProvider; addressType: AddressType };
+	provider: NetworkProvider;
 	tld: string;
 }): Contract =>
 {
@@ -36,7 +37,7 @@ export const constructNameContract = (params: {
 	return new Contract(
 		BitCANNArtifacts.Name,
 		[ nameHex, placeTLDHex, reversedCategory ],
-		params.options,
+		{ provider: params.provider, addressType: ADDRESS_TYPE },
 	);
 };
 
@@ -46,10 +47,9 @@ export const constructNameContract = (params: {
  * @param {string} category - The category identifier for the name.
  * @param {Object} options - The options for constructing the Name contract.
  * @param {NetworkProvider} options.provider - The network provider.
- * @param {AddressType} options.addressType - The address type.
  * @returns {string} The partial bytecode of the Name contract.
  */
-export const getNamePartialBytecode = (params: { category: string; options: { provider: NetworkProvider; addressType: AddressType }; tld: string }): string =>
+export const getNamePartialBytecode = (params: { category: string; provider: NetworkProvider; tld: string }): string =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(params.category).reverse());
@@ -66,7 +66,7 @@ export const getNamePartialBytecode = (params: { category: string; options: { pr
 		.join('');
 
 	// Construct a placeholder name contract to extract partial bytecode.
-	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], params.options);
+	const PlaceholderNameContract = new Contract(BitCANNArtifacts.Name, [ placeholderNameHex, placeTLDHex, reversedCategory ], { provider: params.provider, addressType: ADDRESS_TYPE });
 	const sliceIndex = 2 + 64 + 2 + placeholderName.length * 2 + 2 + placeTLD.length * 2;
 	const namePartialBytecode = PlaceholderNameContract.bytecode.slice(sliceIndex, PlaceholderNameContract.bytecode.length);
 
@@ -83,24 +83,56 @@ export const getNamePartialBytecode = (params: { category: string; options: { pr
 export const constructContracts = (params: {
 	creatorIncentiveAddress: string;
 	category: string;
-	options: { provider: NetworkProvider; addressType: AddressType };
+	provider: NetworkProvider;
 	tld: string;
 }): { [key: string]: Contract } =>
 {
 	// Reverse the category bytes for use in contract parameters.
 	const reversedCategory = binToHex(hexToBin(params.category).reverse());
 
-	const namePartialBytecode = getNamePartialBytecode({ category: params.category, options: params.options, tld: params.tld });
+	const namePartialBytecode = getNamePartialBytecode({ category: params.category, provider: params.provider, tld: params.tld });
 
 	// Return an object containing all the constructed contracts.
 	return {
-		Accumulator: new Contract(BitCANNArtifacts.Accumulator, [], params.options),
-		Auction: new Contract(BitCANNArtifacts.Auction, [], params.options),
-		ConflictResolver: new Contract(BitCANNArtifacts.ConflictResolver, [], params.options),
-		NameEnforcer: new Contract(BitCANNArtifacts.NameEnforcer, [], params.options),
-		Bid: new Contract(BitCANNArtifacts.Bid, [], params.options),
-		Factory: new Contract(BitCANNArtifacts.Factory, [ namePartialBytecode, convertAddressToPkh(params.creatorIncentiveAddress) ], params.options),
-		OwnershipGuard: new Contract(BitCANNArtifacts.OwnershipGuard, [ namePartialBytecode ], params.options),
-		Registry: new Contract(BitCANNArtifacts.Registry, [ reversedCategory ], params.options),
+		Accumulator: new Contract(
+			BitCANNArtifacts.Accumulator,
+			[],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		Auction: new Contract(
+			BitCANNArtifacts.Auction,
+			[],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		ConflictResolver: new Contract(
+			BitCANNArtifacts.ConflictResolver,
+			[],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		NameEnforcer: new Contract(
+			BitCANNArtifacts.NameEnforcer,
+			[],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		Bid: new Contract(
+			BitCANNArtifacts.Bid,
+			[],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		Factory: new Contract(
+			BitCANNArtifacts.Factory,
+			[ namePartialBytecode, convertAddressToPkh(params.creatorIncentiveAddress) ],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		OwnershipGuard: new Contract(
+			BitCANNArtifacts.OwnershipGuard,
+			[ namePartialBytecode ],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
+		Registry: new Contract(
+			BitCANNArtifacts.Registry,
+			[ reversedCategory ],
+			{ provider: params.provider, addressType: ADDRESS_TYPE },
+		),
 	};
 };

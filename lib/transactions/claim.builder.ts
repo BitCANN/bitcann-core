@@ -1,5 +1,9 @@
 import { binToHex, lockingBytecodeToCashAddress } from '@bitauth/libauth';
 import { type AddressType, Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
+import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
+import { InvalidPrevBidderAddressError } from '../errors.js';
+import type { CreateClaimNameParams } from '../interfaces/index.js';
+import { UtxoManager } from '../managers/utxo.manager.js';
 import {
 	constructNameContract,
 	convertCashAddressToTokenAddress,
@@ -9,10 +13,6 @@ import {
 	getCreatorIncentive,
 	validateName,
 } from '../util/index.js';
-import type { CreateClaimNameParams } from '../interfaces/index.js';
-import { InvalidPrevBidderAddressError } from '../errors.js';
-import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
-import { UtxoManager } from '../managers/utxo.manager.js';
 
 
 /**
@@ -68,7 +68,6 @@ export class ClaimNameTransactionBuilder
 	 * @param {string} category - The token category.
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
 	 * @param {string} tld - The TLD of the name.
-	 * @param {object} options - The options for the name contract.
 	 * @param {number} minWaitTime - The minimum wait time for the transaction.
 	 * @param {string} creatorIncentiveAddress - The creator incentive address.
 	 */
@@ -78,7 +77,6 @@ export class ClaimNameTransactionBuilder
 		contracts: Record<string, Contract>,
 		category: string,
 		tld: string,
-		options: { provider: NetworkProvider; addressType: AddressType },
 		minWaitTime: number,
 		creatorIncentiveAddress: string,
 	)
@@ -88,7 +86,6 @@ export class ClaimNameTransactionBuilder
 		this.category = category;
 		this.utxoManager = utxoManager;
 		this.tld = tld;
-		this.options = options;
 		this.minWaitTime = minWaitTime;
 		this.creatorIncentiveAddress = creatorIncentiveAddress;
 	}
@@ -141,7 +138,7 @@ export class ClaimNameTransactionBuilder
 			name,
 			category: this.category,
 			tld: this.tld,
-			options: this.options,
+			provider: this.networkProvider,
 		});
 
 		const registrationId = createRegistrationId(runningAuctionUTXO);

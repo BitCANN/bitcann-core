@@ -1,9 +1,9 @@
 import { binToHex, cashAddressToLockingBytecode, lockingBytecodeToCashAddress } from '@bitauth/libauth';
-import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import type { LibauthOutput, NetworkProvider, UnlockableUtxo, Utxo } from 'cashscript';
+import { cashScriptOutputToLibauthOutput } from 'cashscript/dist/utils.js';
 import {
-	AuthorizedContractUTXONotFoundError,
 	AuctionUTXONotFoundError,
+	AuthorizedContractUTXONotFoundError,
 	ExternalAuthNFTUTXONotFoundError,
 	FundingUTXONotFoundError,
 	InternalAuthNFTUTXONotFoundError,

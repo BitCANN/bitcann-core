@@ -1,4 +1,4 @@
-import type { AddressType, NetworkProvider, Utxo } from 'cashscript';
+import type { Contract, NetworkProvider, Utxo } from 'cashscript';
 
 /**
  * Parameters for fetching UTXOs related to duplicate auction guards.
@@ -7,12 +7,6 @@ export interface FetchDuplicateAuctionGuardUtxosParams
 {
 	/** The name of the auction. */
 	name: string;
-	/** The category of the auction. */
-	category: string;
-	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
-	/** Additional options including provider and address type. */
-	options: { provider: NetworkProvider; addressType: AddressType };
 }
 
 /**
@@ -37,14 +31,6 @@ export interface FetchIllegalAuctionGuardUtxosParams
 {
 	/** The name of the auction. */
 	name: string;
-	/** The category of the auction. */
-	category: string;
-	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
-	/** The TLD of the auction. */
-	tld: string;
-	/** Additional options including provider and address type. */
-	options: { provider: NetworkProvider; addressType: AddressType };
 }
 
 /**
@@ -74,7 +60,7 @@ export interface FetchInvalidNameGuardUtxosParams
 	/** The network provider for blockchain interactions. */
 	networkProvider: NetworkProvider;
 	/** The contracts involved in the auction. */
-	contracts: Record<string, any>;
+	contracts: Record<string, Contract>;
 }
 
 /**

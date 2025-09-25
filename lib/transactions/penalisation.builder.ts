@@ -1,8 +1,8 @@
-import { type AddressType, Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
-import { PenaliseDuplicateAuctionCoreParams, PenalizeInvalidNameCoreParams, PenaliseIllegalAuctionCoreParams } from '../interfaces/index.js';
-import { constructNameContract, findFirstInvalidCharacterIndex, adjustLastOutputForFee } from '../util/index.js';
+import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { AuctionNameDoesNotContainInvalidCharacterError } from '../errors.js';
+import { PenaliseDuplicateAuctionCoreParams, PenaliseIllegalAuctionCoreParams, PenalizeInvalidNameCoreParams } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
+import { adjustLastOutputForFee, constructNameContract, findFirstInvalidCharacterIndex } from '../util/index.js';
 
 
 /**
@@ -27,10 +27,6 @@ export class PenalisationTransactionBuilder
 	 */
 	tld: string;
 	/**
-	 * The options.
-	 */
-	options: { provider: NetworkProvider; addressType: AddressType };
-	/**
 	 * The minimum wait time.
 	 */
 	minWaitTime: number;
@@ -47,7 +43,6 @@ export class PenalisationTransactionBuilder
 	 * @param {Record<string, Contract>} contracts - The contracts used in the transaction.
 	 * @param {string} category - The category.
 	 * @param {string} tld - The TLD.
-	 * @param {object} options - The options.
 	 * @param {number} minWaitTime - The minimum wait time.
 	 */
 	constructor(
@@ -55,7 +50,6 @@ export class PenalisationTransactionBuilder
 		contracts: Record<string, Contract>,
 		category: string,
 		tld: string,
-		options: { provider: NetworkProvider; addressType: AddressType },
 		minWaitTime: number,
 		utxoManager: UtxoManager,
 	)
@@ -64,7 +58,6 @@ export class PenalisationTransactionBuilder
 		this.contracts = contracts;
 		this.category = category;
 		this.tld = tld;
-		this.options = options;
 		this.minWaitTime = minWaitTime;
 		this.utxoManager = utxoManager;
 	}
@@ -83,12 +76,7 @@ export class PenalisationTransactionBuilder
 	{
 		if(!utxos)
 		{
-			utxos = await this.utxoManager.fetchDuplicateAuctionGuardUtxos({
-				name,
-				category: this.category,
-				contracts: this.contracts,
-				options: this.options,
-			});
+			utxos = await this.utxoManager.fetchDuplicateAuctionGuardUtxos({ name });
 		}
 		const { threadNFTUTXO, authorizedContractUTXO, runningValidAuctionUTXO, runningInValidAuctionUTXO } = utxos;
 
@@ -151,20 +139,14 @@ export class PenalisationTransactionBuilder
 	{
 		if(!utxos)
 		{
-			utxos = await this.utxoManager.fetchIllegalAuctionGuardUtxos({
-				name,
-				category: this.category,
-				contracts: this.contracts,
-				tld: this.tld,
-				options: this.options,
-			});
+			utxos = await this.utxoManager.fetchIllegalAuctionGuardUtxos({ name });
 		}
 
 		const nameContract = constructNameContract({
 			name,
 			category: this.category,
 			tld: this.tld,
-			options: this.options,
+			provider: this.networkProvider,
 		});
 
 		const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO, externalAuthUTXO } = utxos;

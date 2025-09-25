@@ -1,18 +1,18 @@
 
 import {
+	binToHex,
+	decodeTransaction,
 	encodeTransaction,
 	generateSigningSerializationBCH,
 	generateTransaction,
 	hash256,
+	hexToBin,
+	importWalletTemplate,
 	secp256k1,
 	sha256,
 	SigningSerializationFlag,
-	walletTemplateToCompilerBCH,
-	importWalletTemplate,
 	walletTemplateP2pkhNonHd,
-	binToHex,
-	hexToBin,
-	decodeTransaction,
+	walletTemplateToCompilerBCH,
 	type TransactionCommon,
 } from '@bitauth/libauth';
 import { TransactionBuilder } from 'cashscript';

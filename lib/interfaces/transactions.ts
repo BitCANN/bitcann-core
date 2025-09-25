@@ -1,6 +1,6 @@
-import { Contract } from 'cashscript';
-import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import type { ElectrumClient } from '@electrum-cash/network';
+import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
+import { Contract } from 'cashscript';
 
 /**
  * Parameters for fetching valid candidate transactions.

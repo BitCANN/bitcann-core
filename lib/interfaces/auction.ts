@@ -1,6 +1,6 @@
 import { ElectrumClient } from '@electrum-cash/network';
 import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
-import type { Contract, NetworkProvider, Utxo } from 'cashscript';
+import type { Contract, Utxo } from 'cashscript';
 
 /**
  * Parameters required to create an auction.

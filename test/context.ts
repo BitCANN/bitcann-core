@@ -1,5 +1,5 @@
-import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import type { ElectrumClient } from '@electrum-cash/network';
+import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
 import { initializeElectrumClient } from '@electrum-cash/protocol';
 
 let electrumClient: any;

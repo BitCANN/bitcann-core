@@ -1,13 +1,13 @@
-import { hash160 } from '@cashscript/utils';
 import {
-	deriveHdPrivateNodeFromSeed,
 	deriveHdPath,
-	secp256k1,
-	encodeCashAddress,
+	deriveHdPrivateNodeFromSeed,
 	deriveSeedFromBip39Mnemonic,
+	encodeCashAddress,
+	secp256k1,
 } from '@bitauth/libauth';
-import type { ManagerConfig } from '../lib/interfaces';
+import { hash160 } from '@cashscript/utils';
 import { SignatureTemplate } from 'cashscript';
+import type { ManagerConfig } from '../lib/interfaces';
 
 export const nameTokenCategory = '98570f00cad2991de0ab25f14ffae29a0c61da97ba6d466acbc8476e2e612ada';
 

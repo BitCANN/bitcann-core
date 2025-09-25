@@ -1,10 +1,10 @@
-import type { Utxo, Unlocker, Contract } from 'cashscript';
-import { TransactionBuilder } from 'cashscript';
-import { binToHex, decodeTransaction, hexToBin, cashAddressToLockingBytecode } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, decodeTransaction, hexToBin } from '@bitauth/libauth';
 import { fetchTransaction } from '@electrum-cash/protocol';
+import type { Contract, Unlocker, Utxo } from 'cashscript';
+import { TransactionBuilder } from 'cashscript';
+import type { GetValidCandidateTransactionsParams } from '../interfaces/index.js';
 import { convertAddressToPkh, convertPkhToLockingBytecode } from './address.js';
 import { extractOpReturnPayload } from './binary.js';
-import type { GetValidCandidateTransactionsParams } from '../interfaces/index.js';
 
 /**
  * Creates a placeholder unlocker for a given address.

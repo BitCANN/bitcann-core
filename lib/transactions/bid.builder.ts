@@ -1,11 +1,11 @@
 import { binToHex } from '@bitauth/libauth';
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { InvalidBidAmountError } from '../errors.js';
-import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, validateName } from '../util/index.js';
-import { convertAddressToPkh, toCashaddr } from '../util/address.js';
 import type { CreateBidCoreParams } from '../interfaces/index.js';
-import { getMinimumBidAmount } from '../util/price.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
+import { convertAddressToPkh, toCashaddr } from '../util/address.js';
+import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, validateName } from '../util/index.js';
+import { getMinimumBidAmount } from '../util/price.js';
 
 
 /**
@@ -84,7 +84,7 @@ export class BidTransactionBuilder
 				amount,
 			});
 		}
-		
+
 		const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO, fundingUTXO } = utxos;
 
 		if(BigInt(amount) < getMinimumBidAmount(BigInt(runningAuctionUTXO.satoshis), BigInt(this.minBidIncreasePercentage)))
