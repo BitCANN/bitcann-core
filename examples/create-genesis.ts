@@ -1,20 +1,20 @@
-import { cashAddressToLockingBytecode, binToHex } from '@bitauth/libauth';
-import { NFTCapability, SendRequest, TokenMintRequest, TokenSendRequest, Wallet } from 'mainnet-js'
-import { BitcannManager } from "../lib/index.js";
+import { binToHex, cashAddressToLockingBytecode } from '@bitauth/libauth';
 import { ElectrumNetworkProvider } from "cashscript";
+import { NFTCapability, SendRequest, TokenMintRequest, TokenSendRequest, Wallet } from 'mainnet-js';
+import { BitcannManager } from "../lib/index.js";
 
 import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  nameTokenCategory,
-  minStartingBid,
-  minBidIncreasePercentage,
-  inactivityExpiryTime,
-  minWaitTime,
-  creatorIncentiveAddress,
-  genesisTokenAmount,
-  tld,
+	genesisIncentiveAddress,
+	genesisTokenAmount,
+	inactivityExpiryTime,
+	minBidIncreasePercentage,
+	minStartingBid,
+	minWaitTime,
+	nameTokenCategory,
+	tld,
 } from './common/config.js';
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
@@ -25,7 +25,7 @@ const bitcannManager = new BitcannManager({
 	minBidIncreasePercentage: minBidIncreasePercentage,
 	inactivityExpiryTime: inactivityExpiryTime,
 	minWaitTime: minWaitTime,
-	creatorIncentiveAddress: creatorIncentiveAddress,
+	genesisIncentiveAddress,
 	tld: tld,
 	networkProvider: networkProvider,
 });
@@ -42,7 +42,7 @@ const getWallet = async () => {
 
 const createSuitableUTXO = async () => {
   const wallet = await getWallet();
-  
+
   if (!wallet.cashaddr) {
     throw new Error('Cashaddr is not set');
   }
@@ -136,7 +136,7 @@ const createMintingSetup = async () => {
     console.log('No minting NFT found');
     return;
   }
-  
+
   const tokenId = mintingUtxo.token?.tokenId;
   const amount = mintingUtxo.token?.amount;
   const capability = mintingUtxo.token?.capability;
@@ -172,4 +172,3 @@ const createMintingSetup = async () => {
 
     // Once this is done, you are ready to go!
   })();
-  

@@ -209,13 +209,12 @@ export const findAllRunningAuctionUtxos = ({ name, utxos, category }: { name: st
  */
 export const findRunningAuctionUtxo = (params: { name: string; utxos: Utxo[]; category: string }): Utxo =>
 {
-	const auctionUtxo = findAllRunningAuctionUtxos(params)
-		.reduce<Utxo | null>((prev, current) =>
-		{
-			if(!prev) return current;
+	const auctionUtxo = findAllRunningAuctionUtxos(params).reduce<Utxo | null>((prev, current) =>
+	{
+		if(!prev) return current;
 
-			return (prev.token!.amount < current.token!.amount) ? prev : current;
-		}, null);
+		return (prev.token!.amount < current.token!.amount) ? prev : current;
+	}, null);
 
 	if(!auctionUtxo)
 	{

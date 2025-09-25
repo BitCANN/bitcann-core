@@ -24,7 +24,7 @@ import type {
 	PenaliseDuplicateAuctionParams,
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
-	ResolveNameParams
+	ResolveNameParams,
 } from '../interfaces/index.js';
 import { NameService } from '../services/name.service.js';
 import { RegistryService } from '../services/registry.service.js';
@@ -80,7 +80,7 @@ export class BitcannManager
 	/**
 	 * The contracts in the BitCANN system.
 	 */
-	private contracts: Record<string, Contract>;
+	public contracts: Record<string, Contract>;
 	/**
 	 * The UTXO manager for builders and
 	 */
@@ -166,7 +166,7 @@ export class BitcannManager
 	 */
 	public async getRecords(params: GetRecordsParams): Promise<ParsedRecords>
 	{
-		return await this.nameService.getRecords(params);
+		return this.nameService.getRecords(params);
 	}
 
 	/**
@@ -175,7 +175,7 @@ export class BitcannManager
 	 */
 	public async getActiveAuctions(): Promise<ActiveAuctionsResponse[]>
 	{
-		return await this.registryService.getActiveAuctions();
+		return this.registryService.getActiveAuctions();
 	}
 
 	/**
@@ -185,7 +185,7 @@ export class BitcannManager
 	 */
 	public async getPastAuctions(): Promise<PastAuctionResponse[]>
 	{
-		return await this.registryService.getPastAuctions();
+		return this.registryService.getPastAuctions();
 	}
 
 	/**
@@ -196,14 +196,11 @@ export class BitcannManager
 	 */
 	public async getName(params: GetNameParams): Promise<NameInfo>
 	{
-		return await this.nameService.getName(params);
+		return this.nameService.getName(params);
 	}
 
 	/**
-	 * @description Resolves a name to its associated address.
-	 *
-	 * This function uses either the Electrum or Chaingraph method to resolve the name
-	 * based on the provided parameters.
+	 * @description Resolves a name to its associated address. This function uses either the Electrum or Chaingraph method to resolve the name based on the provided parameters.
 	 * @param {ResolveNameParams} params - The parameters for resolving the name.
 	 * @param {string} params.name - The name to resolve.
 	 * @param {boolean} [params.useElectrum] - Whether to use the Electrum method for resolution.
@@ -212,22 +209,19 @@ export class BitcannManager
 	 */
 	public async resolveName(params: ResolveNameParams): Promise<string>
 	{
-		return await this.nameService.resolveNameCore(params);
+		return this.nameService.resolveNameCore(params);
 	}
 
 	/**
-	 * @description Looks up all names associated with a given address.
-	 * This function queries the blockchain to find all UTXOs linked to the specified address
+	 * @description Looks up all names associated with a given address. This function queries the blockchain to find all UTXOs linked to the specified address
 	 * and filters them to extract the names owned by the address.
 	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
 	 * @param {string} params.address - The address to look up names for.
 	 * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
-	 * @throws {Error} If no UTXOs are found for the address.
-	 * @throws {Error} If no names are found for the address.
 	 */
 	public async lookupAddress(params: LookupAddressParams): Promise<LookupAddressResponse>
 	{
-		return await this.nameService.lookupAddress(params);
+		return this.nameService.lookupAddress(params);
 	}
 
 	/**
@@ -235,11 +229,9 @@ export class BitcannManager
 	 * @param {CreateAuctionParams} params - The parameters required for the auction transaction.
 	 * @param {string} params.name - The name to be auctioned.
 	 * @param {number} params.amount - The initial amount for the auction.
-	 * @param {string} params.address - The address associated with the auction.
+	 * @param {string} params.address - The p2pkh address interested in the auction.
 	 * @param {FetchAuctionUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the auction transaction.
-	 * @throws {InvalidNameError} If the provided name is invalid.
-	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
 	public async buildAuctionTransaction(params: CreateAuctionParams): Promise<TransactionBuilder>
 	{
@@ -254,8 +246,6 @@ export class BitcannManager
 	 * @param {string} params.address - The address of the bidder.
 	 * @param {FetchBidUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object representing the bid transaction.
-	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
-	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
 	 */
 	public async buildBidTransaction(params: CreateBidParams): Promise<TransactionBuilder>
 	{
@@ -264,12 +254,9 @@ export class BitcannManager
 
 	/**
 	 * @description Creates a transaction to claim a name.
-	 *
 	 * @param {CreateClaimNameParams} params - The parameters for claiming the name.
 	 * @param {string} params.name - The name to claim.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for claiming the name.
-	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
-	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
 	public async buildClaimNameTransaction(params: CreateClaimNameParams): Promise<TransactionBuilder>
 	{
@@ -340,7 +327,6 @@ export class BitcannManager
 	 * If not provided, they will be fetched automatically.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object
 	 * representing the constructed transaction for the accumulation process.
-	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
 	public async buildAccumulateTokensTransaction(params: AccumulateParams): Promise<TransactionBuilder>
 	{

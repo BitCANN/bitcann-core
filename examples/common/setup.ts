@@ -2,13 +2,13 @@ import { ElectrumNetworkProvider } from "cashscript";
 import { BitcannManager } from "../../lib/index.js";
 
 import {
-  nameTokenCategory,
-  minStartingBid,
-  minBidIncreasePercentage,
-  inactivityExpiryTime,
-  minWaitTime,
-  creatorIncentiveAddress,
-  tld,
+	genesisIncentiveAddress,
+	inactivityExpiryTime,
+	minBidIncreasePercentage,
+	minStartingBid,
+	minWaitTime,
+	nameTokenCategory,
+	tld,
 } from './config.js';
 
 const networkProvider = new ElectrumNetworkProvider('mainnet');
@@ -19,7 +19,7 @@ const bitcannManager = new BitcannManager({
 	minBidIncreasePercentage: minBidIncreasePercentage,
 	inactivityExpiryTime: inactivityExpiryTime,
 	minWaitTime: minWaitTime,
-	creatorIncentiveAddress: creatorIncentiveAddress,
+	genesisIncentiveAddress: genesisIncentiveAddress,
 	networkProvider: networkProvider,
 	tld: tld,
 });

@@ -5,7 +5,7 @@ import {
 
 (async () =>
 {
-	const history = await bitcannManager.getHistory();
+	const history = await bitcannManager.getPastAuctions();
 
 	console.log(history);
 })();

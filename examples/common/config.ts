@@ -6,18 +6,12 @@ const minStartingBid = 10000;
 const minBidIncreasePercentage = 5;
 const inactivityExpiryTime = 4194305;
 const minWaitTime = 4194306;
-const creatorIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
+const genesisIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
 const tld = '.bch';
 
 const genesisTokenAmount = BigInt('9223372036854775807');
 
 export {
-  nameTokenCategory,
-  minStartingBid,
-  minBidIncreasePercentage,
-  inactivityExpiryTime,
-  minWaitTime,
-  creatorIncentiveAddress,
-  genesisTokenAmount,
-  tld,
-}
+	genesisIncentiveAddress,
+	genesisTokenAmount, inactivityExpiryTime, minBidIncreasePercentage, minStartingBid, minWaitTime, nameTokenCategory, tld
+};

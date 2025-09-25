@@ -8,7 +8,7 @@ import type {
 	LookupAddressResponse,
 	ResolveNameByChainGraphParams,
 	ResolveNameByElectrumParams,
-	ResolveNameParams
+	ResolveNameParams,
 } from '../interfaces/resolver.js';
 import { scriptToScripthash } from '../util/address.js';
 import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
@@ -456,26 +456,22 @@ export class NameService
 
 
 	/**
-     * Retrieves all names associated with a given Bitcoin Cash address.
-     *
-     * This function queries the blockchain to find all UTXOs linked to the specified address
-     * and filters them to extract the names owned by the address.
-     *
-     * @param {LookupAddressParams} params - The parameters for the lookup operation.
-     * @param {string} params.address - The address to look up names for.
-     * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
-     * @throws {Error} If no UTXOs are found for the address.
-     * @throws {Error} If no names are found for the address.
-     */
+	 * Retrieves all names associated with a given Bitcoin Cash address.
+	 *
+	 * This function queries the blockchain to find all UTXOs linked to the specified address
+	 * and filters them to extract the names owned by the address.
+	 *
+	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
+	 * @param {string} params.address - The address to look up names for.
+	 * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
+	 */
 	lookupAddress = async (params: LookupAddressParams): Promise<LookupAddressResponse> =>
 	{
 		const { address } = params;
 
 		// Look for all the UTXOs for the given address and filter the names.
 		const utxos = await this.networkProvider.getUtxos(address);
-
 		const filteredUtxos = utxos.filter((utxo) => utxo.token?.category === this.category);
-
 		const names = filteredUtxos.map((utxo) =>
 		{
 			const nameHex = utxo.token!.nft!.commitment.slice(16);

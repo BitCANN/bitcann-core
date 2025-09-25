@@ -29,7 +29,7 @@ export interface LookupAddressParams
 interface Token
 {
 	amount: bigint;
-	category: Uint8Array
+	category: Uint8Array;
 	nft?: {
 		capability: `${NonFungibleTokenCapability}`;
 		commitment: Uint8Array;
