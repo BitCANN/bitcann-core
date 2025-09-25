@@ -1,21 +1,15 @@
-/**
- * Interface for the request parameters of the lookupAddressCore function.
- */
-export interface LookupAddressCoreParams
-{
-	address: string;
-}
+import { NonFungibleTokenCapability } from '@bitauth/libauth';
 
 /**
- * Interface for the response of the lookupAddressCore function.
+ * Interface for the response of the lookupAddress function.
  */
-export interface LookupAddressCoreResponse
+export interface LookupAddressResponse
 {
 	names: string[];
 }
 
 /**
- * Interface for the request parameters of the resolveNameCore function.
+ * Interface for the request parameters of the resolveName function.
  */
 export interface ResolveNameParams
 {
@@ -25,21 +19,21 @@ export interface ResolveNameParams
 }
 
 /**
- * Interface for the request parameters of the lookupAddressCore function.
+ * Interface for the request parameters of the lookupAddress function.
  */
 export interface LookupAddressParams
 {
 	address: string;
 }
 
-/**
- * Interface for the request parameters of the resolveNameCore function.
- */
-export interface ResolveNameCoreParams
+interface Token
 {
-	name: string;
-	useElectrum?: boolean;
-	useChaingraph?: boolean;
+	amount: bigint;
+	category: Uint8Array
+	nft?: {
+		capability: `${NonFungibleTokenCapability}`;
+		commitment: Uint8Array;
+	};
 }
 
 /**
@@ -48,8 +42,8 @@ export interface ResolveNameCoreParams
 export interface ResolveNameByElectrumParams
 {
 	baseHeight: number;
-	token: any;
-	ownerLockingBytecode: any;
+	token: Token;
+	ownerLockingBytecode: Uint8Array;
 }
 
 /**
@@ -57,5 +51,5 @@ export interface ResolveNameByElectrumParams
  */
 export interface ResolveNameByChainGraphParams
 {
-	token: any;
+	token: Token;
 }

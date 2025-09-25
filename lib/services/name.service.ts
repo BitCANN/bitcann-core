@@ -4,17 +4,17 @@ import { type Contract, type NetworkProvider } from 'cashscript';
 import { ChaingraphClient, graphql } from 'chaingraph-ts';
 import { GetNameParams, GetRecordsParams, NameInfo, NameStatus } from '../interfaces/index.js';
 import type {
-	LookupAddressCoreParams,
-	LookupAddressCoreResponse,
+	LookupAddressParams,
+	LookupAddressResponse,
 	ResolveNameByChainGraphParams,
 	ResolveNameByElectrumParams,
-	ResolveNameCoreParams,
+	ResolveNameParams
 } from '../interfaces/resolver.js';
 import { scriptToScripthash } from '../util/address.js';
 import { constructNameContract, getNamePartialBytecode } from '../util/contract.js';
 import { buildLockScriptP2SH32, extractRecordsFromTransaction, findRunningAuctionUtxo, getValidCandidateTransactions, lockScriptToAddress, pushDataHex } from '../util/index.js';
 import { isNameValid } from '../util/name.js';
-import { ParsedRecordsInterface, parseRecords } from '../util/parser.js';
+import { ParsedRecords, parseRecords } from '../util/parser.js';
 
 
 export class NameService
@@ -137,11 +137,11 @@ export class NameService
      *
      * @param {GetRecordsParams} params - The parameters for fetching name records.
      * @param {string} params.name - The name to retrieve records for.
-     * @returns {Promise<ParsedRecordsInterface>} A promise that resolves to an array of name records.
+     * @returns {Promise<ParsedRecords>} A promise that resolves to an array of name records.
      */
 	getRecords = async ({
 		name,
-	}: GetRecordsParams): Promise<ParsedRecordsInterface> =>
+	}: GetRecordsParams): Promise<ParsedRecords> =>
 	{
 		const nameContract = constructNameContract({
 			name,
@@ -186,7 +186,7 @@ export class NameService
       }`);
 
 		const category = binToHex(token.category);
-		const commitment = binToHex(token.nft.commitment);
+		const commitment = binToHex(token.nft!.commitment);
 
 		const chaingraphClient = new ChaingraphClient(this.chaingraphUrl);
 		const resultQuery = await chaingraphClient.query(queryReq, {
@@ -279,7 +279,6 @@ export class NameService
 
 	resolveNameByElectrum = async ({ baseHeight, token, ownerLockingBytecode }: ResolveNameByElectrumParams): Promise<string> =>
 	{
-
 		let lookingForNewOwner = true;
 		while(lookingForNewOwner)
 		{
@@ -359,8 +358,8 @@ export class NameService
 			name,
 			useElectrum,
 			useChaingraph,
-		}: ResolveNameCoreParams,
-	): Promise<any> =>
+		}: ResolveNameParams,
+	): Promise<string> =>
 	{
 		if(useElectrum && useChaingraph || !useElectrum && !useChaingraph)
 		{
@@ -418,13 +417,13 @@ export class NameService
 			}
 
 			if(decodedTx.inputs.length !== 5
-                    || decodedTx.outputs.length !== 8
-                    || !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== this.category
-                    || !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== this.category
-                    || !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== this.category
-                    || !decodedTx.outputs[4].token?.category || binToHex(decodedTx.outputs[4].token.category) !== this.category
-                    || !decodedTx.outputs[5].token?.category || binToHex(decodedTx.outputs[5].token.category) !== this.category
-                    || decodedTx.outputs[2].token?.nft?.capability != 'minting'
+					|| decodedTx.outputs.length !== 8
+					|| !decodedTx.outputs[0].token?.category || binToHex(decodedTx.outputs[0].token.category) !== this.category
+					|| !decodedTx.outputs[2].token?.category || binToHex(decodedTx.outputs[2].token.category) !== this.category
+					|| !decodedTx.outputs[3].token?.category || binToHex(decodedTx.outputs[3].token.category) !== this.category
+					|| !decodedTx.outputs[4].token?.category || binToHex(decodedTx.outputs[4].token.category) !== this.category
+					|| !decodedTx.outputs[5].token?.category || binToHex(decodedTx.outputs[5].token.category) !== this.category
+					|| decodedTx.outputs[2].token?.nft?.capability != 'minting'
 			)
 			{
 				continue;
@@ -447,12 +446,12 @@ export class NameService
 
 		if(useChaingraph)
 		{
-			return this.resolveNameByChainGraph({ token: baseTransaction.outputs[5].token });
+			return this.resolveNameByChainGraph({ token: baseTransaction.outputs[5].token! });
 		}
 
 		let ownerLockingBytecode = baseTransaction.outputs[5].lockingBytecode;
 
-		return this.resolveNameByElectrum({ baseHeight, token: baseTransaction.outputs[5].token, ownerLockingBytecode });
+		return this.resolveNameByElectrum({ baseHeight, token: baseTransaction.outputs[5].token!, ownerLockingBytecode });
 	};
 
 
@@ -462,13 +461,16 @@ export class NameService
      * This function queries the blockchain to find all UTXOs linked to the specified address
      * and filters them to extract the names owned by the address.
      *
-     * @param {LookupAddressRequest} params - The parameters for the lookup operation.
+     * @param {LookupAddressParams} params - The parameters for the lookup operation.
+     * @param {string} params.address - The address to look up names for.
      * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
+     * @throws {Error} If no UTXOs are found for the address.
+     * @throws {Error} If no names are found for the address.
      */
-	lookupAddressCore = async ({
-		address,
-	}: LookupAddressCoreParams): Promise<LookupAddressCoreResponse> =>
+	lookupAddress = async (params: LookupAddressParams): Promise<LookupAddressResponse> =>
 	{
+		const { address } = params;
+
 		// Look for all the UTXOs for the given address and filter the names.
 		const utxos = await this.networkProvider.getUtxos(address);
 

@@ -1,6 +1,6 @@
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { AuctionNameDoesNotContainInvalidCharacterError } from '../errors.js';
-import { PenaliseDuplicateAuctionCoreParams, PenaliseIllegalAuctionCoreParams, PenalizeInvalidNameCoreParams } from '../interfaces/index.js';
+import { PenaliseDuplicateAuctionParams, PenaliseIllegalAuctionParams, PenalizeInvalidNameParams } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
 import { adjustLastOutputForFee, constructNameContract, findFirstInvalidCharacterIndex } from '../util/index.js';
 
@@ -65,14 +65,14 @@ export class PenalisationTransactionBuilder
 	/**
 	 * Constructs a transaction to penalise a duplicate auction.
 	 *
-	 * @param {PenaliseDuplicateAuctionCoreParams} params - The parameters required to penalise a duplicate auction.
+	 * @param {PenaliseDuplicateAuctionParams} params - The parameters required to penalise a duplicate auction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
 	buildPenaliseDuplicateAuctionTransaction = async ({
 		name,
 		rewardTo,
 		utxos,
-	}: PenaliseDuplicateAuctionCoreParams): Promise<TransactionBuilder> =>
+	}: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder> =>
 	{
 		if(!utxos)
 		{
@@ -128,14 +128,14 @@ export class PenalisationTransactionBuilder
 	/**
 	 * Constructs a transaction to penalise an illegal auction.
 	 *
-	 * @param {PenaliseIllegalAuctionCoreParams} params - The parameters required to penalise an illegal auction.
+	 * @param {PenaliseIllegalAuctionParams} params - The parameters required to penalise an illegal auction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
 	buildPenaliseIllegalAuctionTransaction = async ({
 		name,
 		rewardTo,
 		utxos,
-	}: PenaliseIllegalAuctionCoreParams): Promise<TransactionBuilder> =>
+	}: PenaliseIllegalAuctionParams): Promise<TransactionBuilder> =>
 	{
 		if(!utxos)
 		{
@@ -198,7 +198,7 @@ export class PenalisationTransactionBuilder
 	/**
 	 * Constructs a transaction to penalise an invalid auction name.
 	 *
-	 * @param {PenaliseInvalidAuctionNameCoreParams} params - The parameters required to penalise an invalid auction name.
+	 * @param {PenalizeInvalidNameParams} params - The parameters required to penalise an invalid auction name.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 * @throws {AuctionNameDoesNotContainInvalidCharacterError} If the auction name does not contain an invalid character.
 	 */
@@ -206,7 +206,7 @@ export class PenalisationTransactionBuilder
 		name,
 		rewardTo,
 		utxos,
-	}: PenalizeInvalidNameCoreParams): Promise<TransactionBuilder> =>
+	}: PenalizeInvalidNameParams): Promise<TransactionBuilder> =>
 	{
 		const invalidCharacterIndex = findFirstInvalidCharacterIndex(name);
 

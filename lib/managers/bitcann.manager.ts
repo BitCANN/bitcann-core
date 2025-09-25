@@ -9,33 +9,33 @@ import {
 import { chaingraphURL } from '../config.js';
 import type {
 	AccumulateParams,
+	ActiveAuctionsResponse,
 	CreateAuctionParams,
 	CreateBidParams,
 	CreateClaimNameParams,
 	CreateRecordsParams,
-	GetAuctionsResponse,
 	GetNameParams,
 	GetRecordsParams,
 	LookupAddressParams,
+	LookupAddressResponse,
 	ManagerConfig,
 	NameInfo,
 	PastAuctionResponse,
 	PenaliseDuplicateAuctionParams,
 	PenaliseIllegalAuctionParams,
 	PenalizeInvalidNameParams,
-	ResolveNameParams,
+	ResolveNameParams
 } from '../interfaces/index.js';
-import { LookupAddressCoreResponse } from '../interfaces/index.js';
 import { NameService } from '../services/name.service.js';
 import { RegistryService } from '../services/registry.service.js';
 import { AccumulationTransactionBuilder } from '../transactions/accumulation.builder.js';
 import { AuctionTransactionBuilder } from '../transactions/auction.builder.js';
 import { BidTransactionBuilder } from '../transactions/bid.builder.js';
 import { ClaimNameTransactionBuilder } from '../transactions/claim.builder.js';
+import { NameTransactionBuilder } from '../transactions/name.builder.js';
 import { PenalisationTransactionBuilder } from '../transactions/penalisation.builder.js';
-import { RecordsTransactionBuilder } from '../transactions/records.builder.js';
 import { constructContracts } from '../util/contract.js';
-import type { ParsedRecordsInterface } from '../util/parser.js';
+import type { ParsedRecords } from '../util/parser.js';
 import { UtxoManager } from './utxo.manager.js';
 
 
@@ -46,11 +46,23 @@ export class BitcannManager
 	 */
 	private category: string;
 	/**
-	 * The minimum starting bid for the name.
+	 * The TLD of the name.
+	 */
+	private tld: string;
+	/**
+	 * The genesis creator incentive address for the protocol.
+	 */
+	private genesisIncentiveAddress: string;
+	/**
+	 * The Chaingraph URL to use for lookups.
+	 */
+	private chaingraphUrl: string;
+	/**
+	 * The minimum starting bid for the auction.
 	 */
 	private minStartingBid: number;
 	/**
-	 * The minimum bid increase percentage for the name.
+	 * The minimum bid increase percentage for the auction.
 	 */
 	private minBidIncreasePercentage: number;
 	/**
@@ -58,21 +70,9 @@ export class BitcannManager
 	 */
 	private inactivityExpiryTime: number;
 	/**
-	 * The minimum wait time for the name.
+	 * The minimum wait time for the auction.
 	 */
 	private minWaitTime: number;
-	/**
-	 * The TLD of the name.
-	 */
-	private tld: string;
-	/**
-	 * The creator incentive address for the protocol.
-	 */
-	private creatorIncentiveAddress: string;
-	/**
-	 * The Chaingraph URL to use for lookups.
-	 */
-	private chaingraphUrl: string;
 	/**
 	 * The network provider to use for BCH network operations.
 	 */
@@ -90,10 +90,6 @@ export class BitcannManager
 	 */
 	private accumulationTransactionBuilder: AccumulationTransactionBuilder;
 	/**
-	 * The builder for claim name transactions.
-	 */
-	private claimNameTransactionBuilder: ClaimNameTransactionBuilder;
-	/**
 	 * The builder for auction transactions.
 	 */
 	private auctionTransactionBuilder: AuctionTransactionBuilder;
@@ -102,21 +98,25 @@ export class BitcannManager
 	 */
 	private bidTransactionBuilder: BidTransactionBuilder;
 	/**
+	 * The builder for claim name transactions.
+	 */
+	private claimNameTransactionBuilder: ClaimNameTransactionBuilder;
+	/**
 	 * The builder for records transactions.
 	 */
-	private recordsTransactionBuilder: RecordsTransactionBuilder;
+	private nameTransactionBuilder: NameTransactionBuilder;
 	/**
 	 * The builder for penalisation transactions.
 	 */
 	private penalisationTransactionBuilder: PenalisationTransactionBuilder;
 	/**
-	 * The service for registry operations.
-	 */
-	private registryService: RegistryService;
-	/**
 	 * The service for name operations.
 	 */
 	private nameService: NameService;
+	/**
+	 * The service for registry operations.
+	 */
+	private registryService: RegistryService;
 
 	/**
 	 * Constructs a new BitcannManager.
@@ -131,7 +131,7 @@ export class BitcannManager
 		this.inactivityExpiryTime = config.inactivityExpiryTime;
 		this.minWaitTime = config.minWaitTime;
 		this.tld = config.tld;
-		this.creatorIncentiveAddress = config.creatorIncentiveAddress;
+		this.genesisIncentiveAddress = config.genesisIncentiveAddress;
 		this.chaingraphUrl = config.chaingraphUrl || chaingraphURL;
 		if(config.networkProvider)
 		{
@@ -144,117 +144,94 @@ export class BitcannManager
 			this.networkProvider = new ElectrumNetworkProvider('mainnet');
 		}
 
-		this.contracts = constructContracts({ creatorIncentiveAddress: this.creatorIncentiveAddress, category: this.category, provider: this.networkProvider, tld: this.tld });
+		this.contracts = constructContracts({ genesisIncentiveAddress: this.genesisIncentiveAddress, category: this.category, provider: this.networkProvider, tld: this.tld });
 
 		this.utxoManager = new UtxoManager(this.networkProvider, this.contracts, this.category, this.tld);
 
 		this.accumulationTransactionBuilder = new AccumulationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.utxoManager);
-		this.claimNameTransactionBuilder = new ClaimNameTransactionBuilder(this.networkProvider, this.utxoManager, this.contracts, this.category, this.tld, this.minWaitTime, this.creatorIncentiveAddress);
+		this.claimNameTransactionBuilder = new ClaimNameTransactionBuilder(this.networkProvider, this.utxoManager, this.contracts, this.category, this.tld, this.minWaitTime, this.genesisIncentiveAddress);
 		this.auctionTransactionBuilder = new AuctionTransactionBuilder(this.networkProvider, this.contracts, this.utxoManager, this.minStartingBid);
 		this.bidTransactionBuilder = new BidTransactionBuilder(this.networkProvider, this.contracts, this.utxoManager, this.minBidIncreasePercentage, this.category);
-		this.recordsTransactionBuilder = new RecordsTransactionBuilder(this.networkProvider, this.utxoManager, this.category, this.tld, this.inactivityExpiryTime);
+		this.nameTransactionBuilder = new NameTransactionBuilder(this.networkProvider, this.utxoManager, this.category, this.tld, this.inactivityExpiryTime);
 		this.penalisationTransactionBuilder = new PenalisationTransactionBuilder(this.networkProvider, this.contracts, this.category, this.tld, this.minWaitTime, this.utxoManager);
 		this.nameService = new NameService(this.networkProvider, this.contracts, this.category, this.tld, this.chaingraphUrl);
 		this.registryService = new RegistryService(this.networkProvider, this.contracts, this.category);
 	}
 
-	// *********************************************************************************
-	// Read Methods
-	// *********************************************************************************
-
 	/**
-	 * Fetches the name records for a given name.
-	 *
-	 * This method interacts with the blockchain to retrieve records associated with the specified name.
-	 * It allows the option to retain duplicate records if desired.
-	 *
+	 * @description Fetches the records for a given name.
 	 * @param {GetRecordsParams} params - The parameters for fetching name records.
 	 * @param {string} params.name - The name for which records are to be fetched.
-	 * @returns {Promise<GetRecordsResponse>} A promise that resolves to an object containing an array of name records.
+	 * @returns {Promise<ParsedRecords>} A promise that resolves to an object containing an array of name records.
 	 */
-	public async getRecords({ name }: GetRecordsParams): Promise<ParsedRecordsInterface>
+	public async getRecords(params: GetRecordsParams): Promise<ParsedRecords>
 	{
-		return this.nameService.getRecords({ name });
+		return await this.nameService.getRecords(params);
 	}
 
 	/**
-	 * Fetches all active auctions.
-	 *
-	 * @returns {Promise<GetAuctionsResponse[]>} A promise that resolves to an array of UTXOs representing active auctions.
+	 * @description Fetches all active auctions.
+	 * @returns {Promise<ActiveAuctionsResponse[]>} A promise that resolves to an array of UTXOs representing active auctions.
 	 */
-	public async getAuctions(): Promise<GetAuctionsResponse[]>
+	public async getActiveAuctions(): Promise<ActiveAuctionsResponse[]>
 	{
-		return this.registryService.getAuctions();
+		return await this.registryService.getActiveAuctions();
 	}
 
 	/**
-	 * Retrieves the transaction history.
-	 *
+	 * @description Retrieves the past auctions.
 	 * @returns {Promise<PastAuctionResponse[]>} A promise that resolves to an array of transaction history objects,
 	 * each containing a transaction hex and a name.
 	 */
 	public async getPastAuctions(): Promise<PastAuctionResponse[]>
 	{
-		return this.registryService.getPastAuctions();
+		return await this.registryService.getPastAuctions();
 	}
 
 	/**
-	 * Retrieves detailed information about a specific name.
-	 *
+	 * @description Retrieves detailed information about a specific name.
 	 * @param {GetNameParams} params - The parameters for retrieving name information.
 	 * @param {string} params.name - The name to retrieve information for.
 	 * @returns {Promise<NameInfo>} A promise that resolves to an object containing the name's address and contract.
 	 */
-	public async getName({ name }: GetNameParams): Promise<NameInfo>
+	public async getName(params: GetNameParams): Promise<NameInfo>
 	{
-		return this.nameService.getName({ name });
+		return await this.nameService.getName(params);
 	}
 
 	/**
-	 * Resolves a name to its associated address.
+	 * @description Resolves a name to its associated address.
 	 *
 	 * This function uses either the Electrum or Chaingraph method to resolve the name
 	 * based on the provided parameters.
-	 *
 	 * @param {ResolveNameParams} params - The parameters for resolving the name.
 	 * @param {string} params.name - The name to resolve.
 	 * @param {boolean} [params.useElectrum] - Whether to use the Electrum method for resolution.
 	 * @param {boolean} [params.useChaingraph] - Whether to use the Chaingraph method for resolution.
 	 * @returns {Promise<string>} A promise that resolves to the address associated with the name.
 	 */
-	public async resolveName({ name, useElectrum, useChaingraph }: ResolveNameParams): Promise<string>
+	public async resolveName(params: ResolveNameParams): Promise<string>
 	{
-		return this.nameService.resolveNameCore({
-			name,
-			useElectrum,
-			useChaingraph,
-		});
+		return await this.nameService.resolveNameCore(params);
 	}
 
 	/**
-	 * Looks up all names associated with a given address.
-	 *
+	 * @description Looks up all names associated with a given address.
 	 * This function queries the blockchain to find all UTXOs linked to the specified address
 	 * and filters them to extract the names owned by the address.
-	 *
 	 * @param {LookupAddressParams} params - The parameters for the lookup operation.
 	 * @param {string} params.address - The address to look up names for.
-	 * @returns {Promise<LookupAddressCoreResponse>} A promise that resolves to an object containing an array of names owned by the address.
+	 * @returns {Promise<LookupAddressResponse>} A promise that resolves to an object containing an array of names owned by the address.
+	 * @throws {Error} If no UTXOs are found for the address.
+	 * @throws {Error} If no names are found for the address.
 	 */
-	public async lookupAddress({ address }: LookupAddressParams): Promise<LookupAddressCoreResponse>
+	public async lookupAddress(params: LookupAddressParams): Promise<LookupAddressResponse>
 	{
-		return this.nameService.lookupAddressCore({
-			address,
-		});
+		return await this.nameService.lookupAddress(params);
 	}
 
-	// *********************************************************************************
-	// Write Methods
-	// *********************************************************************************
-
 	/**
-	 * Initiates the creation of an auction transaction for a specified name.
-	 *
+	 * @description Initiates the creation of an auction transaction for a specified name.
 	 * @param {CreateAuctionParams} params - The parameters required for the auction transaction.
 	 * @param {string} params.name - The name to be auctioned.
 	 * @param {number} params.amount - The initial amount for the auction.
@@ -264,24 +241,13 @@ export class BitcannManager
 	 * @throws {InvalidNameError} If the provided name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for the transaction.
 	 */
-	public async buildAuctionTransaction({
-		name,
-		amount,
-		address,
-		utxos,
-	}: CreateAuctionParams): Promise<TransactionBuilder>
+	public async buildAuctionTransaction(params: CreateAuctionParams): Promise<TransactionBuilder>
 	{
-		return this.auctionTransactionBuilder.build({
-			name,
-			amount,
-			address,
-			utxos,
-		});
+		return this.auctionTransactionBuilder.build(params);
 	}
 
 	/**
-	 * Initiates the creation of a bid transaction for a specified name auction.
-	 *
+	 * @description Initiates the creation of a bid transaction for a specified name auction.
 	 * @param {CreateBidParams} params - The parameters required for the bid transaction.
 	 * @param {string} params.name - The name on which the bid is being placed.
 	 * @param {number} params.amount - The amount of the bid.
@@ -291,18 +257,13 @@ export class BitcannManager
 	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
 	 */
-	public async buildBidTransaction({ name, amount, address, utxos }: CreateBidParams): Promise<TransactionBuilder>
+	public async buildBidTransaction(params: CreateBidParams): Promise<TransactionBuilder>
 	{
-		return this.bidTransactionBuilder.build({
-			name,
-			amount,
-			address,
-			utxos,
-		});
+		return this.bidTransactionBuilder.build(params);
 	}
 
 	/**
-	 * Creates a transaction to claim a name.
+	 * @description Creates a transaction to claim a name.
 	 *
 	 * @param {CreateClaimNameParams} params - The parameters for claiming the name.
 	 * @param {string} params.name - The name to claim.
@@ -310,65 +271,50 @@ export class BitcannManager
 	 * @throws {NameMintingUTXONotFoundError} If no suitable UTXO is found for minting the name.
 	 * @throws {ThreadWithTokenUTXONotFoundError} If no suitable UTXO is found for the thread with token.
 	 */
-	public async buildClaimNameTransaction({ name, utxos }: CreateClaimNameParams): Promise<TransactionBuilder>
+	public async buildClaimNameTransaction(params: CreateClaimNameParams): Promise<TransactionBuilder>
 	{
-		return this.claimNameTransactionBuilder.build({ name, utxos });
+		return this.claimNameTransactionBuilder.build(params);
 	}
 
 	/**
-	 * Initiates a transaction to penalize an auction with an invalid name.
-	 *
+	 * @description Initiates a transaction to penalize an auction with an invalid name.
 	 * @param {PenalizeInvalidNameParams} params - The parameters required to penalize an invalid auction name.
 	 * @param {string} params.name - The auction name to validate.
 	 * @param {string} params.rewardTo - The address to reward for identifying the invalid name.
 	 * @param {FetchInvalidNameGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async buildPenalizeInvalidAuctionNameTransaction({ name, rewardTo, utxos }: PenalizeInvalidNameParams): Promise<TransactionBuilder>
+	public async buildPenalizeInvalidAuctionNameTransaction(params: PenalizeInvalidNameParams): Promise<TransactionBuilder>
 	{
-		return this.penalisationTransactionBuilder.buildPenaliseInvalidAuctionNameTransaction({
-			name,
-			rewardTo,
-			utxos,
-		});
+		return this.penalisationTransactionBuilder.buildPenaliseInvalidAuctionNameTransaction(params);
 	}
 
 	/**
-	 * Initiates a transaction to penalize a duplicate auction.
-	 *
+	 * @description Initiates a transaction to penalize a duplicate auction.
 	 * @param {PenaliseDuplicateAuctionParams} params - The parameters required to penalize a duplicate auction.
 	 * @param {string} params.name - The auction name to check for duplication.
 	 * @param {string} params.rewardTo - The address to reward for identifying the duplicate auction.
 	 * @param {FetchDuplicateAuctionGuardUtxosResponse} [params.utxos] - Optional UTXOs for the transaction; if not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the transaction.
 	 */
-	public async buildPenalizeDuplicateAuctionTransaction({ name, rewardTo, utxos }: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder>
+	public async buildPenalizeDuplicateAuctionTransaction(params: PenaliseDuplicateAuctionParams): Promise<TransactionBuilder>
 	{
-		return this.penalisationTransactionBuilder.buildPenaliseDuplicateAuctionTransaction({
-			name,
-			rewardTo,
-			utxos,
-		});
+		return this.penalisationTransactionBuilder.buildPenaliseDuplicateAuctionTransaction(params);
 	}
 
 	/**
-	 * Proves that an auction is illegal. Currently logs the name.
-	 *
+	 * @description Proves that an auction is illegal. Currently logs the name.
+	 * @param {PenaliseIllegalAuctionParams} params - The parameters required to penalize an illegal auction.
 	 * @param {string} name - The auction name to check for legality.
 	 * @returns {Promise<void>} A promise that resolves when the operation is complete.
 	 */
-	public async buildPenalizeIllegalAuctionTransaction({ name, rewardTo, utxos }: PenaliseIllegalAuctionParams): Promise<TransactionBuilder>
+	public async buildPenalizeIllegalAuctionTransaction(params: PenaliseIllegalAuctionParams): Promise<TransactionBuilder>
 	{
-		return this.penalisationTransactionBuilder.buildPenaliseIllegalAuctionTransaction({
-			name,
-			rewardTo,
-			utxos,
-		});
+		return this.penalisationTransactionBuilder.buildPenaliseIllegalAuctionTransaction(params);
 	}
 
 	/**
-	 * Initiates the creation of a transaction to add records to a specified name.
-	 *
+	 * @description Initiates the creation of a transaction to add records to a specified name.
 	 * @param {CreateRecordsParams} params - The parameters required for the record transaction.
 	 * @param {string} params.name - The name of the name where the records will be added.
 	 * @param {string[]} params.records - An array of record data to be added to the name.
@@ -376,19 +322,13 @@ export class BitcannManager
 	 * @param {FetchRecordsUtxosResponse} [params.utxos] - Optional UTXOs required for the transaction. If not provided, they will be fetched.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder instance for the record transaction.
 	 */
-	public async buildRecordsTransaction({ name, records, address, utxos }: CreateRecordsParams): Promise<TransactionBuilder>
+	public async buildRecordsTransaction(params: CreateRecordsParams): Promise<TransactionBuilder>
 	{
-		return this.recordsTransactionBuilder.build({
-			address,
-			name,
-			records,
-			utxos,
-		});
+		return this.nameTransactionBuilder.build(params);
 	}
 
 	/**
-	 * Initiates the accumulation of tokens from a thread to the minting UTXO.
-	 *
+	 * @description Initiates the accumulation of tokens from a thread to the minting UTXO.
 	 * This method facilitates the transfer of tokens from a specified thread to a minting UTXO
 	 * by constructing a transaction using the provided or fetched UTXOs. If the UTXOs are not
 	 * provided, they will be fetched using the network provider and contracts associated with

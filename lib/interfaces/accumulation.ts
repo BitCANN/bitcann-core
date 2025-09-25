@@ -1,22 +1,8 @@
-import { Contract, type NetworkProvider, type Utxo } from 'cashscript';
+import { type Utxo } from 'cashscript';
+
 
 /**
- * Parameters required to fetch UTXOs for accumulation.
- */
-export interface FetchAccumulationUtxosParams
-{
-	/** Network provider for BCH network operations. */
-	networkProvider: NetworkProvider;
-	/** Contracts involved in the accumulation process. */
-	contracts: Record<string, Contract>;
-	/** The token category. */
-	category: string;
-	/** The address associated with the accumulation. */
-	address: string;
-}
-
-/**
- * Core parameters required for the accumulation process.
+ * Parameters required for the accumulation process.
  */
 export interface AccumulateParams
 {

@@ -77,11 +77,11 @@ export const getNamePartialBytecode = (params: { category: string; provider: Net
  * Constructs a set of contracts for the BitCANN system.
  *
  * @param {Object} params - The parameters for constructing the contracts.
- * @param {string} params.creatorIncentiveAddress - The creator incentive address.
+ * @param {string} params.genesisIncentiveAddress - The creator incentive address.
  * @returns {Object} An object containing the constructed contracts.
  */
 export const constructContracts = (params: {
-	creatorIncentiveAddress: string;
+	genesisIncentiveAddress: string;
 	category: string;
 	provider: NetworkProvider;
 	tld: string;
@@ -121,7 +121,7 @@ export const constructContracts = (params: {
 		),
 		Factory: new Contract(
 			BitCANNArtifacts.Factory,
-			[ namePartialBytecode, convertAddressToPkh(params.creatorIncentiveAddress) ],
+			[ namePartialBytecode, convertAddressToPkh(params.genesisIncentiveAddress) ],
 			{ provider: params.provider, addressType: ADDRESS_TYPE },
 		),
 		OwnershipGuard: new Contract(

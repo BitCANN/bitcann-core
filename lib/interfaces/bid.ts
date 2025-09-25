@@ -23,28 +23,6 @@ export interface CreateBidParams
 	utxos?: FetchBidUtxosResponse;
 }
 
-/**
- * Parameters for creating a bid transaction that is not part of the manager.
- */
-export interface CreateBidCoreParams
-{
-	/**
-	 * The name on which the bid is being placed.
-	 */
-	name: string;
-	/**
-	 * The amount of the bid.
-	 */
-	amount: number;
-	/**
-	 * The address of the bidder.
-	 */
-	address: string;
-	/**
-	 * UTXOs required for the bid transaction.
-	 */
-	utxos?: FetchBidUtxosResponse;
-}
 
 /**
  * Parameters for fetching UTXOs for a bid.

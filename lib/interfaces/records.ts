@@ -25,21 +25,6 @@ export interface CreateRecordsParams
 }
 
 /**
- * Core parameters required to create records.
- */
-export interface CreateRecordsCoreParams
-{
-	/** The address associated with the records. */
-	address: string;
-	/** The name associated with the records. */
-	name: string;
-	/** List of records to be created. */
-	records: string[];
-	/** UTXOs required for the records creation process. */
-	utxos?: FetchRecordsUtxosResponse;
-}
-
-/**
  * Parameters required to fetch UTXOs for records.
  */
 export interface FetchRecordsUtxosParams

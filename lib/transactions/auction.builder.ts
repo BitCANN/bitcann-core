@@ -1,7 +1,7 @@
-import { binToHex } from '@bitauth/libauth';
+import { binToHex, NonFungibleTokenCapability } from '@bitauth/libauth';
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { InvalidAuctionAmountError } from '../errors.js';
-import type { CreateAuctionCoreParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
+import type { CreateAuctionParams, FetchAuctionUtxosResponse } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
 import { convertAddressToPkh } from '../util/address.js';
 import { createPlaceholderUnlocker, getAuctionPrice, padVmNumber } from '../util/index.js';
@@ -52,11 +52,9 @@ export class AuctionTransactionBuilder
 	}
 
 	/**
-	 * Constructs a transaction to initiate an auction.
+	 * @description Constructs a transaction to initiate an auction.
 	 *
-	 * This function creates a transaction to start an auction using various UTXOs and contracts.
-	 *
-	 * @param {CreateAuctionCoreParams} params - The parameters for constructing the auction transaction.
+	 * @param {CreateAuctionParams} params - The parameters for constructing the auction transaction.
 	 * @param {string} params.name - The name to be auctioned.
 	 * @param {number} params.amount - The initial bid amount for the auction.
 	 * @param {string} params.address - The address of the auction creator.
@@ -65,12 +63,7 @@ export class AuctionTransactionBuilder
 	 * @throws {InvalidNameError} If the provided auction name is invalid.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found to fund the auction.
 	 */
-	build = async ({
-		name,
-		amount,
-		address,
-		utxos,
-	}: CreateAuctionCoreParams): Promise<TransactionBuilder> =>
+	build = async ({ name, amount, address, utxos }: CreateAuctionParams): Promise<TransactionBuilder> =>
 	{
 		// Validate the auction name
 		validateName(name);
@@ -145,7 +138,7 @@ export class AuctionTransactionBuilder
 					category: registrationCounterUTXO.token!.category,
 					amount: BigInt(currentRegistrationId),
 					nft: {
-						capability: 'mutable',
+						capability: NonFungibleTokenCapability.mutable,
 						commitment: userPkh + binToHex(nameBin),
 					},
 				},

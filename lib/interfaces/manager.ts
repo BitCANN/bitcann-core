@@ -9,7 +9,7 @@ export type ManagerConfig =
 	chaingraphUrl?: string;
 
 	/** creator incentive address for the name. */
-	creatorIncentiveAddress: string;
+	genesisIncentiveAddress: string;
 
 	/** inactivity expiry time before the name can be considered expired. */
 	inactivityExpiryTime: number;

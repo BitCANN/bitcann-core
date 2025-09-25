@@ -1,7 +1,7 @@
-import { binToHex } from '@bitauth/libauth';
+import { binToHex, NonFungibleTokenCapability } from '@bitauth/libauth';
 import { Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { InvalidBidAmountError } from '../errors.js';
-import type { CreateBidCoreParams } from '../interfaces/index.js';
+import type { CreateBidParams } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
 import { convertAddressToPkh, toCashaddr } from '../util/address.js';
 import { adjustLastOutputForFee, convertNameToBinaryAndHex, convertPkhToLockingBytecode, createPlaceholderUnlocker, validateName } from '../util/index.js';
@@ -59,30 +59,23 @@ export class BidTransactionBuilder
 	/**
 	 * Creates a transaction for placing a bid in an auction.
 	 *
-	 * @param {CreateBidCoreParams} params - The parameters for the bid transaction.
+	 * @param {CreateBidParams} params - The parameters for the bid transaction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to a TransactionBuilder object for the bid transaction.
 	 * @throws {InvalidNameError} If the auction name is invalid.
 	 * @throws {InvalidBidAmountError} If the bid amount is less than the minimum required increase.
 	 * @throws {UserUTXONotFoundError} If no suitable UTXO is found for funding the bid.
 	 */
-	build = async ({
-		name,
-		amount,
-		address,
-		utxos,
-	}: CreateBidCoreParams): Promise<TransactionBuilder> =>
+	build = async (params: CreateBidParams): Promise<TransactionBuilder> =>
 	{
+		const { name, amount, address } = params;
+		let { utxos } = params;
+
 		validateName(name);
 		const { nameBin } = convertNameToBinaryAndHex(name);
 
 		if(!utxos)
 		{
-			utxos = await this.utxoManager.fetchBidUtxos({
-				name,
-				category: this.category,
-				address,
-				amount,
-			});
+			utxos = await this.utxoManager.fetchBidUtxos({ name, category: this.category, address, amount });
 		}
 
 		const { threadNFTUTXO, authorizedContractUTXO, runningAuctionUTXO, fundingUTXO } = utxos;
@@ -127,7 +120,7 @@ export class BidTransactionBuilder
 					category: runningAuctionUTXO.token!.category,
 					amount: runningAuctionUTXO.token!.amount,
 					nft: {
-						capability: 'mutable',
+						capability: NonFungibleTokenCapability.mutable,
 						commitment: pkh + binToHex(nameBin),
 					},
 				},

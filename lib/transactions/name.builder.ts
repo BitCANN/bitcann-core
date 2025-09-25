@@ -1,5 +1,5 @@
 import { type Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
-import { CreateRecordsCoreParams } from '../interfaces/index.js';
+import { CreateRecordsParams } from '../interfaces/index.js';
 import { UtxoManager } from '../managers/utxo.manager.js';
 import {
 	adjustLastOutputForFee,
@@ -10,9 +10,9 @@ import {
 
 
 /**
- * Builder class for records transactions.
+ * Builder class for name transactions.
  */
-export class RecordsTransactionBuilder
+export class NameTransactionBuilder
 {
 	/**
 	 * The network provider.
@@ -40,7 +40,7 @@ export class RecordsTransactionBuilder
 	private inactivityExpiryTime: number;
 
 	/**
-	 * Constructs a new RecordsTransactionBuilder.
+	 * Constructs a new NameTransactionBuilder.
 	 *
 	 * @param {NetworkProvider} networkProvider - The network provider instance.
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
@@ -69,15 +69,10 @@ export class RecordsTransactionBuilder
 	/**
 	 * Creates a transaction for adding a record to a name.
 	 *
-	 * @param {CreateRecordsCoreParams} params - The parameters for creating the record transaction.
+	 * @param {CreateRecordsParams} params - The parameters for creating the name transaction.
 	 * @returns {Promise<TransactionBuilder>} A promise that resolves to the transaction builder.
 	 */
-	build = async ({
-		address,
-		name,
-		records,
-		utxos,
-	}: CreateRecordsCoreParams): Promise<TransactionBuilder> =>
+	build = async ({ address, name, records, utxos }: CreateRecordsParams): Promise<TransactionBuilder> =>
 	{
 		const nameContract = this.getNameContract(name);
 

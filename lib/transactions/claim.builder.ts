@@ -1,4 +1,4 @@
-import { binToHex, lockingBytecodeToCashAddress } from '@bitauth/libauth';
+import { binToHex, lockingBytecodeToCashAddress, NonFungibleTokenCapability } from '@bitauth/libauth';
 import { type AddressType, Contract, type NetworkProvider, TransactionBuilder } from 'cashscript';
 import { MINIMAL_CREATOR_INCENTIVE } from '../constants.js';
 import { InvalidPrevBidderAddressError } from '../errors.js';
@@ -58,7 +58,7 @@ export class ClaimNameTransactionBuilder
 	/**
 	 * The creator incentive address.
 	 */
-	creatorIncentiveAddress: string;
+	genesisIncentiveAddress: string;
 
 	/**
 	 * Constructs a new ClaimNameTransactionBuilder.
@@ -69,7 +69,7 @@ export class ClaimNameTransactionBuilder
 	 * @param {UtxoManager} utxoManager - The UTXO manager.
 	 * @param {string} tld - The TLD of the name.
 	 * @param {number} minWaitTime - The minimum wait time for the transaction.
-	 * @param {string} creatorIncentiveAddress - The creator incentive address.
+	 * @param {string} genesisIncentiveAddress - The creator incentive address.
 	 */
 	constructor(
 		networkProvider: NetworkProvider,
@@ -78,7 +78,7 @@ export class ClaimNameTransactionBuilder
 		category: string,
 		tld: string,
 		minWaitTime: number,
-		creatorIncentiveAddress: string,
+		genesisIncentiveAddress: string,
 	)
 	{
 		this.networkProvider = networkProvider;
@@ -87,7 +87,7 @@ export class ClaimNameTransactionBuilder
 		this.utxoManager = utxoManager;
 		this.tld = tld;
 		this.minWaitTime = minWaitTime;
-		this.creatorIncentiveAddress = creatorIncentiveAddress;
+		this.genesisIncentiveAddress = genesisIncentiveAddress;
 	}
 
 	/**
@@ -207,7 +207,7 @@ export class ClaimNameTransactionBuilder
 					category: nameMintingUTXO.token!.category,
 					amount: BigInt(0),
 					nft: {
-						capability: 'none',
+						capability: NonFungibleTokenCapability.none,
 						commitment: registrationId + binToHex(nameBin),
 					},
 				},
@@ -218,7 +218,7 @@ export class ClaimNameTransactionBuilder
 		if(expectedCreatorIncentive > MINIMAL_CREATOR_INCENTIVE)
 		{
 			transaction.addOutput({
-				to: this.creatorIncentiveAddress,
+				to: this.genesisIncentiveAddress,
 				amount: expectedCreatorIncentive,
 			});
 		}

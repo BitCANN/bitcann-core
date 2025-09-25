@@ -33,7 +33,7 @@ export const minStartingBid = 10000;
 export const minBidIncreasePercentage = 5;
 export const inactivityExpiryTime = 1;
 export const minWaitTime = 1;
-export const creatorIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
+export const genesisIncentiveAddress = 'bitcoincash:qqaer4yfa0j4sa7dez9gwsgjd98edjm3dg40rkrchw';
 export const tld = '.bch';
 
 export const mockOptions: ManagerConfig =
@@ -44,7 +44,7 @@ export const mockOptions: ManagerConfig =
 	minBidIncreasePercentage,
 	inactivityExpiryTime,
 	minWaitTime,
-	creatorIncentiveAddress,
+	genesisIncentiveAddress,
 };
 
 const seed = deriveSeedFromBip39Mnemonic('');

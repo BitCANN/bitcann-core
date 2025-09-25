@@ -1,18 +1,18 @@
 
 import { binToHex, hexToBin, instantiateSha256 } from '@bitauth/libauth';
 
-export interface ParsedRecordsInterface
+export interface ParsedRecords
 {
 	[namespace: string]: {
 		[key: string]: string | string[] | { [subkey: string]: string | { [subsubkey: string]: string | { [subsubsubkey: string]: string | { [subsubsubsubkey: string]: string } } } } | undefined;
 	};
 }
 
-export const parseRecords = async (records: string[]): Promise<ParsedRecordsInterface> =>
+export const parseRecords = async (records: string[]): Promise<ParsedRecords> =>
 {
 	const sha256 = await instantiateSha256();
 
-	const result: ParsedRecordsInterface = {};
+	const result: ParsedRecords = {};
 	const revocations = new Set<string>();
 	const metaRecords: { [key: string]: { type: string } } = {};
 

@@ -1,6 +1,4 @@
-import { ElectrumClient } from '@electrum-cash/network';
-import type { ElectrumProtocolEvents } from '@electrum-cash/protocol';
-import type { Contract, Utxo } from 'cashscript';
+import type { Utxo } from 'cashscript';
 
 /**
  * Parameters required to create an auction.
@@ -21,29 +19,6 @@ export interface CreateAuctionParams
 	address: string;
 	/**
    * Optional UTXOs for the transaction; if not provided, they will be fetched.
-   */
-	utxos?: FetchAuctionUtxosResponse;
-}
-
-/**
- * Parameters for creating an auction transaction that is not part of the manager.
- */
-export interface CreateAuctionCoreParams
-{
-	/**
-   * The address of the user creating the auction.
-   */
-	address: string;
-	/**
-   * The initial amount for the auction.
-   */
-	amount: number;
-	/**
-   * The name to be auctioned.
-   */
-	name: string;
-	/**
-   * UTXOs required for the auction transaction.
    */
 	utxos?: FetchAuctionUtxosResponse;
 }
@@ -89,7 +64,7 @@ export interface FetchAuctionUtxosResponse
 /**
  * Response type for retrieving all active auctions.
  */
-export interface GetAuctionsResponse
+export interface ActiveAuctionsResponse
 {
 	/**
    * The name of the auction.
@@ -119,25 +94,6 @@ export interface GetAuctionsResponse
    * UTXO representing the auction.
    */
 	utxo: Utxo;
-}
-
-/**
- * Parameters for retrieving past auctions.
- */
-export interface GetPastAuctionsParams
-{
-	/**
-   * The category of the past auctions.
-   */
-	category: string;
-	/**
-   * Contract for the name.
-   */
-	Factory: Contract;
-	/**
-   * Electrum client for protocol events.
-   */
-	electrumClient: ElectrumClient<ElectrumProtocolEvents>;
 }
 
 /**
